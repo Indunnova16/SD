@@ -39,6 +39,7 @@
         <div class="card bg-base-100 shadow mb-6">
             <div class="card-body">
                 <form method="get" hx-get="{% url 'accounts:user_list' %}" hx-trigger="submit, change from:select" hx-target="#user-table" hx-swap="innerHTML">
+                    <input type="hidden" name="active" id="active-filter-input" value="{{ active_filter }}">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="form-control">
                             <label class="label">
@@ -80,6 +81,28 @@
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Tabs: Activos / Desactivados -->
+        <div role="tablist" class="tabs tabs-bordered mb-4">
+            <a role="tab"
+               class="tab tab-lg {% if active_filter != 'false' %}tab-active{% endif %}"
+               hx-get="{% url 'accounts:user_list' %}?active=true"
+               hx-target="#user-table"
+               hx-swap="innerHTML"
+               onclick="document.querySelectorAll('[role=tablist] .tab').forEach(t=>t.classList.remove('tab-active'));this.classList.add('tab-active');document.getElementById('active-filter-input').value='true';">
+                Usuarios Activos
+                <span class="badge badge-sm ml-2">{{ active_count }}</span>
+            </a>
+            <a role="tab"
+               class="tab tab-lg {% if active_filter == 'false' %}tab-active{% endif %}"
+               hx-get="{% url 'accounts:user_list' %}?active=false"
+               hx-target="#user-table"
+               hx-swap="innerHTML"
+               onclick="document.querySelectorAll('[role=tablist] .tab').forEach(t=>t.classList.remove('tab-active'));this.classList.add('tab-active');document.getElementById('active-filter-input').value='false';">
+                Usuarios Desactivados
+                <span class="badge badge-ghost badge-sm ml-2">{{ inactive_count }}</span>
+            </a>
         </div>
 
         <!-- Users Table -->

@@ -262,7 +262,18 @@ def user_list(request):
     status_filter = request.GET.get("status", "")
     job_profile_filter = request.GET.get("job_profile", "")
 
+    # Active/inactive tab filter (default: active users)
+    active_filter = request.GET.get("active", "true")
+    is_active = active_filter != "false"
+
     users = User.objects.all().order_by("-created_at")
+
+    # Counts for tab badges (before other filters)
+    active_count = User.objects.filter(is_active=True).count()
+    inactive_count = User.objects.filter(is_active=False).count()
+
+    # Filter by active status
+    users = users.filter(is_active=is_active)
 
     if search:
         users = users.filter(
@@ -290,6 +301,9 @@ def user_list(request):
         "job_profile_filter": job_profile_filter,
         "job_profiles": job_profiles,
         "status_choices": User.Status.choices,
+        "active_filter": active_filter,
+        "active_count": active_count,
+        "inactive_count": inactive_count,
     }
 
     if request.htmx:
@@ -498,6 +512,61 @@ def user_learning_history(request, user_id):
 
 
 @login_required
+@require_GET
+def user_export_pdf(request, user_id):
+    """Export user profile and learning history as PDF (admin/staff only)."""
+    if not request.user.is_staff:
+        messages.error(request, "No tiene permisos para realizar esta acción.")
+        return redirect("accounts:dashboard")
+
+    from io import BytesIO
+
+    from xhtml2pdf import pisa
+
+    from apps.courses.models import CompletionRecord, Enrollment
+
+    user = get_object_or_404(User, pk=user_id)
+
+    enrollments = (
+        Enrollment.objects.filter(user=user)
+        .select_related("course", "course__category")
+        .order_by("-updated_at")
+    )
+    completion_records = (
+        CompletionRecord.objects.filter(user=user)
+        .select_related("course", "course__category")
+        .order_by("-completed_at")
+    )
+    all_enrollments = Enrollment.objects.filter(user=user)
+
+    context = {
+        "user_obj": user,
+        "enrollments": enrollments,
+        "completion_records": completion_records,
+        "total_enrollments": all_enrollments.count(),
+        "completed_count": all_enrollments.filter(status="completed").count(),
+        "in_progress_count": all_enrollments.filter(status="in_progress").count(),
+        "pending_count": all_enrollments.filter(status="enrolled").count(),
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+    }
+
+    html_string = render_to_string("accounts/user_profile_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF.")
+        return redirect("accounts:user_detail", user_id=user_id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = f"ficha_{user.document_number}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
 @require_POST
 def user_delete(request, user_id):
     """Delete a user permanently (admin/staff only)."""
@@ -518,7 +587,21 @@ def user_delete(request, user_id):
 
     full_name = user.get_full_name()
     document = user.document_number
-    user.delete()
+
+    try:
+        user.delete()
+    except models.ProtectedError:
+        messages.error(
+            request,
+            f"No se puede eliminar a {full_name} porque tiene registros asociados "
+            "(cursos, charlas, evaluaciones, etc.). Desactívelo en su lugar.",
+        )
+        redirect_url = reverse("accounts:user_detail", args=[user_id])
+        if request.htmx:
+            response = HttpResponse()
+            response["HX-Redirect"] = redirect_url
+            return response
+        return redirect(redirect_url)
 
     messages.success(request, f"Usuario {full_name} eliminado permanentemente.")
     logger.info(f"User {document} deleted by {request.user.document_number}")

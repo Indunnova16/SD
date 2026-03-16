@@ -57,8 +57,8 @@ django-extensions>=3.2.3
 django-import-export>=4.0.5
 openpyxl>=3.1.2
 
-# PDF Generation (deshabilitado temporalmente - requiere dependencias pesadas)
-# WeasyPrint>=62.1
+# PDF Generation
+xhtml2pdf>=0.2.17
 
 # Data validation
 pydantic>=2.7.0
