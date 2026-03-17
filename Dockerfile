@@ -23,6 +23,9 @@ FROM python-base as builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    pkg-config \
+    libcairo2-dev \
+    libgobject2.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
@@ -75,6 +78,8 @@ FROM python-base as production
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    libcairo2 \
+    libgobject-2.0-0 \
     gettext \
     curl \
     && rm -rf /var/lib/apt/lists/*
