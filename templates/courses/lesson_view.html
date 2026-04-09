@@ -190,7 +190,8 @@
                     <div class="border-t dark:border-gray-700 pt-6 mt-6">
                         <form hx-post="{% url 'courses:update_progress' course.id lesson.id %}"
                               hx-swap="outerHTML"
-                              hx-target="#complete-btn">
+                              hx-target="#complete-btn"
+                              hx-on::after-request="if(event.detail.successful) { setTimeout(function(){ window.location.reload(); }, 400); }">
                             {% csrf_token %}
                             <input type="hidden" name="progress" value="100">
                             <button type="submit" id="complete-btn" class="btn btn-success">

@@ -8,11 +8,13 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         hx-post="{% url 'courses:builder_add_lesson' course.id module.id %}"
         hx-target="previous [data-lesson-list]"
         hx-swap="beforeend"
+        hx-encoding="multipart/form-data"
         @htmx:after-request="if(event.detail.successful) { showAddLesson = false; }"
       {% else %}
         hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}"
         hx-target="closest [data-lesson-id]"
         hx-swap="outerHTML"
+        hx-encoding="multipart/form-data"
       {% endif %}
       x-data="{
           lessonType: '{% if is_new %}video{% else %}{{ lesson.lesson_type }}{% endif %}',
