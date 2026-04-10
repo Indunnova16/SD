@@ -52,45 +52,13 @@ jobs:
     runs-on: self-hosted
     needs: lint
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: sd_lms_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6380:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
       DJANGO_SETTINGS_MODULE: config.settings.test
-      DATABASE_URL: postgres://postgres:postgres@localhost:5433/sd_lms_test
-      REDIS_URL: redis://localhost:6380/0
       SECRET_KEY: test-secret-key-for-ci
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libpq-dev
 
       - name: Install Python dependencies
         run: |
