@@ -201,13 +201,13 @@ CACHES = {
 # Session configuration
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_COOKIE_AGE = 2592000  # 30 days (increased from 24 hours to prevent session loss when creating courses)
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True  # Refresh session on every request to prevent silent expiry
 
-# Inactivity timeout (seconds) — logout after 10 minutes of no activity
-SESSION_INACTIVITY_TIMEOUT = 10 * 60  # 10 minutes
+# Inactivity timeout (seconds) — logout after 30 minutes of no activity (increased from 10 min)
+SESSION_INACTIVITY_TIMEOUT = 30 * 60  # 30 minutes
 
 # CSRF configuration
 CSRF_COOKIE_SECURE = True

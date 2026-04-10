@@ -4,7 +4,7 @@ Web views for courses app.
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -438,6 +438,7 @@ def reenable_course(request, enrollment_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@transaction.atomic
 def course_create(request):
     """Create a new course (staff only)."""
     if not request.user.is_staff:
@@ -447,13 +448,16 @@ def course_create(request):
     form = CourseCreateForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
-        course = form.save(commit=False)
-        course.created_by = request.user
-        course.save()
-        messages.success(
-            request, f"Curso '{course.title}' creado exitosamente. Agregue modulos y lecciones."
-        )
-        return redirect("courses:course_builder", course_id=course.id)
+        try:
+            course = form.save(commit=False)
+            course.created_by = request.user
+            course.save()
+            messages.success(
+                request, f"Curso '{course.title}' creado exitosamente. Agregue modulos y lecciones."
+            )
+            return redirect("courses:course_builder", course_id=course.id)
+        except Exception as e:
+            messages.error(request, f"Error al crear el curso: {str(e)}")
 
     context = {"form": form}
     return render(request, "courses/course_create.html", context)
@@ -485,6 +489,7 @@ def category_list(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@transaction.atomic
 def category_create(request):
     """Create a new category (staff only)."""
     if not request.user.is_staff:
@@ -494,16 +499,19 @@ def category_create(request):
     form = CategoryForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
-        category = form.save()
-        messages.success(request, f"Categoría '{category.name}' creada exitosamente.")
+        try:
+            category = form.save()
+            messages.success(request, f"Categoría '{category.name}' creada exitosamente.")
 
-        if request.headers.get("HX-Request"):
-            return render(
-                request,
-                "courses/partials/category_row.html",
-                {"category": category},
-            )
-        return redirect("courses:category_list")
+            if request.headers.get("HX-Request"):
+                return render(
+                    request,
+                    "courses/partials/category_row.html",
+                    {"category": category},
+                )
+            return redirect("courses:category_list")
+        except Exception as e:
+            messages.error(request, f"Error al crear la categoría: {str(e)}")
 
     context = {"form": form, "action": "Crear"}
     return render(request, "courses/category_form.html", context)
@@ -511,6 +519,7 @@ def category_create(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@transaction.atomic
 def category_edit(request, category_id):
     """Edit a category (staff only)."""
     if not request.user.is_staff:
@@ -521,9 +530,12 @@ def category_edit(request, category_id):
     form = CategoryForm(request.POST or None, instance=category)
 
     if request.method == "POST" and form.is_valid():
-        category = form.save()
-        messages.success(request, f"Categoría '{category.name}' actualizada exitosamente.")
-        return redirect("courses:category_list")
+        try:
+            category = form.save()
+            messages.success(request, f"Categoría '{category.name}' actualizada exitosamente.")
+            return redirect("courses:category_list")
+        except Exception as e:
+            messages.error(request, f"Error al actualizar la categoría: {str(e)}")
 
     context = {"form": form, "category": category, "action": "Editar"}
     return render(request, "courses/category_form.html", context)
