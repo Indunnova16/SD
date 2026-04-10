@@ -17,10 +17,17 @@ class SessionInactivityMiddleware(MiddlewareMixin):
 
     Uses SESSION_INACTIVITY_TIMEOUT from settings (default: 600 seconds / 10 min).
     Tracks last activity timestamp in the session and compares it on each request.
+
+    EXCEPTION: Administrators (staff users) have infinite session timeout.
     """
 
     def process_request(self, request):
         if not request.user.is_authenticated:
+            return None
+
+        # Administrators (staff) have infinite session timeout
+        if request.user.is_staff:
+            request.session["_last_activity"] = time.time()
             return None
 
         timeout = getattr(settings, "SESSION_INACTIVITY_TIMEOUT", 600)
