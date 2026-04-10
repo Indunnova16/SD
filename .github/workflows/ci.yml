@@ -29,37 +29,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install ruff mypy django-stubs djangorestframework-stubs types-redis types-pytz
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user ruff mypy django-stubs djangorestframework-stubs types-redis types-pytz
 
       - name: Run Ruff linter
-        run: ruff check .
+        run: python3 -m ruff check .
 
       - name: Run Ruff formatter check
-        run: ruff format --check .
+        run: python3 -m ruff format --check .
 
       - name: Run mypy
-        run: mypy . --ignore-missing-imports
+        run: python3 -m mypy . --ignore-missing-imports
         continue-on-error: true
 
   # ---------------------------------------------------------------------------
   # Tests
   # ---------------------------------------------------------------------------
   test:
-    name: Test (Python ${{ matrix.python-version }})
+    name: Test (Python 3.12)
     runs-on: self-hosted
     needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12"]
 
     services:
       postgres:
@@ -96,12 +87,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -109,15 +94,15 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements/test.txt
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user -r requirements/test.txt
 
       - name: Run migrations
-        run: python manage.py migrate --noinput
+        run: python3 manage.py migrate --noinput
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=apps --cov-report=xml --cov-report=html -n auto
+          python3 -m pytest --cov=apps --cov-report=xml --cov-report=html -n auto
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -142,21 +127,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install safety bandit
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user safety bandit
 
       - name: Run safety check
-        run: safety check -r requirements/base.txt --full-report
+        run: python3 -m safety check -r requirements/base.txt --full-report
 
       - name: Run bandit security linter
-        run: bandit -r apps/ -ll -ii --skip B703,B308,B314
+        run: python3 -m bandit -r apps/ -ll -ii --skip B703,B308,B314
 
   # ---------------------------------------------------------------------------
   # Build Docker Image
