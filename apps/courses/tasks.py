@@ -577,7 +577,9 @@ def check_enrollment_deadlines():
             )
 
         if expiring.exists():
-            logger.info(f"Sent {expiring.count()} reminder(s) for enrollments expiring in {days_left} day(s)")
+            logger.info(
+                f"Sent {expiring.count()} reminder(s) for enrollments expiring in {days_left} day(s)"
+            )
 
 
 def _send_deadline_notification(user, title, message, priority="normal"):

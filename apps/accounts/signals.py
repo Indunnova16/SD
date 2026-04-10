@@ -62,7 +62,7 @@ def _calculate_due_date(course):
     from dateutil.relativedelta import relativedelta
 
     if course.validity_months:
-        return (date.today() + relativedelta(months=course.validity_months))
+        return date.today() + relativedelta(months=course.validity_months)
     return None
 
 
@@ -133,13 +133,15 @@ def _reset_and_reenroll_by_profile(user):
             )
 
         # Reset all enrollments back to ENROLLED so user must redo them
-        reset_count = Enrollment.objects.filter(user=user).exclude(
-            status=Enrollment.Status.ENROLLED
-        ).update(
-            status=Enrollment.Status.ENROLLED,
-            progress=0,
-            started_at=None,
-            completed_at=None,
+        reset_count = (
+            Enrollment.objects.filter(user=user)
+            .exclude(status=Enrollment.Status.ENROLLED)
+            .update(
+                status=Enrollment.Status.ENROLLED,
+                progress=0,
+                started_at=None,
+                completed_at=None,
+            )
         )
         if reset_count:
             logger.info(

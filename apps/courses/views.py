@@ -230,7 +230,9 @@ def lesson_content_file(request, course_id, lesson_id):
         return HttpResponse("Archivo no disponible", status=404)
 
     response = FileResponse(lesson.content_file.open("rb"), content_type="application/pdf")
-    response["Content-Disposition"] = f'inline; filename="{lesson.content_file.name.split("/")[-1]}"'
+    response["Content-Disposition"] = (
+        f'inline; filename="{lesson.content_file.name.split("/")[-1]}"'
+    )
     response["X-Frame-Options"] = "SAMEORIGIN"
     return response
 
@@ -404,7 +406,9 @@ def reenable_course(request, enrollment_id):
     # Calculate new due_date with 5 days penalty
     course = enrollment.course
     if course.validity_months:
-        new_due_date = date.today() + relativedelta(months=course.validity_months) - timedelta(days=5)
+        new_due_date = (
+            date.today() + relativedelta(months=course.validity_months) - timedelta(days=5)
+        )
     else:
         new_due_date = date.today() + timedelta(days=25)  # 30 - 5 = 25
 
@@ -427,7 +431,7 @@ def reenable_course(request, enrollment_id):
     messages.success(
         request,
         f"Curso '{course.title}' habilitado de nuevo. "
-        f"Nueva fecha límite: {new_due_date.strftime('%d/%m/%Y')}."
+        f"Nueva fecha límite: {new_due_date.strftime('%d/%m/%Y')}.",
     )
     return redirect("courses:my_courses")
 
@@ -1215,7 +1219,13 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
         response = render(
             request,
             "courses/partials/builder/lesson_form.html",
-            {"lesson_form": form, "course": course, "module": module, "lesson": lesson, "is_new": False},
+            {
+                "lesson_form": form,
+                "course": course,
+                "module": module,
+                "lesson": lesson,
+                "is_new": False,
+            },
         )
         response["HX-Retarget"] = "closest form"
         response["HX-Reswap"] = "outerHTML"

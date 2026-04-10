@@ -828,6 +828,7 @@ class Enrollment(models.Model):
         if not self.due_date:
             return None
         from datetime import date
+
         return (self.due_date - date.today()).days
 
     @property

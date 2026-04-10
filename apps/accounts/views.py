@@ -453,7 +453,10 @@ def user_toggle_status(request, user_id):
         from .signals import _reset_and_reenroll_by_profile
 
         _reset_and_reenroll_by_profile(user)
-        messages.info(request, f"Cursos reiniciados y reasignados según perfil: {user.get_job_profile_display()}")
+        messages.info(
+            request,
+            f"Cursos reiniciados y reasignados según perfil: {user.get_job_profile_display()}",
+        )
 
     if request.htmx:
         response = HttpResponse()
