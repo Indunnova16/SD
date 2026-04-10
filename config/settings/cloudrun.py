@@ -28,11 +28,18 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-# Static files with WhiteNoise
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Storage backends (Django 5.1+ uses STORAGES instead of deprecated
+# DEFAULT_FILE_STORAGE / STATICFILES_STORAGE)
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
-# GCP Cloud Storage for media files
-DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+# GCP Cloud Storage settings
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="sd-lms-media")
 GS_DEFAULT_ACL = "projectPrivate"
 GS_QUERYSTRING_AUTH = True

@@ -68,8 +68,12 @@ LOGGING = {
     },
 }
 
-# Static files - simplified
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
-
-# Media files - use local storage
-DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+# Storage backends
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}

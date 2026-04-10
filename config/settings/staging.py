@@ -13,8 +13,15 @@ X_FRAME_OPTIONS = "DENY"
 SECURE_HSTS_SECONDS = 3600  # 1 hour for staging
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-# Static files with WhiteNoise
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Storage backends (Django 5.1+ STORAGES)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Email via SendGrid
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

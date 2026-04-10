@@ -29,11 +29,17 @@ CSP_FORM_ACTION = ("'self'",)
 # Enable nonce for inline scripts and styles
 CSP_INCLUDE_NONCE_IN = ["script-src", "style-src"]
 
-# Static files with WhiteNoise
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# Storage backends (Django 5.1+ STORAGES)
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
-# GCP Cloud Storage for media files
-DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
+# GCP Cloud Storage settings
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="sd-lms-media")  # noqa: F405
 GS_DEFAULT_ACL = "projectPrivate"
 GS_QUERYSTRING_AUTH = True

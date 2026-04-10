@@ -1,5 +1,5 @@
-{% if messages %}
 <div id="toast-container" class="fixed top-20 right-4 z-50 space-y-2">
+{% if messages %}
     {% for message in messages %}
     <div class="alert {% if message.tags == 'error' %}alert-error{% elif message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-info{% endif %} shadow-lg"
          x-data="{ show: true }"
@@ -38,5 +38,5 @@
         </button>
     </div>
     {% endfor %}
-</div>
 {% endif %}
+</div>

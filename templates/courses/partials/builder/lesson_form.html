@@ -174,38 +174,25 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
 
     <!-- Conditional fields based on lesson type -->
 
-    <!-- Video: URL + optional file upload -->
-    <div class="mt-2 space-y-2" x-show="lessonType === 'video'" x-cloak>
-        <div class="form-control">
-            <label class="label py-1">
-                <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
-            </label>
-            <input type="url" name="video_url"
-                   value="{% if not is_new %}{{ lesson.video_url }}{% endif %}"
-                   class="input input-bordered input-sm w-full"
-                   placeholder="https://youtube.com/...">
-        </div>
-        <div class="divider text-xs my-0">o sube un archivo multimedia</div>
-        <div class="form-control">
-            <label class="label py-1">
-                <span class="label-text text-xs">Archivo multimedia (video, imagen, audio)</span>
-            </label>
-            <input type="file" name="content_file"
-                   class="file-input file-input-bordered file-input-sm w-full"
-                   accept="video/*,audio/*,image/*">
-            {% if not is_new and lesson.content_file %}
-            <span class="text-xs text-gray-400 mt-1">Archivo actual: {{ lesson.content_file.name }}</span>
-            {% endif %}
-        </div>
+    <!-- Video: URL -->
+    <div class="form-control mt-2" x-show="lessonType === 'video'" x-cloak>
+        <label class="label py-1">
+            <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
+        </label>
+        <input type="url" name="video_url"
+               value="{% if not is_new %}{{ lesson.video_url }}{% endif %}"
+               class="input input-bordered input-sm w-full"
+               placeholder="https://youtube.com/...">
     </div>
 
-    <!-- Content File (for pdf, scorm, audio) -->
-    <div class="form-control mt-2" x-show="['pdf', 'scorm', 'audio'].includes(lessonType)" x-cloak>
+    <!-- Single file input for video / pdf / scorm / audio -->
+    <div class="form-control mt-2" x-show="['video', 'pdf', 'scorm', 'audio'].includes(lessonType)" x-cloak>
         <label class="label py-1">
-            <span class="label-text text-xs">Archivo</span>
+            <span class="label-text text-xs" x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
         </label>
         <input type="file" name="content_file"
-               class="file-input file-input-bordered file-input-sm w-full">
+               class="file-input file-input-bordered file-input-sm w-full"
+               :accept="lessonType === 'video' ? 'video/*,audio/*,image/*' : lessonType === 'audio' ? 'audio/*' : lessonType === 'scorm' ? '.zip' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt'">
         {% if not is_new and lesson.content_file %}
         <span class="text-xs text-gray-400 mt-1">Archivo actual: {{ lesson.content_file.name }}</span>
         {% endif %}

@@ -1090,84 +1090,92 @@ def builder_add_lesson(request, course_id, module_id):
     form = LessonBuilderForm(request.POST, request.FILES)
 
     if form.is_valid():
-        lesson = form.save(commit=False)
-        lesson.module = module
-        max_order = module.lessons.aggregate(max_order=models.Max("order"))["max_order"]
-        lesson.order = (max_order or -1) + 1
-        lesson.save()
+        try:
+            lesson = form.save(commit=False)
+            lesson.module = module
+            max_order = module.lessons.aggregate(max_order=models.Max("order"))["max_order"]
+            lesson.order = (max_order or -1) + 1
+            lesson.save()
+        except Exception as e:
+            import logging
 
-        # Auto-create assessment + questions for quiz-type lessons
-        if lesson.lesson_type == "quiz":
-            from apps.assessments.models import Answer, Assessment, Question
+            logger = logging.getLogger(__name__)
+            logger.exception("Error saving lesson")
+            form.add_error(None, f"Error al guardar la leccion: {e}")
+        else:
+            # Auto-create assessment + questions for quiz-type lessons
+            if lesson.lesson_type == "quiz":
+                from apps.assessments.models import Answer, Assessment, Question
 
-            assessment = Assessment.objects.create(
-                title=lesson.title,
-                assessment_type="quiz",
-                passing_score=80,
-                max_attempts=3,
-                course=course,
-                lesson=lesson,
-                created_by=request.user,
-                status="draft",
-            )
-
-            # Parse inline quiz questions from JSON
-            import json
-
-            quiz_questions_json = request.POST.get("quiz_questions", "[]")
-            try:
-                quiz_questions = json.loads(quiz_questions_json)
-            except (json.JSONDecodeError, TypeError):
-                quiz_questions = []
-
-            for i, qdata in enumerate(quiz_questions):
-                question = Question.objects.create(
-                    assessment=assessment,
-                    question_type=qdata.get("type", "single_choice"),
-                    text=qdata.get("text", ""),
-                    explanation=qdata.get("explanation", ""),
-                    points=int(qdata.get("points", 1)),
-                    order=i,
+                assessment = Assessment.objects.create(
+                    title=lesson.title,
+                    assessment_type="quiz",
+                    passing_score=80,
+                    max_attempts=3,
+                    course=course,
+                    lesson=lesson,
+                    created_by=request.user,
+                    status="draft",
                 )
-                q_type = qdata.get("type", "single_choice")
-                if q_type in ("single_choice", "multiple_choice"):
-                    for j, adata in enumerate(qdata.get("answers", [])):
-                        Answer.objects.create(
-                            question=question,
-                            text=adata.get("text", ""),
-                            is_correct=adata.get("is_correct", False),
-                            order=j,
-                        )
-                elif q_type == "true_false":
-                    is_true = qdata.get("trueFalseCorrect", "true") == "true"
-                    Answer.objects.create(
-                        question=question, text="Verdadero", is_correct=is_true, order=0
-                    )
-                    Answer.objects.create(
-                        question=question, text="Falso", is_correct=not is_true, order=1
-                    )
-                elif q_type == "matching":
-                    for j, pair in enumerate(qdata.get("matchPairs", [])):
-                        Answer.objects.create(
-                            question=question,
-                            text=pair.get("left", ""),
-                            feedback=pair.get("right", ""),
-                            is_correct=True,
-                            order=j,
-                        )
 
-        if request.headers.get("HX-Request"):
-            return render(
-                request,
-                "courses/partials/builder/lesson_item.html",
-                {
-                    "lesson": lesson,
-                    "course": course,
-                    "module": module,
-                    "available_assessments": _get_available_assessments(course),
-                },
-            )
+                # Parse inline quiz questions from JSON
+                import json
 
+                quiz_questions_json = request.POST.get("quiz_questions", "[]")
+                try:
+                    quiz_questions = json.loads(quiz_questions_json)
+                except (json.JSONDecodeError, TypeError):
+                    quiz_questions = []
+
+                for i, qdata in enumerate(quiz_questions):
+                    question = Question.objects.create(
+                        assessment=assessment,
+                        question_type=qdata.get("type", "single_choice"),
+                        text=qdata.get("text", ""),
+                        explanation=qdata.get("explanation", ""),
+                        points=int(qdata.get("points", 1)),
+                        order=i,
+                    )
+                    q_type = qdata.get("type", "single_choice")
+                    if q_type in ("single_choice", "multiple_choice"):
+                        for j, adata in enumerate(qdata.get("answers", [])):
+                            Answer.objects.create(
+                                question=question,
+                                text=adata.get("text", ""),
+                                is_correct=adata.get("is_correct", False),
+                                order=j,
+                            )
+                    elif q_type == "true_false":
+                        is_true = qdata.get("trueFalseCorrect", "true") == "true"
+                        Answer.objects.create(
+                            question=question, text="Verdadero", is_correct=is_true, order=0
+                        )
+                        Answer.objects.create(
+                            question=question, text="Falso", is_correct=not is_true, order=1
+                        )
+                    elif q_type == "matching":
+                        for j, pair in enumerate(qdata.get("matchPairs", [])):
+                            Answer.objects.create(
+                                question=question,
+                                text=pair.get("left", ""),
+                                feedback=pair.get("right", ""),
+                                is_correct=True,
+                                order=j,
+                            )
+
+            if request.headers.get("HX-Request"):
+                return render(
+                    request,
+                    "courses/partials/builder/lesson_item.html",
+                    {
+                        "lesson": lesson,
+                        "course": course,
+                        "module": module,
+                        "available_assessments": _get_available_assessments(course),
+                    },
+                )
+
+    # Form invalid or save error — return form with errors
     if request.headers.get("HX-Request"):
         response = render(
             request,
@@ -1194,7 +1202,24 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
     form = LessonBuilderForm(request.POST, request.FILES, instance=lesson)
 
     if form.is_valid():
-        form.save()
+        try:
+            form.save()
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.exception("Error saving lesson")
+            form.add_error(None, f"Error al guardar la leccion: {e}")
+
+    if form.errors and request.headers.get("HX-Request"):
+        response = render(
+            request,
+            "courses/partials/builder/lesson_form.html",
+            {"lesson_form": form, "course": course, "module": module, "lesson": lesson, "is_new": False},
+        )
+        response["HX-Retarget"] = "closest form"
+        response["HX-Reswap"] = "outerHTML"
+        return response
 
     if request.headers.get("HX-Request"):
         lesson.refresh_from_db()
