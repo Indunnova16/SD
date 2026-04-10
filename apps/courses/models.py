@@ -819,6 +819,9 @@ class Enrollment(models.Model):
             models.Index(fields=["course", "status"]),
         ]
 
+    def __str__(self):
+        return f"{self.user} - {self.course}"
+
     @property
     def days_until_due(self):
         """Return number of days until due_date, or None if no due_date."""
@@ -834,9 +837,6 @@ class Enrollment(models.Model):
         if days is None:
             return False
         return 0 <= days <= 3 and self.status not in (self.Status.COMPLETED, self.Status.EXPIRED)
-
-    def __str__(self):
-        return f"{self.user} - {self.course}"
 
 
 class LessonProgress(models.Model):
