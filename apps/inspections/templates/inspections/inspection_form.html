@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} Inspección - SD{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .form-control-lg, .form-select-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0.9;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+    }
+
+    .header-icon {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .section-divider {
+        border-top: 2px solid #667eea;
+        opacity: 0.2;
+        margin: 2rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-1">
+                <span class="header-icon"><i class="fas fa-{% if form.instance.pk %}edit{% else %}plus-circle{% endif %}"></i></span>
+                {% if form.instance.pk %}Editar Inspección{% else %}Nueva Inspección{% endif %}
+            </h1>
+            <p class="text-muted">Sistema de Inspecciones - S.D. S.A.S.</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'inspections:inspection-list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Listado
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <strong><i class="fas fa-exclamation-circle"></i> Error:</strong>
+                            {{ form.non_field_errors }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endif %}
+
+                        <!-- Equipo -->
+                        <div class="mb-4">
+                            <label for="{{ form.equipment.id_for_label }}" class="form-label fw-600">
+                                <i class="fas fa-cog"></i> {{ form.equipment.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.equipment }}
+                            {% if form.equipment.errors %}
+                            <div class="invalid-feedback d-block mt-2">
+                                {{ form.equipment.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-2">
+                                Selecciona el equipo o máquina que deseas inspeccionar
+                            </small>
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <!-- Fecha y Criticidad -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label for="{{ form.scheduled_date.id_for_label }}" class="form-label fw-600">
+                                    <i class="fas fa-calendar-alt"></i> {{ form.scheduled_date.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.scheduled_date }}
+                                {% if form.scheduled_date.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {{ form.scheduled_date.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label for="{{ form.criticality.id_for_label }}" class="form-label fw-600">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ form.criticality.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.criticality }}
+                                {% if form.criticality.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    {{ form.criticality.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <!-- Ubicación -->
+                        <div class="mb-4">
+                            <label for="{{ form.location.id_for_label }}" class="form-label fw-600">
+                                <i class="fas fa-map-marker-alt"></i> {{ form.location.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.errors %}
+                            <div class="invalid-feedback d-block mt-2">
+                                {{ form.location.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="mb-4">
+                            <label for="{{ form.observations.id_for_label }}" class="form-label fw-600">
+                                <i class="fas fa-sticky-note"></i> {{ form.observations.label }}
+                            </label>
+                            {{ form.observations }}
+                            {% if form.observations.errors %}
+                            <div class="invalid-feedback d-block mt-2">
+                                {{ form.observations.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-2">
+                                Incluye cualquier detalle importante sobre la inspección
+                            </small>
+                        </div>
+
+                        <div class="section-divider"></div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check"></i>
+                                {% if form.instance.pk %}Actualizar Inspección{% else %}Crear Inspección{% endif %}
+                            </button>
+                            <a href="{% url 'inspections:inspection-list' %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Información -->
+        <div class="col-lg-4">
+            <div class="card bg-gradient mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body text-white">
+                    <h6 class="card-title text-white">
+                        <i class="fas fa-lightbulb"></i> Información
+                    </h6>
+                    <hr class="border-light">
+                    <ul class="small">
+                        <li class="mb-2"><strong>Equipo:</strong> Selecciona de los equipos energéticos disponibles</li>
+                        <li class="mb-2"><strong>Fecha:</strong> Programa la fecha de la inspección</li>
+                        <li class="mb-2"><strong>Ubicación:</strong> Especifica dónde se encuentra el equipo (ej: línea, km, sector)</li>
+                        <li class="mb-2"><strong>Criticidad:</strong> Define el nivel de riesgo estimado</li>
+                        <li><strong>Observaciones:</strong> Agrega detalles relevantes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-shield-alt"></i> Niveles de Criticidad
+                    </h6>
+                    <hr>
+                    <div class="mb-3">
+                        <span class="badge bg-success">Baja</span>
+                        <small class="text-muted">Equipos en buen estado</small>
+                    </div>
+                    <div class="mb-3">
+                        <span class="badge bg-warning">Media</span>
+                        <small class="text-muted">Equipos con algunos detalles</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-danger">Crítica</span>
+                        <small class="text-muted">Equipos con riesgos potenciales</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-600 {
+        font-weight: 600;
+    }
+
+    .bg-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+{% endblock %}
+
+<style>
+    .form-control, .form-select {
+        border-radius: 8px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}

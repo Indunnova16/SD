@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Inspecciones - SD{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+    }
+
+    .container-custom {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Header */
+    .header-section {
+        margin-bottom: 3rem;
+        animation: slideInDown 0.6s ease;
+    }
+
+    .header-title {
+        color: white;
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .header-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        font-weight: 300;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+        transition: all 0.6s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card:hover::before {
+        top: -25%;
+        right: -25%;
+    }
+
+    .stat-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .stat-label {
+        color: #999;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-icon {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        font-size: 2.5rem;
+        opacity: 0.1;
+        color: #667eea;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        margin-bottom: 3rem;
+    }
+
+    .filter-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Inspection Table */
+    .inspections-section {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+    }
+
+    .folio-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.85rem;
+    }
+
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-badge.completed {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.in-progress {
+        background: #fff3cd;
+        color: #856404;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-badge.pending {
+        background: #e7e8ea;
+        color: #383d41;
+    }
+
+    .criticality-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .criticality-badge.critical {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .criticality-badge.medium {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .criticality-badge.low {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .table-custom {
+        border: none;
+    }
+
+    .table-custom tbody tr {
+        border-bottom: 1px solid #eee;
+        transition: all 0.3s ease;
+    }
+
+    .table-custom tbody tr:hover {
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .action-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-new-inspection {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-new-inspection:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-custom">
+    <!-- Header -->
+    <div class="header-section">
+        <h1 class="header-title"><i class="fas fa-clipboard-check"></i> Sistema de Inspecciones</h1>
+        <p class="header-subtitle">Gestión integral de inspecciones de equipos y maquinaria</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-label">Total de Inspecciones</div>
+                <div class="stat-value">{{ total_inspections }}</div>
+            </div>
+            <i class="fas fa-chart-bar stat-icon"></i>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-label">Completadas</div>
+                <div class="stat-value" style="color: #10b981;">{{ completed_inspections }}</div>
+            </div>
+            <i class="fas fa-check-circle stat-icon"></i>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-label">En Proceso</div>
+                <div class="stat-value" style="color: #f59e0b;">{{ in_progress }}</div>
+            </div>
+            <i class="fas fa-spinner stat-icon"></i>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-content">
+                <div class="stat-label">Críticas</div>
+                <div class="stat-value" style="color: #ef4444;">{{ critical_inspections }}</div>
+            </div>
+            <i class="fas fa-exclamation-circle stat-icon"></i>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="filter-title"><i class="fas fa-filter"></i> Filtros</div>
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Buscar por folio o equipo..." name="search">
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" name="status">
+                    <option value="">Todos los estados</option>
+                    <option value="pending">Pendiente</option>
+                    <option value="in_progress">En Proceso</option>
+                    <option value="completed">Completada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Buscar</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'inspections:inspection-create' %}" class="btn btn-success w-100 btn-new-inspection">
+                    <i class="fas fa-plus"></i> Nueva Inspección
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Inspections List -->
+    <div class="inspections-section">
+        <h2 class="section-title"><i class="fas fa-list"></i> Inspecciones Recientes</h2>
+
+        {% if recent_inspections %}
+        <div class="table-responsive">
+            <table class="table table-custom">
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Equipo</th>
+                        <th>Inspector</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Criticidad</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inspection in recent_inspections %}
+                    <tr>
+                        <td><span class="folio-badge">{{ inspection.folio }}</span></td>
+                        <td>{{ inspection.equipment.name }}</td>
+                        <td>{{ inspection.inspector.first_name }} {{ inspection.inspector.last_name }}</td>
+                        <td>{{ inspection.inspection_date|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <span class="status-badge {{ inspection.status }}">
+                                {% if inspection.status == 'completed' %}
+                                    <i class="fas fa-check-circle"></i> Completada
+                                {% elif inspection.status == 'in_progress' %}
+                                    <i class="fas fa-spinner fa-spin"></i> En Proceso
+                                {% elif inspection.status == 'pending' %}
+                                    <i class="fas fa-clock"></i> Pendiente
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="criticality-badge {{ inspection.criticality }}">
+                                {% if inspection.criticality == 'critical' %}
+                                    <i class="fas fa-exclamation-circle"></i> Crítica
+                                {% elif inspection.criticality == 'medium' %}
+                                    <i class="fas fa-exclamation-triangle"></i> Media
+                                {% else %}
+                                    <i class="fas fa-check"></i> Baja
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'inspections:inspection-detail' inspection.id %}" class="action-btn">
+                                <i class="fas fa-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No hay inspecciones registradas aún.
+            <a href="{% url 'inspections:inspection-create' %}" class="alert-link">Crear primera inspección</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Add scroll animations
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.stat-card').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'all 0.6s ease';
+        observer.observe(el);
+    });
+</script>
+{% endblock %}

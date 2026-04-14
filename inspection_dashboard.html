@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspecciones - SD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 1.2rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        /* Container */
+        .container-custom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header-section {
+            margin-bottom: 3rem;
+            animation: slideInDown 0.6s ease;
+        }
+
+        .header-title {
+            color: white;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+            transition: all 0.6s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card:hover::before {
+            top: -25%;
+            right: -25%;
+        }
+
+        .stat-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2.5rem;
+            opacity: 0.1;
+            color: #667eea;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-filter {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-filter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+            color: white;
+        }
+
+        .btn-filter:active {
+            transform: translateY(0);
+        }
+
+        /* Accordion */
+        .accordion-custom {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: none;
+        }
+
+        .accordion-button-custom {
+            background: white;
+            border: none;
+            padding: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .accordion-button-custom:not(.collapsed) {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border-bottom-color: #667eea;
+        }
+
+        .accordion-button-custom:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+        }
+
+        .accordion-button-custom::after {
+            background: none;
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            border-top: none;
+            border-left: none;
+            content: '';
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-button-custom:not(.collapsed)::after {
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        .accordion-body-custom {
+            padding: 0;
+        }
+
+        /* Equipment Category */
+        .equipment-category {
+            border-top: 1px solid #f0f0f0;
+            padding: 0;
+        }
+
+        .equipment-header {
+            background: #fafafa;
+            border-left: 4px solid;
+            padding: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .equipment-header:hover {
+            background: #f5f5f5;
+        }
+
+        .equipment-title {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.05rem;
+        }
+
+        .equipment-stats {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .stat-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .stat-badge.success {
+            background: linear-gradient(135deg, #10b98122, #10b98133);
+            color: #059669;
+        }
+
+        .stat-badge.warning {
+            background: linear-gradient(135deg, #f59e0b22, #f59e0b33);
+            color: #d97706;
+        }
+
+        .stat-badge.danger {
+            background: linear-gradient(135deg, #ef444422, #ef444433);
+            color: #dc2626;
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .table-custom {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .table-custom thead {
+            background: #f9f9f9;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+
+        .table-custom th {
+            border: none;
+            padding: 1rem;
+            color: #999;
+        }
+
+        .table-custom td {
+            border-color: #f0f0f0;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .table-custom tbody tr:hover {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.03), transparent);
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .folio-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.completed {
+            background: linear-gradient(135deg, #10b98122, #10b98133);
+            color: #059669;
+        }
+
+        .status-badge.in-progress {
+            background: linear-gradient(135deg, #3b82f622, #3b82f633);
+            color: #1d4ed8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-badge.pending {
+            background: linear-gradient(135deg, #f59e0b22, #f59e0b33);
+            color: #d97706;
+        }
+
+        .criticality-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .criticality-badge.critical {
+            background: linear-gradient(135deg, #ef444422, #ef444433);
+            color: #dc2626;
+        }
+
+        .criticality-badge.medium {
+            background: linear-gradient(135deg, #f59e0b22, #f59e0b33);
+            color: #d97706;
+        }
+
+        .criticality-badge.low {
+            background: linear-gradient(135deg, #10b98122, #10b98133);
+            color: #059669;
+        }
+
+        /* Action Buttons */
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            background: white;
+            color: #667eea;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .action-btn:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Color system for equipment */
+        .equipment-excavator { --cat-color: #0066cc; }
+        .equipment-grua { --cat-color: #ff6b6b; }
+        .equipment-compresor { --cat-color: #4ecdc4; }
+        .equipment-generador { --cat-color: #f9c74f; }
+        .equipment-plataforma { --cat-color: #90be6d; }
+
+        .equipment-category[data-type="excavator"] .equipment-header {
+            border-left-color: var(--cat-color, #0066cc);
+        }
+
+        .equipment-category[data-type="grua"] .equipment-header {
+            border-left-color: var(--cat-color, #ff6b6b);
+        }
+
+        .equipment-category[data-type="compresor"] .equipment-header {
+            border-left-color: var(--cat-color, #4ecdc4);
+        }
+
+        /* Animations */
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .equipment-category {
+            animation: slideInUp 0.6s ease forwards;
+        }
+
+        /* New Inspection Button */
+        .btn-new-inspection {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-new-inspection:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.6);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Modal */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1) brightness(1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .equipment-stats {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar-custom">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-tools"></i>
+                    Inspecciones
+                </a>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted small">S.D. Salomón Durán S.A.S.</span>
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        JP
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container-custom">
+
+        <!-- Header -->
+        <div class="header-section">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1 class="header-title">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Centro de Control
+                    </h1>
+                    <p class="header-subtitle">Gestión Integral de Inspecciones de Máquinas y Equipos</p>
+                </div>
+                <a href="#" class="btn-new-inspection">
+                    <i class="fas fa-plus"></i>
+                    Nueva Inspección
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-content">
+                    <div class="stat-label">Hoy</div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-change positive"><i class="fas fa-arrow-up"></i> Completadas</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-label">Críticos</div>
+                    <div class="stat-value" style="color: #ef4444;">2</div>
+                    <div class="stat-change"><i class="fas fa-info-circle"></i> Requieren atención</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+                <div class="stat-content">
+                    <div class="stat-label">En Progreso</div>
+                    <div class="stat-value" style="color: #f59e0b;">5</div>
+                    <div class="stat-change"><i class="fas fa-clock"></i> Activas ahora</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-pie"></i></div>
+                <div class="stat-content">
+                    <div class="stat-label">Cumplimiento</div>
+                    <div class="stat-value" style="color: #10b981;">94.2%</div>
+                    <div class="stat-change positive"><i class="fas fa-arrow-up"></i> 2.3% vs semana</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <h5 class="filter-title"><i class="fas fa-filter"></i> Filtros de Búsqueda</h5>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">Máquina o Ubicación</label>
+                    <input type="text" class="form-control" placeholder="Buscar excavadora, grúa...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Tipo de Equipo</label>
+                    <select class="form-select">
+                        <option>Todos los tipos</option>
+                        <option>Excavadoras</option>
+                        <option>Grúas</option>
+                        <option>Compresores</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">Estado</label>
+                    <select class="form-select">
+                        <option>Todos</option>
+                        <option>Completada</option>
+                        <option>En Proceso</option>
+                        <option>Pendiente</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn-filter w-100">
+                        <i class="fas fa-search me-2"></i>Filtrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordions -->
+        <div class="accordion-custom">
+            <div class="accordion-button-custom" data-bs-toggle="collapse" data-bs-target="#week1">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2" style="color: #667eea;"></i>
+                        <strong>Semana 14-20 Abril, 2026</strong>
+                    </div>
+                    <div class="equipment-stats">
+                        <span class="stat-badge success"><i class="fas fa-check-circle"></i> 8 completadas</span>
+                        <span class="stat-badge warning"><i class="fas fa-hourglass-half"></i> 5 en proceso</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="week1" class="accordion-body-custom collapse show">
+
+                <!-- Excavadoras -->
+                <div class="equipment-category" data-type="excavator">
+                    <div class="equipment-header">
+                        <div class="equipment-title" style="color: #0066cc;">
+                            <i class="fas fa-digger"></i>
+                            <span>Excavadoras</span>
+                            <span class="text-muted small">(Máquinas de movimiento de tierra)</span>
+                        </div>
+                        <div class="equipment-stats">
+                            <span class="stat-badge success"><i class="fas fa-check"></i> 3 completadas</span>
+                            <span class="stat-badge warning"><i class="fas fa-spinner"></i> 2 en proceso</span>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Máquina</th>
+                                    <th>Ubicación</th>
+                                    <th>Inspector</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Criticidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-001</span></td>
+                                    <td>Excavadora CAT 320</td>
+                                    <td>Área Construcción A</td>
+                                    <td>Juan Pérez</td>
+                                    <td>14/04/2026</td>
+                                    <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completada</span></td>
+                                    <td><span class="criticality-badge low"><i class="fas fa-circle"></i> Baja</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-002</span></td>
+                                    <td>Excavadora VOLVO EC480</td>
+                                    <td>Cantera Norte</td>
+                                    <td>Maria García</td>
+                                    <td>15/04/2026</td>
+                                    <td><span class="status-badge in-progress"><i class="fas fa-spinner fa-spin"></i> En Proceso</span></td>
+                                    <td><span class="criticality-badge critical"><i class="fas fa-exclamation-circle"></i> Crítica</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-003</span></td>
+                                    <td>Excavadora KOMATSU PC200</td>
+                                    <td>Planta 1</td>
+                                    <td>Carlos López</td>
+                                    <td>16/04/2026</td>
+                                    <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completada</span></td>
+                                    <td><span class="criticality-badge low"><i class="fas fa-circle"></i> Baja</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Grúas -->
+                <div class="equipment-category" data-type="grua" style="animation-delay: 0.1s;">
+                    <div class="equipment-header">
+                        <div class="equipment-title" style="color: #ff6b6b;">
+                            <i class="fas fa-arrow-up-down"></i>
+                            <span>Grúas Torre</span>
+                            <span class="text-muted small">(Equipos de elevación)</span>
+                        </div>
+                        <div class="equipment-stats">
+                            <span class="stat-badge success"><i class="fas fa-check"></i> 2 completadas</span>
+                            <span class="stat-badge warning"><i class="fas fa-spinner"></i> 1 en proceso</span>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Máquina</th>
+                                    <th>Ubicación</th>
+                                    <th>Inspector</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Criticidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-004</span></td>
+                                    <td>Grúa Torre 60T</td>
+                                    <td>Área Construcción B</td>
+                                    <td>Juan Pérez</td>
+                                    <td>14/04/2026</td>
+                                    <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completada</span></td>
+                                    <td><span class="criticality-badge medium"><i class="fas fa-circle"></i> Media</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-005</span></td>
+                                    <td>Grúa Torre 75T</td>
+                                    <td>Zona Industrial</td>
+                                    <td>Carlos López</td>
+                                    <td>16/04/2026</td>
+                                    <td><span class="status-badge in-progress"><i class="fas fa-spinner fa-spin"></i> En Proceso</span></td>
+                                    <td><span class="criticality-badge low"><i class="fas fa-circle"></i> Baja</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Compresores -->
+                <div class="equipment-category" data-type="compresor" style="animation-delay: 0.2s;">
+                    <div class="equipment-header">
+                        <div class="equipment-title" style="color: #4ecdc4;">
+                            <i class="fas fa-fan"></i>
+                            <span>Compresores Industriales</span>
+                            <span class="text-muted small">(Generadores aire comprimido)</span>
+                        </div>
+                        <div class="equipment-stats">
+                            <span class="stat-badge success"><i class="fas fa-check"></i> 2 completadas</span>
+                            <span class="stat-badge warning"><i class="fas fa-spinner"></i> 2 en proceso</span>
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th>
+                                    <th>Máquina</th>
+                                    <th>Ubicación</th>
+                                    <th>Inspector</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Criticidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-006</span></td>
+                                    <td>Compresor 150HP</td>
+                                    <td>Taller Mantenimiento</td>
+                                    <td>Maria García</td>
+                                    <td>15/04/2026</td>
+                                    <td><span class="status-badge completed"><i class="fas fa-check-circle"></i> Completada</span></td>
+                                    <td><span class="criticality-badge low"><i class="fas fa-circle"></i> Baja</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr>
+                                    <td><span class="folio-badge">INS-2026-007</span></td>
+                                    <td>Compresor 200HP</td>
+                                    <td>Almacén Equipos</td>
+                                    <td>Pedro Ruiz</td>
+                                    <td>17/04/2026</td>
+                                    <td><span class="status-badge in-progress"><i class="fas fa-spinner fa-spin"></i> En Proceso</span></td>
+                                    <td><span class="criticality-badge medium"><i class="fas fa-circle"></i> Media</span></td>
+                                    <td><button class="action-btn"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Semana Anterior -->
+        <div class="accordion-custom" style="margin-top: 1.5rem;">
+            <div class="accordion-button-custom" data-bs-toggle="collapse" data-bs-target="#week2">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div>
+                        <i class="fas fa-calendar-alt me-2" style="color: #999;"></i>
+                        <strong>Semana 7-13 Abril, 2026</strong>
+                    </div>
+                    <div class="equipment-stats">
+                        <span class="stat-badge success"><i class="fas fa-check-circle"></i> 12 completadas</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="week2" class="accordion-body-custom collapse">
+                <div style="padding: 2rem; text-align: center; color: #999;">
+                    <i class="fas fa-calendar-check" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                    <p style="margin: 0;">Todas las inspecciones de esta semana fueron completadas correctamente.</p>
+                    <p style="font-size: 0.9rem; color: #10b981; font-weight: 600; margin-top: 0.5rem;"><i class="fas fa-chart-line"></i> Tasa de cumplimiento: 100%</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Add interactivity
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Abriendo detalles de la inspección...');
+            });
+        });
+
+        document.querySelectorAll('.btn-new-inspection').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Redirigiendo a nueva inspección...');
+            });
+        });
+
+        // Filter button
+        document.querySelector('.btn-filter').addEventListener('click', function() {
+            const search = document.querySelector('input[placeholder*="Buscar"]').value;
+            const type = document.querySelectorAll('select')[0].value;
+            const status = document.querySelectorAll('select')[1].value;
+            alert(`Filtrando por: Búsqueda="${search}", Tipo="${type}", Estado="${status}"`);
+        });
+
+        // Add animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.stat-card, .equipment-category').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+
+</body>
+</html>

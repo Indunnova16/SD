@@ -1,0 +1,94 @@
+═════════════════════════════════════════════════════════════════════
+    SISTEMA DE INSPECCIONES ENERGÉTICAS - INICIO RÁPIDO (5 MIN)
+═════════════════════════════════════════════════════════════════════
+
+PASO 1: Edita carnes_sebastian/config/settings.py
+────────────────────────────────────────────────────────────────────
+Busca INSTALLED_APPS y agrega esta línea:
+
+    INSTALLED_APPS = [
+        ...
+        'apps.inspections',  ← AGREGAR ESTA LÍNEA
+        ...
+    ]
+
+
+PASO 2: Edita carnes_sebastian/config/urls.py
+────────────────────────────────────────────────────────────────────
+Busca urlpatterns y agrega esta línea:
+
+    urlpatterns = [
+        ...
+        path('inspecciones/', include('apps.inspections.urls')),  ← AGREGAR
+        ...
+    ]
+
+
+PASO 3: Crea base de datos en terminal
+────────────────────────────────────────────────────────────────────
+    cd carnes_sebastian
+    python manage.py makemigrations inspections
+    python manage.py migrate inspections
+
+
+PASO 4: Carga 16 equipos energéticos reales
+────────────────────────────────────────────────────────────────────
+    python manage.py cargar_equipos_energeticos
+
+    (Carga automáticamente:
+     - Torres y postes de transmisión
+     - Aisladores y cadenas
+     - Conductores y cables
+     - Herrajes y fijaciones
+     - Transformadores)
+
+
+PASO 5: Verifica instalación
+────────────────────────────────────────────────────────────────────
+    python manage.py verificar_instalacion
+
+    Deberías ver:
+    ✓ App registrado
+    ✓ Modelos creados
+    ✓ Categorías de equipos
+    ✓ Equipos cargados
+    ✓ Base de datos
+
+
+PASO 6: Inicia servidor
+────────────────────────────────────────────────────────────────────
+    python manage.py runserver
+
+
+LISTO! Ahora accede a:
+════════════════════════════════════════════════════════════════════
+
+📊 DASHBOARD:  http://localhost:8000/inspecciones/
+📋 LISTADO:    http://localhost:8000/inspecciones/inspecciones/
+⚙️  ADMIN:     http://localhost:8000/admin/
+
+═════════════════════════════════════════════════════════════════════
+
+QUÉ PUEDES HACER:
+
+1. Click en "+ Nueva Inspección"
+2. Selecciona un equipo energético (ej: Torre Celosía 230kV)
+3. Completa detalles de la inspección
+4. Click en "Crear Inspección"
+5. ¡Listo! Tu inspección está registrada
+
+═════════════════════════════════════════════════════════════════════
+
+DOCUMENTACIÓN COMPLETA en:
+- INSTALACION_COMPLETA.md (paso a paso detallado)
+- INSPECTIONS_SETUP.md (guía de integración)
+- apps/inspections/README.md (referencia técnica)
+
+═════════════════════════════════════════════════════════════════════
+
+PROBLEMAS? Ejecuta:
+    python manage.py verificar_instalacion
+
+Verifica INSTALACION_COMPLETA.md sección Troubleshooting
+
+═════════════════════════════════════════════════════════════════════

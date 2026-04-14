@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspecciones Energéticas - SD</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar-custom {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 1.2rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            color: #667eea;
+            margin-right: 0.5rem;
+        }
+
+        /* Container */
+        .container-custom {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header-section {
+            margin-bottom: 3rem;
+            animation: slideInDown 0.6s ease;
+        }
+
+        .header-title {
+            color: white;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.05));
+            transition: all 0.6s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card:hover::before {
+            top: -25%;
+            right: -25%;
+        }
+
+        .stat-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-icon {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            font-size: 2.5rem;
+            opacity: 0.1;
+            color: #667eea;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .filter-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Inspections Section */
+        .inspections-section {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .folio-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.in-progress {
+            background: #fff3cd;
+            color: #856404;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-badge.pending {
+            background: #e7e8ea;
+            color: #383d41;
+        }
+
+        .criticality-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .criticality-badge.critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .criticality-badge.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .criticality-badge.low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .table-custom {
+            border: none;
+        }
+
+        .table-custom tbody tr {
+            border-bottom: 1px solid #eee;
+            transition: all 0.3s ease;
+        }
+
+        .table-custom tbody tr:hover {
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-title {
+            font-weight: 600;
+        }
+
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0.9;
+            color: white;
+        }
+
+        /* Card Details */
+        .detail-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+
+        .detail-label {
+            color: #999;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-value {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .badge-custom {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .mt-4 { margin-top: 1.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar-custom">
+    <div class="container-fluid">
+        <span class="navbar-brand">
+            <i class="fas fa-bolt"></i> Inspecciones Energéticas
+        </span>
+        <div style="color: #667eea; font-weight: 600;">S.D. S.A.S.</div>
+    </div>
+</nav>
+
+<!-- Main Container -->
+<div class="container-custom">
+    <!-- Dashboard View -->
+    <div id="dashboardView">
+        <!-- Header -->
+        <div class="header-section">
+            <h1 class="header-title"><i class="fas fa-clipboard-check"></i> Sistema de Inspecciones</h1>
+            <p class="header-subtitle">Gestión integral de inspecciones de equipos y maquinaria - Sector Energético</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Total de Inspecciones</div>
+                    <div class="stat-value" id="totalStats">0</div>
+                </div>
+                <i class="fas fa-chart-bar stat-icon"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Completadas</div>
+                    <div class="stat-value" style="color: #10b981;" id="completedStats">0</div>
+                </div>
+                <i class="fas fa-check-circle stat-icon"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">En Proceso</div>
+                    <div class="stat-value" style="color: #f59e0b;" id="inProgressStats">0</div>
+                </div>
+                <i class="fas fa-spinner stat-icon"></i>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-content">
+                    <div class="stat-label">Críticas</div>
+                    <div class="stat-value" style="color: #ef4444;" id="criticalStats">0</div>
+                </div>
+                <i class="fas fa-exclamation-circle stat-icon"></i>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-title"><i class="fas fa-filter"></i> Filtros</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Buscar por folio o equipo...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="statusFilter">
+                        <option value="">Todos los estados</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="in_progress">En Proceso</option>
+                        <option value="completed">Completada</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-action w-100" onclick="filterInspections()">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-action w-100" onclick="showCreateModal()">
+                        <i class="fas fa-plus"></i> Nueva Inspección
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspections List -->
+        <div class="inspections-section">
+            <h2 class="section-title"><i class="fas fa-list"></i> Inspecciones</h2>
+
+            <div class="table-responsive">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Equipo</th>
+                            <th>Categoría</th>
+                            <th>Inspector</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                            <th>Criticidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inspectionsList">
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="fas fa-inbox"></i>
+                                <p>No hay inspecciones. Crea una nueva para empezar.</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail View -->
+    <div id="detailView" class="hidden">
+        <button class="btn btn-outline-secondary mb-3" onclick="backToDashboard()">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </button>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="inspections-section">
+                    <h2 class="section-title">Detalles de Inspección</h2>
+                    <div id="detailContent"></div>
+                </div>
+
+                <!-- Hallazgos -->
+                <div class="inspections-section mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="section-title mb-0">Hallazgos</h3>
+                        <button class="btn btn-action btn-sm" onclick="showFindingModal()">
+                            <i class="fas fa-plus"></i> Agregar
+                        </button>
+                    </div>
+                    <div id="findingsList"></div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="inspections-section">
+                    <h5 class="section-title">Estado</h5>
+                    <div id="statusPanel"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Inspección -->
+<div class="modal fade" id="inspectionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Nueva Inspección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="inspectionForm">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-cog"></i> Equipo a Inspeccionar *</label>
+                        <select class="form-select" id="equipmentSelect" required>
+                            <option value="">Selecciona un equipo...</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar-alt"></i> Fecha de Inspección *</label>
+                            <input type="date" class="form-control" id="inspectionDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-exclamation-triangle"></i> Criticidad *</label>
+                            <select class="form-select" id="criticality" required>
+                                <option value="low">Baja</option>
+                                <option value="medium">Media</option>
+                                <option value="critical">Crítica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-map-marker-alt"></i> Ubicación *</label>
+                        <input type="text" class="form-control" id="location" placeholder="Ej: Línea Bogotá-Medellín, km 45" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-sticky-note"></i> Observaciones</label>
+                        <textarea class="form-control" id="observations" rows="3" placeholder="Detalles relevantes..."></textarea>
+                    </div>
+
+                    <!-- Firma Digital -->
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-pen-fancy"></i> Firma del Inspector</label>
+                        <div style="border: 2px solid #ddd; border-radius: 8px; overflow: hidden; background: white;">
+                            <canvas id="signatureCanvas" width="400" height="150" style="display: block; cursor: crosshair; background: white;"></canvas>
+                        </div>
+                        <div class="mt-2 d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSignature()">
+                                <i class="fas fa-eraser"></i> Limpiar Firma
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="acceptSignature()">
+                                <i class="fas fa-check"></i> Aceptar Firma
+                            </button>
+                        </div>
+                        <small class="form-text text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> Firma aceptada: <span id="signatureStatus" style="color: #dc3545;">No</span>
+                        </small>
+                    </div>
+
+                    <!-- Subida de Foto -->
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-camera"></i> Foto del Equipo</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+                        </div>
+                        <div id="photoPreview" style="margin-top: 1rem; display: none;">
+                            <img id="photoImg" src="" alt="Preview" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                            <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="removePhoto()">
+                                <i class="fas fa-trash"></i> Remover Foto
+                            </button>
+                        </div>
+                        <small class="form-text text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> Foto cargada: <span id="photoStatus" style="color: #dc3545;">No</span>
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary-custom" onclick="saveInspection()">
+                    <i class="fas fa-check"></i> Crear Inspección
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Agregar Hallazgo -->
+<div class="modal fade" id="findingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-exclamation-circle"></i> Registrar Hallazgo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="findingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Descripción del Hallazgo *</label>
+                        <textarea class="form-control" id="findingDescription" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Severidad *</label>
+                        <select class="form-select" id="findingSeverity" required>
+                            <option value="minor">Menor</option>
+                            <option value="major">Mayor</option>
+                            <option value="critical">Crítica</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary-custom" onclick="saveFinding()">
+                    <i class="fas fa-save"></i> Guardar Hallazgo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Datos de equipos del sector energético
+    const equipmentData = [
+        // Estructuras
+        { id: 'EST-001', name: 'Torre Celosía 230kV', category: 'Estructuras y Postes', location: 'Línea Bogotá-Medellín' },
+        { id: 'EST-002', name: 'Poste Concreto 138kV', category: 'Estructuras y Postes', location: 'Línea Cali-Buenaventura' },
+        { id: 'EST-003', name: 'Torre Tubular 500kV', category: 'Estructuras y Postes', location: 'Línea Guatapé-Medellín' },
+        { id: 'EST-004', name: 'Poste Madera 34.5kV', category: 'Estructuras y Postes', location: 'Distribución Zona Urbana' },
+        // Aisladores
+        { id: 'AIS-001', name: 'Cadena Aisladores 230kV', category: 'Aisladores y Cadenas', location: 'Almacén Central' },
+        { id: 'AIS-002', name: 'Aislador Cerámica 138kV', category: 'Aisladores y Cadenas', location: 'Línea Cali-Popayán' },
+        { id: 'AIS-003', name: 'Cadena Vidrio 500kV', category: 'Aisladores y Cadenas', location: 'Centro Distribución' },
+        { id: 'AIS-004', name: 'Aislador Polimérico 69kV', category: 'Aisladores y Cadenas', location: 'Zona Rural' },
+        // Conductores
+        { id: 'CON-001', name: 'Conductor ACSR 4/0 AWG', category: 'Conductores y Cables', location: 'Línea Principal' },
+        { id: 'CON-002', name: 'Cable de Guarda ACSR', category: 'Conductores y Cables', location: 'Almacén Bogotá' },
+        { id: 'CON-003', name: 'Conductor Aluminio 500kcmil', category: 'Conductores y Cables', location: 'Centro Distribución' },
+        { id: 'CON-004', name: 'Conductor Cobre Desnudo', category: 'Conductores y Cables', location: 'Zona Distribución' },
+        // Herrajes
+        { id: 'HER-001', name: 'Cruceta Hierro 230kV', category: 'Herrajes y Fijaciones', location: 'Torre Celosía' },
+        { id: 'HER-002', name: 'Grapa Suspensión Aluminio', category: 'Herrajes y Fijaciones', location: 'Almacén Bogotá' },
+        { id: 'HER-003', name: 'Ménsula Acero Galvanizado', category: 'Herrajes y Fijaciones', location: 'Centro Mantenimiento' },
+        { id: 'HER-004', name: 'Tornillería Acero Inox', category: 'Herrajes y Fijaciones', location: 'Almacén Central' },
+        // Transformadores
+        { id: 'TRF-001', name: 'Transformador 230/138kV 200MVA', category: 'Transformadores', location: 'Subestación Central' },
+        { id: 'TRF-002', name: 'Transformador 13.8/0.46kV 10MVA', category: 'Transformadores', location: 'Subestación Industrial' },
+        { id: 'TRF-003', name: 'Transformador 500/230kV 300MVA', category: 'Transformadores', location: 'Subestación Guatapé' },
+        { id: 'TRF-004', name: 'Transformador 69/13.8kV 30MVA', category: 'Transformadores', location: 'Subestación Rural' }
+    ];
+
+    let inspections = [];
+    let currentInspectionId = null;
+    let signatureAccepted = false;
+    let photoData = null;
+    let isDrawing = false;
+
+    // Canvas para firma
+    let canvas, ctx;
+
+    // Inicializar
+    function init() {
+        // Inicializar canvas de firma
+        canvas = document.getElementById('signatureCanvas');
+        ctx = canvas.getContext('2d');
+
+        // Eventos para dibujar en canvas
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Soporte para touch (móvil)
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        loadData();
+        populateEquipmentSelect();
+        setTodayDate();
+        renderDashboard();
+    }
+
+    // LocalStorage
+    function loadData() {
+        const saved = localStorage.getItem('inspections');
+        if (saved) {
+            inspections = JSON.parse(saved);
+        }
+    }
+
+    function saveData() {
+        localStorage.setItem('inspections', JSON.stringify(inspections));
+    }
+
+    function setTodayDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('inspectionDate').value = today;
+    }
+
+    function populateEquipmentSelect() {
+        const select = document.getElementById('equipmentSelect');
+        equipmentData.forEach(eq => {
+            const option = document.createElement('option');
+            option.value = eq.id;
+            option.textContent = `[${eq.category}] ${eq.id} - ${eq.name}`;
+            select.appendChild(option);
+        });
+    }
+
+    // Modal management
+    function showCreateModal() {
+        document.getElementById('inspectionForm').reset();
+        setTodayDate();
+        new bootstrap.Modal(document.getElementById('inspectionModal')).show();
+    }
+
+    function showFindingModal() {
+        document.getElementById('findingForm').reset();
+        new bootstrap.Modal(document.getElementById('findingModal')).show();
+    }
+
+    // Guardar inspección
+    function saveInspection() {
+        const equipmentId = document.getElementById('equipmentSelect').value;
+        const date = document.getElementById('inspectionDate').value;
+        const criticality = document.getElementById('criticality').value;
+        const location = document.getElementById('location').value;
+        const observations = document.getElementById('observations').value;
+
+        if (!equipmentId || !date || !location) {
+            alert('Por favor completa todos los campos requeridos');
+            return;
+        }
+
+        const equipment = equipmentData.find(e => e.id === equipmentId);
+        const folio = `INS-${new Date().getFullYear()}-${String(inspections.length + 1).padStart(3, '0')}`;
+
+        const inspection = {
+            id: Date.now(),
+            folio: folio,
+            equipment: equipment,
+            date: date,
+            criticality: criticality,
+            location: location,
+            observations: observations,
+            status: 'pending',
+            inspector: 'Inspector SD',
+            signature: signatureAccepted ? canvas.toDataURL('image/png') : null,
+            photo: photoData || null,
+            findings: [],
+            createdAt: new Date().toLocaleString()
+        };
+
+        inspections.push(inspection);
+        saveData();
+        renderDashboard();
+
+        // Limpiar formulario
+        clearSignature();
+        removePhoto();
+        signatureAccepted = false;
+
+        bootstrap.Modal.getInstance(document.getElementById('inspectionModal')).hide();
+        alert('✓ Inspección creada: ' + folio + '\n✓ Firma: ' + (inspection.signature ? 'Sí' : 'No') + '\n✓ Foto: ' + (inspection.photo ? 'Sí' : 'No'));
+    }
+
+    // Guardar hallazgo
+    function saveFinding() {
+        if (!currentInspectionId) return;
+
+        const description = document.getElementById('findingDescription').value;
+        const severity = document.getElementById('findingSeverity').value;
+
+        if (!description) {
+            alert('Por favor describe el hallazgo');
+            return;
+        }
+
+        const inspection = inspections.find(i => i.id === currentInspectionId);
+        inspection.findings.push({
+            id: Date.now(),
+            description: description,
+            severity: severity,
+            date: new Date().toLocaleString()
+        });
+
+        saveData();
+        renderDetail();
+        bootstrap.Modal.getInstance(document.getElementById('findingModal')).hide();
+        alert('✓ Hallazgo registrado');
+    }
+
+    // Render dashboard
+    function renderDashboard() {
+        updateStats();
+        renderInspectionsList();
+    }
+
+    function updateStats() {
+        const total = inspections.length;
+        const completed = inspections.filter(i => i.status === 'completed').length;
+        const inProgress = inspections.filter(i => i.status === 'in_progress').length;
+        const critical = inspections.filter(i => i.criticality === 'critical').length;
+
+        document.getElementById('totalStats').textContent = total;
+        document.getElementById('completedStats').textContent = completed;
+        document.getElementById('inProgressStats').textContent = inProgress;
+        document.getElementById('criticalStats').textContent = critical;
+    }
+
+    function renderInspectionsList() {
+        const tbody = document.getElementById('inspectionsList');
+
+        if (inspections.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No hay inspecciones. Crea una nueva para empezar.</p>
+            </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = inspections.map(insp => `
+            <tr>
+                <td><span class="folio-badge">${insp.folio}</span></td>
+                <td>${insp.equipment.name}</td>
+                <td>${insp.equipment.category}</td>
+                <td>${insp.inspector}</td>
+                <td>${new Date(insp.date).toLocaleDateString('es-CO')}</td>
+                <td>
+                    <span class="status-badge ${insp.status}">
+                        ${getStatusIcon(insp.status)} ${getStatusText(insp.status)}
+                    </span>
+                </td>
+                <td>
+                    <span class="criticality-badge ${insp.criticality}">
+                        ${getCriticalityIcon(insp.criticality)} ${getCriticalityText(insp.criticality)}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary-custom" onclick="viewDetail(${insp.id})">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function getStatusIcon(status) {
+        const icons = {
+            'completed': '<i class="fas fa-check-circle"></i>',
+            'in_progress': '<i class="fas fa-spinner"></i>',
+            'pending': '<i class="fas fa-clock"></i>'
+        };
+        return icons[status] || '';
+    }
+
+    function getStatusText(status) {
+        const texts = {
+            'completed': 'Completada',
+            'in_progress': 'En Proceso',
+            'pending': 'Pendiente'
+        };
+        return texts[status] || status;
+    }
+
+    function getCriticalityIcon(crit) {
+        const icons = {
+            'critical': '<i class="fas fa-exclamation-circle"></i>',
+            'medium': '<i class="fas fa-exclamation-triangle"></i>',
+            'low': '<i class="fas fa-check"></i>'
+        };
+        return icons[crit] || '';
+    }
+
+    function getCriticalityText(crit) {
+        const texts = {
+            'critical': 'Crítica',
+            'medium': 'Media',
+            'low': 'Baja'
+        };
+        return texts[crit] || crit;
+    }
+
+    // Detail view
+    function viewDetail(inspectionId) {
+        currentInspectionId = inspectionId;
+        document.getElementById('dashboardView').classList.add('hidden');
+        document.getElementById('detailView').classList.remove('hidden');
+        renderDetail();
+    }
+
+    function renderDetail() {
+        const insp = inspections.find(i => i.id === currentInspectionId);
+        if (!insp) return;
+
+        // Contenido principal
+        const detailHtml = `
+            <div class="detail-card">
+                <div class="detail-label">Folio</div>
+                <div class="detail-value">${insp.folio}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Equipo</div>
+                <div class="detail-value">${insp.equipment.name}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Categoría</div>
+                <div class="detail-value">${insp.equipment.category}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Ubicación</div>
+                <div class="detail-value">${insp.location}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Fecha</div>
+                <div class="detail-value">${new Date(insp.date).toLocaleDateString('es-CO')}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Inspector</div>
+                <div class="detail-value">${insp.inspector}</div>
+            </div>
+            ${insp.observations ? `
+            <div class="detail-card">
+                <div class="detail-label">Observaciones</div>
+                <div class="detail-value">${insp.observations}</div>
+            </div>
+            ` : ''}
+        `;
+
+        document.getElementById('detailContent').innerHTML = detailHtml;
+
+        // Hallazgos
+        const findingsHtml = insp.findings.length > 0
+            ? insp.findings.map(f => `
+                <div class="detail-card">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6>${f.description}</h6>
+                        <span class="criticality-badge ${f.severity}">
+                            ${getCriticalityText(f.severity)}
+                        </span>
+                    </div>
+                    <small class="text-muted">${f.date}</small>
+                </div>
+            `).join('')
+            : '<div class="empty-state"><p>Sin hallazgos registrados</p></div>';
+
+        document.getElementById('findingsList').innerHTML = findingsHtml;
+
+        // Panel de estado
+        const statusHtml = `
+            <div class="detail-card">
+                <div class="detail-label">Estado</div>
+                <div class="detail-value">
+                    <span class="status-badge ${insp.status}">
+                        ${getStatusText(insp.status)}
+                    </span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Criticidad</div>
+                <div class="detail-value">
+                    <span class="criticality-badge ${insp.criticality}">
+                        ${getCriticalityText(insp.criticality)}
+                    </span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Hallazgos</div>
+                <div class="detail-value">${insp.findings.length}</div>
+            </div>
+            <div class="detail-card">
+                <div class="detail-label">Creada</div>
+                <div class="detail-value">${insp.createdAt}</div>
+            </div>
+
+            ${insp.signature ? `
+            <div class="detail-card">
+                <div class="detail-label"><i class="fas fa-pen-fancy"></i> Firma Digital</div>
+                <img src="${insp.signature}" alt="Firma" style="max-width: 100%; border-radius: 8px; margin-top: 0.5rem;">
+            </div>
+            ` : `
+            <div class="detail-card" style="background: #fff3cd;">
+                <div class="detail-label">Firma Digital</div>
+                <div class="detail-value" style="color: #856404;">
+                    <i class="fas fa-times-circle"></i> No firmado
+                </div>
+            </div>
+            `}
+
+            ${insp.photo ? `
+            <div class="detail-card">
+                <div class="detail-label"><i class="fas fa-camera"></i> Foto del Equipo</div>
+                <img src="${insp.photo}" alt="Foto" style="max-width: 100%; border-radius: 8px; margin-top: 0.5rem;">
+            </div>
+            ` : `
+            <div class="detail-card" style="background: #fff3cd;">
+                <div class="detail-label">Foto del Equipo</div>
+                <div class="detail-value" style="color: #856404;">
+                    <i class="fas fa-times-circle"></i> Sin foto
+                </div>
+            </div>
+            `}
+
+            <button class="btn btn-action w-100 mt-4" onclick="changeStatus()">
+                Cambiar Estado
+            </button>
+        `;
+
+        document.getElementById('statusPanel').innerHTML = statusHtml;
+    }
+
+    function changeStatus() {
+        const insp = inspections.find(i => i.id === currentInspectionId);
+        const newStatus = prompt('Estado (pending/in_progress/completed):', insp.status);
+        if (newStatus && ['pending', 'in_progress', 'completed'].includes(newStatus)) {
+            insp.status = newStatus;
+            saveData();
+            renderDetail();
+            renderDashboard();
+        }
+    }
+
+    function backToDashboard() {
+        document.getElementById('detailView').classList.add('hidden');
+        document.getElementById('dashboardView').classList.remove('hidden');
+        renderDashboard();
+    }
+
+    // Funciones para Firma Digital
+    function startDrawing(e) {
+        isDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#333';
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        ctx.closePath();
+    }
+
+    function handleTouch(e) {
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function clearSignature() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        signatureAccepted = false;
+        document.getElementById('signatureStatus').textContent = 'No';
+        document.getElementById('signatureStatus').style.color = '#dc3545';
+    }
+
+    function acceptSignature() {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let hasDrawing = false;
+        for (let i = 3; i < imageData.length; i += 4) {
+            if (imageData[i] > 128) {
+                hasDrawing = true;
+                break;
+            }
+        }
+
+        if (!hasDrawing) {
+            alert('Por favor, dibuja una firma antes de aceptar.');
+            return;
+        }
+
+        signatureAccepted = true;
+        document.getElementById('signatureStatus').textContent = 'Sí ✓';
+        document.getElementById('signatureStatus').style.color = '#28a745';
+        alert('✓ Firma aceptada');
+    }
+
+    // Funciones para Foto
+    function handlePhotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Por favor selecciona una imagen válida');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            photoData = e.target.result;
+            const preview = document.getElementById('photoPreview');
+            document.getElementById('photoImg').src = photoData;
+            preview.style.display = 'block';
+            document.getElementById('photoStatus').textContent = 'Sí ✓';
+            document.getElementById('photoStatus').style.color = '#28a745';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removePhoto() {
+        photoData = null;
+        document.getElementById('photoInput').value = '';
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('photoStatus').textContent = 'No';
+        document.getElementById('photoStatus').style.color = '#dc3545';
+    }
+
+    function filterInspections() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+
+        const filtered = inspections.filter(insp => {
+            const matchSearch = !search ||
+                insp.folio.toLowerCase().includes(search) ||
+                insp.equipment.name.toLowerCase().includes(search);
+            const matchStatus = !status || insp.status === status;
+            return matchSearch && matchStatus;
+        });
+
+        const tbody = document.getElementById('inspectionsList');
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty-state">
+                <p>No se encontraron inspecciones con esos criterios</p>
+            </td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(insp => `
+            <tr>
+                <td><span class="folio-badge">${insp.folio}</span></td>
+                <td>${insp.equipment.name}</td>
+                <td>${insp.equipment.category}</td>
+                <td>${insp.inspector}</td>
+                <td>${new Date(insp.date).toLocaleDateString('es-CO')}</td>
+                <td>
+                    <span class="status-badge ${insp.status}">
+                        ${getStatusIcon(insp.status)} ${getStatusText(insp.status)}
+                    </span>
+                </td>
+                <td>
+                    <span class="criticality-badge ${insp.criticality}">
+                        ${getCriticalityIcon(insp.criticality)} ${getCriticalityText(insp.criticality)}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary-custom" onclick="viewDetail(${insp.id})">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Iniciar
+    init();
+</script>
+
+</body>
+</html>

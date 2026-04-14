@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspección - Máquinas y Equipos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+    <style>
+        .signature-pad {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.375rem;
+            background: white;
+            cursor: crosshair;
+        }
+        .tab-active {
+            @apply border-b-2 border-blue-600 text-blue-600;
+        }
+        .tab-inactive {
+            @apply border-b-2 border-gray-200 text-gray-500 hover:text-gray-700;
+        }
+        .field-required::after {
+            content: " *";
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-6 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold">Sistema de Inspección</h1>
+                        <p class="text-blue-100 mt-2">Inspección de Máquinas y Equipos</p>
+                    </div>
+                    <div class="text-right text-sm">
+                        <p class="text-blue-100">S.D. Salomón Durán S.A.S.</p>
+                        <p class="text-blue-200 text-xs mt-1" id="current-date"></p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            <form id="inspectionForm" class="bg-white rounded-lg shadow-lg">
+
+                <!-- Navigation Tabs -->
+                <div class="border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                    <div class="flex overflow-x-auto px-6 pt-4 gap-8">
+                        <button type="button" class="tab-btn tab-active pb-4 font-medium" data-tab="general">
+                            1. Datos Generales
+                        </button>
+                        <button type="button" class="tab-btn tab-inactive pb-4 font-medium" data-tab="checklist">
+                            2. Checklist de Seguridad
+                        </button>
+                        <button type="button" class="tab-btn tab-inactive pb-4 font-medium" data-tab="findings">
+                            3. Hallazgos
+                        </button>
+                        <button type="button" class="tab-btn tab-inactive pb-4 font-medium" data-tab="actions">
+                            4. Acciones Correctivas
+                        </button>
+                        <button type="button" class="tab-btn tab-inactive pb-4 font-medium" data-tab="signature">
+                            5. Firma Digital
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 1: General Information -->
+                <div class="tab-content active p-8" id="tab-general">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Datos Generales de la Inspección</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Fecha -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Fecha de Inspección</label>
+                            <input type="date" id="inspectionDate" required class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                            <span class="text-xs text-gray-500 mt-1">Se registra automáticamente</span>
+                        </div>
+
+                        <!-- Hora -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Hora</label>
+                            <input type="time" id="inspectionTime" required class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+
+                        <!-- Máquina/Equipo -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Máquina/Equipo a Inspeccionar</label>
+                            <select id="equipment" required class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Seleccione una máquina</option>
+                                <option value="excavadora">Excavadora CAT 320</option>
+                                <option value="grua">Grúa Torre 60T</option>
+                                <option value="compresor">Compresor de Aire Industrial</option>
+                                <option value="generador">Generador Diesel 500KW</option>
+                                <option value="plataforma">Plataforma Elevadora</option>
+                                <option value="otra">Otra máquina</option>
+                            </select>
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Ubicación</label>
+                            <input type="text" id="location" placeholder="Ej: Área de construcción, Planta 1" required class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+
+                        <!-- Inspector -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Inspector</label>
+                            <input type="text" id="inspector" placeholder="Nombre completo" required class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+
+                        <!-- Supervisor -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Supervisor Responsable</label>
+                            <input type="text" id="supervisor" placeholder="Nombre (Opcional)" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+                    </div>
+
+                    <!-- Descripción general -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Descripción General del Equipo</label>
+                        <textarea id="generalDescription" placeholder="Describa el estado actual de la máquina" rows="4" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="flex justify-end gap-4 mt-8 pt-6 border-t">
+                        <button type="button" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancelar</button>
+                        <button type="button" class="next-tab px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Checklist -->
+                <div class="tab-content hidden p-8" id="tab-checklist">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Checklist de Seguridad</h2>
+
+                    <div class="space-y-8">
+                        <!-- Sección 1: Estructura -->
+                        <div class="border-l-4 border-blue-500 pl-6 py-4 bg-blue-50 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">1. Estructura y Estabilidad</h3>
+
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-700">¿La máquina se encuentra en buen estado estructural?</p>
+                                        <p class="text-sm text-gray-500">Verificar ausencia de grietas, óxido o deformaciones</p>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="structure1" value="si" class="w-4 h-4">
+                                            <span class="text-sm">SÍ</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="structure1" value="no" class="w-4 h-4">
+                                            <span class="text-sm">NO</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="structure1" value="na" class="w-4 h-4">
+                                            <span class="text-sm">N/A</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <textarea placeholder="Observaciones..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Sección 2: Operación -->
+                        <div class="border-l-4 border-green-500 pl-6 py-4 bg-green-50 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">2. Operación y Funcionamiento</h3>
+
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-700">¿Todos los controles funcionan correctamente?</p>
+                                        <p class="text-sm text-gray-500">Verificar botones, palancas y sistemas de control</p>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="operation1" value="si" class="w-4 h-4">
+                                            <span class="text-sm">SÍ</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="operation1" value="no" class="w-4 h-4">
+                                            <span class="text-sm">NO</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="operation1" value="na" class="w-4 h-4">
+                                            <span class="text-sm">N/A</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <textarea placeholder="Observaciones..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Sección 3: Seguridad -->
+                        <div class="border-l-4 border-red-500 pl-6 py-4 bg-red-50 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">3. Sistemas de Seguridad</h3>
+
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-700">¿Los sistemas de seguridad están presentes y funcionales?</p>
+                                        <p class="text-sm text-gray-500">Frenos de emergencia, escudos de protección, alarmas</p>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="safety1" value="si" class="w-4 h-4">
+                                            <span class="text-sm">SÍ</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="safety1" value="no" class="w-4 h-4">
+                                            <span class="text-sm">NO</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="safety1" value="na" class="w-4 h-4">
+                                            <span class="text-sm">N/A</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <textarea placeholder="Observaciones..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Sección 4: Mantenimiento -->
+                        <div class="border-l-4 border-yellow-500 pl-6 py-4 bg-yellow-50 rounded-r-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">4. Estado de Mantenimiento</h3>
+
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-700">¿Hay fugas de fluidos (aceite, combustible, refrigerante)?</p>
+                                        <p class="text-sm text-gray-500">Inspeccionar bajo la máquina y conexiones</p>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="maintenance1" value="si" class="w-4 h-4">
+                                            <span class="text-sm">SÍ</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="maintenance1" value="no" class="w-4 h-4">
+                                            <span class="text-sm">NO</span>
+                                        </label>
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" name="maintenance1" value="na" class="w-4 h-4">
+                                            <span class="text-sm">N/A</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <textarea placeholder="Observaciones..." class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="flex justify-between gap-4 mt-8 pt-6 border-t">
+                        <button type="button" class="prev-tab px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Anterior</button>
+                        <button type="button" class="next-tab px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Findings -->
+                <div class="tab-content hidden p-8" id="tab-findings">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Hallazgos y Evidencias</h2>
+
+                    <div class="space-y-8">
+                        <!-- Hallazgos encontrados -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-4">¿Se encontraron problemas o hallazgos?</label>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="no-findings" class="w-5 h-5">
+                                    <span>No se encontraron problemas - Máquina en óptimas condiciones</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="minor-findings" class="w-5 h-5">
+                                    <span>Hallazgos menores - Requieren atención en el próximo mantenimiento</span>
+                                </label>
+                                <label class="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="critical-findings" class="w-5 h-5">
+                                    <span>Hallazgos críticos - Requieren acción inmediata</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Detalles de hallazgos -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-4">Detalles de los Hallazgos</label>
+                            <textarea id="findings" placeholder="Describa los problemas encontrados, su ubicación, severidad y recomendaciones..." rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+
+                        <!-- Fotos de evidencia -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-4">Cargar Fotos de Evidencia</label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition" id="photoDropZone">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20a4 4 0 004 4h24a4 4 0 004-4V20m-14-6l6 6m0 0l-6 6m6-6H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-2 font-medium text-gray-700">Arrastra fotos aquí o haz clic para seleccionar</p>
+                                <p class="text-sm text-gray-500 mt-1">PNG, JPG hasta 5MB cada una</p>
+                                <input type="file" id="photoInput" multiple accept="image/*" class="hidden" />
+                            </div>
+                            <div id="photoPreview" class="mt-4 grid grid-cols-3 gap-4"></div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation -->
+                    <div class="flex justify-between gap-4 mt-8 pt-6 border-t">
+                        <button type="button" class="prev-tab px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Anterior</button>
+                        <button type="button" class="next-tab px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Corrective Actions -->
+                <div class="tab-content hidden p-8" id="tab-actions">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Plan de Acciones Correctivas</h2>
+
+                    <div id="actionsContainer" class="space-y-6">
+                        <div class="border border-gray-200 rounded-lg p-6 bg-gray-50">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-gray-800">Acción Correctiva #1</h3>
+                                <button type="button" class="text-red-600 hover:text-red-700" onclick="this.parentElement.parentElement.remove()">Eliminar</button>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 field-required">Descripción de la Acción</label>
+                                    <textarea placeholder="¿Qué se debe hacer para corregir el problema?" rows="3" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 field-required">Responsable</label>
+                                        <input type="text" placeholder="Nombre y cargo" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 field-required">Fecha Límite</label>
+                                        <input type="date" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Nivel de Criticidad</label>
+                                    <select class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="alta">Alta - Requiere atención inmediata</option>
+                                        <option value="media">Media - Requiere atención en 5 días</option>
+                                        <option value="baja">Baja - Próximo mantenimiento programado</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agregar acción -->
+                    <button type="button" id="addActionBtn" class="mt-6 w-full py-3 border-2 border-dashed border-blue-400 rounded-lg text-blue-600 font-medium hover:bg-blue-50">+ Agregar Otra Acción Correctiva</button>
+
+                    <!-- Navigation -->
+                    <div class="flex justify-between gap-4 mt-8 pt-6 border-t">
+                        <button type="button" class="prev-tab px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Anterior</button>
+                        <button type="button" class="next-tab px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Digital Signature -->
+                <div class="tab-content hidden p-8" id="tab-signature">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Firma Digital y Resumen</h2>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-8">
+                        <p class="text-sm text-gray-700"><strong>Nota:</strong> Al firmar, usted certifica que ha revisado toda la información y que es correcta.</p>
+                    </div>
+
+                    <!-- Resumen -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Resumen de la Inspección</h3>
+                        <div class="bg-gray-50 rounded-lg p-6 space-y-3 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Máquina/Equipo:</span>
+                                <span id="summaryEquipment" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Ubicación:</span>
+                                <span id="summaryLocation" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Inspector:</span>
+                                <span id="summaryInspector" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Fecha y Hora:</span>
+                                <span id="summaryDateTime" class="font-medium">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Firma Canvas -->
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-gray-700 mb-4 field-required">Firma del Inspector</label>
+                        <div class="border-2 border-gray-300 rounded-lg p-4 bg-white">
+                            <canvas id="signaturePad" class="signature-pad w-full" width="800" height="200"></canvas>
+                        </div>
+                        <div class="flex gap-4 mt-4">
+                            <button type="button" id="clearSignature" class="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Limpiar Firma</button>
+                            <p class="text-xs text-gray-500 flex items-center">Firma aquí con el ratón o pantalla táctil</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="flex justify-between gap-4 mt-8 pt-6 border-t">
+                        <button type="button" class="prev-tab px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Anterior</button>
+                        <div class="flex gap-4">
+                            <button type="button" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Guardar como Borrador</button>
+                            <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">Enviar Inspección</button>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date and time
+        const today = new Date();
+        document.getElementById('inspectionDate').valueAsDate = today;
+        document.getElementById('current-date').textContent = today.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Tab Navigation
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabName = btn.dataset.tab;
+                switchTab(tabName);
+            });
+        });
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            tabContents.forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('active');
+            });
+
+            // Deactivate all buttons
+            tabButtons.forEach(btn => {
+                btn.classList.remove('tab-active');
+                btn.classList.add('tab-inactive');
+            });
+
+            // Show selected tab
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Activate button
+            document.querySelector(`[data-tab="${tabName}"]`).classList.remove('tab-inactive');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('tab-active');
+
+            // Update summary
+            updateSummary();
+            window.scrollTo(0, 0);
+        }
+
+        // Next/Previous buttons
+        document.querySelectorAll('.next-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentTab = document.querySelector('.tab-content.active');
+                const currentIndex = Array.from(tabContents).indexOf(currentTab);
+                if (currentIndex < tabContents.length - 1) {
+                    const nextTabName = tabContents[currentIndex + 1].id.replace('tab-', '');
+                    switchTab(nextTabName);
+                }
+            });
+        });
+
+        document.querySelectorAll('.prev-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const currentTab = document.querySelector('.tab-content.active');
+                const currentIndex = Array.from(tabContents).indexOf(currentTab);
+                if (currentIndex > 0) {
+                    const prevTabName = tabContents[currentIndex - 1].id.replace('tab-', '');
+                    switchTab(prevTabName);
+                }
+            });
+        });
+
+        // Photo upload handling
+        const photoDropZone = document.getElementById('photoDropZone');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreview = document.getElementById('photoPreview');
+
+        photoDropZone.addEventListener('click', () => photoInput.click());
+        photoDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoDropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        photoDropZone.addEventListener('dragleave', () => {
+            photoDropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+        photoDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoDropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            handlePhotos(e.dataTransfer.files);
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            handlePhotos(e.target.files);
+        });
+
+        function handlePhotos(files) {
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('div');
+                    img.className = 'relative group';
+                    img.innerHTML = `
+                        <img src="${e.target.result}" alt="Foto" class="w-full h-32 object-cover rounded-lg">
+                        <button type="button" class="absolute top-2 right-2 bg-red-500 text-white p-1 rounded opacity-0 group-hover:opacity-100 transition" onclick="this.parentElement.remove()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    `;
+                    photoPreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Signature Pad
+        const canvas = document.getElementById('signaturePad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'white'
+        });
+
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            signaturePad.clear();
+        });
+
+        // Add corrective action
+        document.getElementById('addActionBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const actionNumber = document.querySelectorAll('#actionsContainer > div').length + 1;
+            const newAction = document.createElement('div');
+            newAction.className = 'border border-gray-200 rounded-lg p-6 bg-gray-50';
+            newAction.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">Acción Correctiva #${actionNumber}</h3>
+                    <button type="button" class="text-red-600 hover:text-red-700" onclick="this.parentElement.parentElement.remove()">Eliminar</button>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 field-required">Descripción de la Acción</label>
+                        <textarea placeholder="¿Qué se debe hacer para corregir el problema?" rows="3" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Responsable</label>
+                            <input type="text" placeholder="Nombre y cargo" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 field-required">Fecha Límite</label>
+                            <input type="date" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nivel de Criticidad</label>
+                        <select class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="alta">Alta - Requiere atención inmediata</option>
+                            <option value="media">Media - Requiere atención en 5 días</option>
+                            <option value="baja">Baja - Próximo mantenimiento programado</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            document.getElementById('actionsContainer').appendChild(newAction);
+        });
+
+        // Update summary
+        function updateSummary() {
+            document.getElementById('summaryEquipment').textContent = document.getElementById('equipment').value || '-';
+            document.getElementById('summaryLocation').textContent = document.getElementById('location').value || '-';
+            document.getElementById('summaryInspector').textContent = document.getElementById('inspector').value || '-';
+
+            const date = document.getElementById('inspectionDate').value;
+            const time = document.getElementById('inspectionTime').value;
+            const dateTime = date && time ? `${date} ${time}` : '-';
+            document.getElementById('summaryDateTime').textContent = dateTime;
+        }
+
+        // Form submission
+        document.getElementById('inspectionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (signaturePad.isEmpty()) {
+                alert('Por favor, firma antes de enviar la inspección');
+                return;
+            }
+
+            // Get signature image
+            const signatureImage = signaturePad.toDataURL();
+
+            // Prepare data
+            const formData = {
+                inspectionDate: document.getElementById('inspectionDate').value,
+                inspectionTime: document.getElementById('inspectionTime').value,
+                equipment: document.getElementById('equipment').value,
+                location: document.getElementById('location').value,
+                inspector: document.getElementById('inspector').value,
+                supervisor: document.getElementById('supervisor').value,
+                generalDescription: document.getElementById('generalDescription').value,
+                findings: document.getElementById('findings').value,
+                signature: signatureImage,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('Formulario de Inspección:', formData);
+            alert('✓ Inspección enviada correctamente!\n\nDatos:\n' + JSON.stringify(formData, null, 2));
+
+            // Reset form
+            document.getElementById('inspectionForm').reset();
+            signaturePad.clear();
+            photoPreview.innerHTML = '';
+            switchTab('general');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspección de Máquinas - SD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            scroll-behavior: smooth;
+        }
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: 280px;
+        }
+        .badge-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+        }
+        .badge-pendiente {
+            @apply bg-yellow-100 text-yellow-800;
+        }
+        .badge-en-proceso {
+            @apply bg-blue-100 text-blue-800;
+        }
+        .badge-completada {
+            @apply bg-green-100 text-green-800;
+        }
+        .badge-critica {
+            @apply bg-red-100 text-red-800;
+        }
+        .field-row {
+            @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+        }
+        .field-row.full {
+            @apply grid-cols-1;
+        }
+        .signature-pad {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.375rem;
+            background: white;
+            cursor: crosshair;
+        }
+        .inspection-item {
+            @apply p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-lg mb-4;
+        }
+        .inspection-item.critical {
+            @apply border-l-4 border-red-500 bg-red-50;
+        }
+        .inspection-item.warning {
+            @apply border-l-4 border-yellow-500 bg-yellow-50;
+        }
+        .section-header {
+            @apply text-lg font-bold text-gray-800 mb-6 pb-4 border-b-2 border-blue-600;
+        }
+        .btn-primary {
+            @apply px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium;
+        }
+        .btn-secondary {
+            @apply px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium;
+        }
+        .btn-success {
+            @apply px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium;
+        }
+        .btn-danger {
+            @apply px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium;
+        }
+        .card {
+            @apply bg-white rounded-lg shadow-md p-6 mb-6;
+        }
+        .form-group {
+            @apply mb-6;
+        }
+        .form-label {
+            @apply block text-sm font-semibold text-gray-700 mb-2;
+        }
+        .form-input, .form-select, .form-textarea {
+            @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+        }
+        .form-textarea {
+            @apply resize-vertical;
+        }
+        .required::after {
+            content: " *";
+            color: #dc2626;
+        }
+        .checklist-item {
+            @apply flex items-start gap-4 p-4 bg-gray-50 rounded-lg mb-4;
+        }
+        .checklist-options {
+            @apply flex gap-4 ml-auto;
+        }
+        .photo-gallery {
+            @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4;
+        }
+        .photo-item {
+            @apply relative overflow-hidden rounded-lg shadow-sm hover:shadow-md transition;
+        }
+        .photo-item img {
+            @apply w-full h-40 object-cover;
+        }
+        .photo-remove {
+            @apply absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 hover:opacity-100 transition cursor-pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar bg-gradient-to-b from-blue-900 to-blue-800 text-white shadow-xl">
+        <div class="p-6 border-b border-blue-700">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-blue-400 rounded-lg flex items-center justify-center font-bold">SD</div>
+                <div>
+                    <h1 class="font-bold text-lg">Inspecciones</h1>
+                    <p class="text-xs text-blue-200">S.D. SAS</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="p-4">
+            <div class="space-y-2">
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-700 hover:bg-blue-600 transition">
+                    <i class="fas fa-home w-5"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-list-check w-5"></i>
+                    <span>Mis Inspecciones</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-plus-circle w-5"></i>
+                    <span>Nueva Inspección</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-file-pdf w-5"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-history w-5"></i>
+                    <span>Historial</span>
+                </a>
+            </div>
+
+            <hr class="border-blue-700 my-6">
+
+            <div class="space-y-2">
+                <p class="text-xs font-semibold text-blue-300 uppercase px-4">Administración</p>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="fas fa-cog w-5"></i>
+                    <span>Configuración</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="fas fa-users w-5"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition text-sm">
+                    <i class="fas fa-building w-5"></i>
+                    <span>Equipos</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="flex items-center justify-between px-8 py-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Nueva Inspección</h2>
+                    <p class="text-sm text-gray-500 mt-1">Completa todos los campos para registrar la inspección</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-700" id="userName">Juan Pérez</p>
+                        <p class="text-xs text-gray-500">Inspector</p>
+                    </div>
+                    <img src="https://ui-avatars.com/api/?name=Juan+Perez" alt="Avatar" class="w-10 h-10 rounded-full">
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="p-8">
+            <form id="inspectionForm">
+
+                <!-- SECTION 1: INFORMACIÓN GENERAL -->
+                <div class="card">
+                    <div class="section-header">
+                        <i class="fas fa-info-circle text-blue-600 mr-3"></i>
+                        Información General
+                    </div>
+
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label class="form-label required">Fecha de Inspección</label>
+                            <input type="date" id="inspectionDate" required class="form-input">
+                            <p class="text-xs text-gray-500 mt-1">Se registra automáticamente con la fecha actual</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Hora de Inspección</label>
+                            <input type="time" id="inspectionTime" required class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label class="form-label required">Máquina/Equipo</label>
+                            <select id="equipment" required class="form-select">
+                                <option value="">-- Seleccione una máquina --</option>
+                                <option value="excavadora-320">Excavadora CAT 320</option>
+                                <option value="grua-60t">Grúa Torre 60T</option>
+                                <option value="compresor-air">Compresor de Aire Industrial 150HP</option>
+                                <option value="generador-diesel">Generador Diesel 500KW</option>
+                                <option value="plataforma-elevadora">Plataforma Elevadora Articulada</option>
+                                <option value="otra">Otra máquina</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Ubicación/Sector</label>
+                            <select id="location" required class="form-select">
+                                <option value="">-- Seleccione ubicación --</option>
+                                <option value="area-construccion">Área de Construcción</option>
+                                <option value="almacen-equipos">Almacén de Equipos</option>
+                                <option value="planta-1">Planta 1</option>
+                                <option value="cantera">Cantera</option>
+                                <option value="mantenimiento">Taller de Mantenimiento</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label class="form-label required">Inspector</label>
+                            <input type="text" id="inspector" placeholder="Nombre completo" value="Juan Pérez" required class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Supervisor Responsable</label>
+                            <input type="text" id="supervisor" placeholder="Nombre (Opcional)" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label">Observaciones Generales</label>
+                        <textarea id="generalDescription" placeholder="Describa el estado general de la máquina antes de la inspección..." rows="4" class="form-textarea"></textarea>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: CHECKLIST DETALLADO -->
+                <div class="card">
+                    <div class="section-header">
+                        <i class="fas fa-check-square text-blue-600 mr-3"></i>
+                        Checklist de Inspección
+                    </div>
+
+                    <!-- Categoría 1 -->
+                    <div class="inspection-item">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                                <i class="fas fa-cogs text-blue-600"></i>
+                                Estructura y Componentes
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Inspeccione la integridad estructural de la máquina</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="checklist-item">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">¿La estructura está íntegra sin grietas o deformaciones?</p>
+                                    <p class="text-xs text-gray-500 mt-1">Verificar presencia de óxido, corrosión o daños físicos</p>
+                                </div>
+                                <div class="checklist-options">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="structure1" value="si" class="w-4 h-4 text-green-600">
+                                        <span class="text-sm font-medium">SÍ</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="structure1" value="no" class="w-4 h-4 text-red-600">
+                                        <span class="text-sm font-medium">NO</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="structure1" value="na" class="w-4 h-4 text-gray-600">
+                                        <span class="text-sm font-medium">N/A</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <textarea placeholder="Observaciones..." class="w-full form-textarea" rows="2"></textarea>
+
+                            <div>
+                                <label class="form-label text-xs">Adjuntar Fotos</label>
+                                <input type="file" accept="image/*" multiple class="form-input text-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categoría 2 -->
+                    <div class="inspection-item">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                                <i class="fas fa-bolt text-yellow-600"></i>
+                                Operación y Funcionalidad
+                            </h3>
+                            <p class="text-sm text-gray-600 mt-1">Verifique que todos los sistemas funcionen correctamente</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="checklist-item">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">¿Todos los controles responden correctamente?</p>
+                                    <p class="text-xs text-gray-500 mt-1">Botones, palancas, pantallas, sistemas electrónicos</p>
+                                </div>
+                                <div class="checklist-options">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="operation1" value="si" class="w-4 h-4 text-green-600">
+                                        <span class="text-sm font-medium">SÍ</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="operation1" value="no" class="w-4 h-4 text-red-600">
+                                        <span class="text-sm font-medium">NO</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="operation1" value="na" class="w-4 h-4 text-gray-600">
+                                        <span class="text-sm font-medium">N/A</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <textarea placeholder="Observaciones..." class="w-full form-textarea" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Categoría 3 -->
+                    <div class="inspection-item critical">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-red-800 text-lg flex items-center gap-2">
+                                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                Sistemas de Seguridad
+                            </h3>
+                            <p class="text-sm text-red-700 mt-1">CRÍTICO: Todos los sistemas de seguridad deben estar operativos</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="checklist-item">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">¿Los sistemas de seguridad están presentes y funcionales?</p>
+                                    <p class="text-xs text-gray-500 mt-1">Frenos de emergencia, paradas de seguridad, escudos de protección, alarmas</p>
+                                </div>
+                                <div class="checklist-options">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="safety1" value="si" class="w-4 h-4 text-green-600">
+                                        <span class="text-sm font-medium">SÍ</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="safety1" value="no" class="w-4 h-4 text-red-600">
+                                        <span class="text-sm font-medium">NO</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="safety1" value="na" class="w-4 h-4 text-gray-600">
+                                        <span class="text-sm font-medium">N/A</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <textarea placeholder="Observaciones..." class="w-full form-textarea" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Categoría 4 -->
+                    <div class="inspection-item warning">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-yellow-800 text-lg flex items-center gap-2">
+                                <i class="fas fa-wrench text-yellow-600"></i>
+                                Estado de Mantenimiento
+                            </h3>
+                            <p class="text-sm text-yellow-700 mt-1">Verifique el estado del mantenimiento preventivo</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="checklist-item">
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">¿Hay fugas de fluidos (aceite, combustible, refrigerante)?</p>
+                                    <p class="text-xs text-gray-500 mt-1">Inspeccionar bajo la máquina, mangueras, conexiones</p>
+                                </div>
+                                <div class="checklist-options">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="maintenance1" value="si" class="w-4 h-4 text-green-600">
+                                        <span class="text-sm font-medium">SÍ</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="maintenance1" value="no" class="w-4 h-4 text-red-600">
+                                        <span class="text-sm font-medium">NO</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="maintenance1" value="na" class="w-4 h-4 text-gray-600">
+                                        <span class="text-sm font-medium">N/A</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <textarea placeholder="Observaciones..." class="w-full form-textarea" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: EVIDENCIA FOTOGRÁFICA -->
+                <div class="card">
+                    <div class="section-header">
+                        <i class="fas fa-camera text-blue-600 mr-3"></i>
+                        Evidencia Fotográfica
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label required">Fotos de la Inspección</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition" id="photoDropZone">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                            <p class="font-medium text-gray-700">Arrastra fotos aquí o haz clic para seleccionar</p>
+                            <p class="text-sm text-gray-500 mt-1">PNG, JPG, GIF - Máximo 5MB cada una</p>
+                            <p class="text-xs text-gray-400 mt-2">Se recomienda mínimo 3 fotos de la máquina/equipo</p>
+                            <input type="file" id="photoInput" multiple accept="image/*" class="hidden">
+                        </div>
+                        <div id="photoPreview" class="photo-gallery"></div>
+                    </div>
+                </div>
+
+                <!-- SECTION 4: ACCIONES CORRECTIVAS -->
+                <div class="card">
+                    <div class="section-header">
+                        <i class="fas fa-tasks text-blue-600 mr-3"></i>
+                        Acciones Correctivas Requeridas
+                    </div>
+
+                    <p class="text-sm text-gray-600 mb-6">Si encontró hallazgos críticos, complete los siguientes campos para registrar las acciones correctivas necesarias.</p>
+
+                    <div id="actionsContainer" class="space-y-6"></div>
+
+                    <button type="button" id="addActionBtn" class="w-full py-3 border-2 border-dashed border-blue-400 rounded-lg text-blue-600 font-medium hover:bg-blue-50 transition mt-4">
+                        <i class="fas fa-plus mr-2"></i> Agregar Acción Correctiva
+                    </button>
+                </div>
+
+                <!-- SECTION 5: FIRMA DIGITAL -->
+                <div class="card">
+                    <div class="section-header">
+                        <i class="fas fa-pen-fancy text-blue-600 mr-3"></i>
+                        Firma Digital y Aprobación
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+                        <p class="text-sm text-gray-700">
+                            <strong>Atención:</strong> Al firmar, usted certifica que ha inspeccionado la máquina/equipo conforme a los estándares de la empresa y que la información proporcionada es correcta y veraz.
+                        </p>
+                    </div>
+
+                    <div class="form-group full">
+                        <label class="form-label required">Firma del Inspector</label>
+                        <div class="border-2 border-gray-300 rounded-lg p-4 bg-white">
+                            <canvas id="signaturePad" class="signature-pad w-full" width="800" height="200"></canvas>
+                        </div>
+                        <div class="flex gap-4 mt-4">
+                            <button type="button" id="clearSignature" class="btn-secondary">
+                                <i class="fas fa-eraser mr-2"></i> Limpiar Firma
+                            </button>
+                            <p class="text-xs text-gray-500 flex items-center">Firma aquí con el ratón o pantalla táctil</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" id="confirmCheckbox" class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                            <span class="text-sm text-gray-700">Confirmo que he revisado toda la información y que es correcta</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="flex gap-4 justify-end mb-8">
+                    <button type="reset" class="btn-secondary">
+                        <i class="fas fa-times mr-2"></i> Cancelar
+                    </button>
+                    <button type="button" id="saveDraftBtn" class="btn-secondary">
+                        <i class="fas fa-save mr-2"></i> Guardar Borrador
+                    </button>
+                    <button type="submit" class="btn-success">
+                        <i class="fas fa-check-circle mr-2"></i> Enviar Inspección
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date and time
+        const today = new Date();
+        document.getElementById('inspectionDate').valueAsDate = today;
+        document.getElementById('inspectionTime').value = new Date().toTimeString().slice(0, 5);
+
+        // Photo upload handling
+        const photoDropZone = document.getElementById('photoDropZone');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreview = document.getElementById('photoPreview');
+
+        photoDropZone.addEventListener('click', () => photoInput.click());
+        photoDropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            photoDropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        photoDropZone.addEventListener('dragleave', () => {
+            photoDropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+        photoDropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            photoDropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            handlePhotos(e.dataTransfer.files);
+        });
+
+        photoInput.addEventListener('change', (e) => {
+            handlePhotos(e.target.files);
+        });
+
+        function handlePhotos(files) {
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const photoItem = document.createElement('div');
+                    photoItem.className = 'photo-item group';
+                    photoItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Foto">
+                        <div class="photo-remove" onclick="this.parentElement.remove()">
+                            <i class="fas fa-trash-alt"></i>
+                        </div>
+                    `;
+                    photoPreview.appendChild(photoItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Signature Pad
+        const canvas = document.getElementById('signaturePad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'white',
+            penColor: '#1e3a8a'
+        });
+
+        document.getElementById('clearSignature').addEventListener('click', () => {
+            signaturePad.clear();
+        });
+
+        // Add corrective action
+        document.getElementById('addActionBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const actionNumber = document.querySelectorAll('#actionsContainer > div').length + 1;
+            const newAction = document.createElement('div');
+            newAction.className = 'border border-gray-300 rounded-lg p-6 bg-gray-50 hover:shadow-md transition';
+            newAction.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-wrench text-blue-600"></i>
+                        Acción Correctiva #${actionNumber}
+                    </h3>
+                    <button type="button" class="text-red-600 hover:text-red-700 transition" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label required">Descripción de la Acción</label>
+                        <textarea placeholder="¿Qué se debe hacer para corregir el problema?" rows="3" class="form-textarea"></textarea>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label class="form-label required">Responsable</label>
+                            <input type="text" placeholder="Nombre y cargo" class="form-input" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Fecha Límite</label>
+                            <input type="date" class="form-input" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Nivel de Criticidad</label>
+                        <select class="form-select">
+                            <option value="alta">🔴 ALTA - Requiere atención inmediata</option>
+                            <option value="media">🟡 MEDIA - Requiere atención en 5 días</option>
+                            <option value="baja">🟢 BAJA - Próximo mantenimiento programado</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            document.getElementById('actionsContainer').appendChild(newAction);
+        });
+
+        // Form submission
+        document.getElementById('inspectionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (!document.getElementById('confirmCheckbox').checked) {
+                alert('⚠️ Debes confirmar que la información es correcta antes de enviar');
+                return;
+            }
+
+            if (signaturePad.isEmpty()) {
+                alert('⚠️ Por favor, firma antes de enviar la inspección');
+                document.querySelector('[href="#"]').click();
+                return;
+            }
+
+            const signatureImage = signaturePad.toDataURL();
+
+            const formData = {
+                inspectionDate: document.getElementById('inspectionDate').value,
+                inspectionTime: document.getElementById('inspectionTime').value,
+                equipment: document.getElementById('equipment').value,
+                location: document.getElementById('location').value,
+                inspector: document.getElementById('inspector').value,
+                supervisor: document.getElementById('supervisor').value,
+                generalDescription: document.getElementById('generalDescription').value,
+                signature: signatureImage,
+                timestamp: new Date().toISOString(),
+                status: 'completada'
+            };
+
+            console.log('✅ Inspección Enviada:', formData);
+
+            // Simulate success
+            alert('✅ ¡Inspección enviada correctamente!\n\nReferencia: INS-' + Date.now());
+
+            // Reset form
+            document.getElementById('inspectionForm').reset();
+            signaturePad.clear();
+            photoPreview.innerHTML = '';
+            document.getElementById('actionsContainer').innerHTML = '';
+        });
+
+        // Save draft
+        document.getElementById('saveDraftBtn').addEventListener('click', () => {
+            const formData = {
+                inspectionDate: document.getElementById('inspectionDate').value,
+                inspectionTime: document.getElementById('inspectionTime').value,
+                equipment: document.getElementById('equipment').value,
+                inspector: document.getElementById('inspector').value,
+                timestamp: new Date().toISOString(),
+                status: 'borrador'
+            };
+
+            console.log('💾 Borrador Guardado:', formData);
+            alert('💾 Borrador guardado correctamente como: BORRADOR-' + Date.now());
+        });
+    </script>
+
+</body>
+</html>

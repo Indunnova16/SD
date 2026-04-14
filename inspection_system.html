@@ -1,0 +1,494 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inspecciones - Control de Máquinas y Equipos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .inspection-page * {
+        color: #000 !important;
+    }
+    .categoria-header {
+        border-left: 4px solid var(--cat-color, #6c757d);
+        padding-left: 0.75rem;
+    }
+    .estado-badge { font-size: 0.75rem; }
+    .table-inspecciones td { vertical-align: middle; }
+    .url-small { font-size: 0.78rem; font-family: monospace; }
+    .stats-mini { font-size: 0.8rem; }
+    .criticidad-alta {
+        background: #dc3545 !important;
+        color: white !important;
+    }
+    .criticidad-media {
+        background: #ffc107 !important;
+        color: #000 !important;
+    }
+    .criticidad-baja {
+        background: #28a745 !important;
+        color: white !important;
+    }
+    .progress-bar-animated {
+        animation: progress-bar-stripes 1s linear infinite;
+    }
+    .card-equipo {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+    }
+    .card-equipo:hover {
+        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+    .badge-estado {
+        font-weight: 600;
+        padding: 0.5rem 0.75rem;
+    }
+    .inspection-timeline {
+        border-left: 3px solid #dee2e6;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+    .inspection-timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    .inspection-timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.875rem;
+        top: 0.5rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 2px solid white;
+    }
+    .inspection-form-section {
+        border-top: 2px solid #dee2e6;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    .field-required::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid inspection-page">
+
+    <!-- Encabezado Principal -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">
+                <i class="fas fa-tools me-2"></i>
+                Inspecciones de Máquinas y Equipos
+            </h1>
+            <p class="text-muted mb-0">Sistema de Control de Calidad - S.D. Salomón Durán S.A.S.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="#" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Nueva Inspección
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Inspecciones Hoy</p>
+                            <h3 class="mb-0">8</h3>
+                        </div>
+                        <i class="fas fa-check-circle text-success" style="font-size:1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Hallazgos Críticos</p>
+                            <h3 class="mb-0" style="color:#dc3545;">2</h3>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size:1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">En Progreso</p>
+                            <h3 class="mb-0">5</h3>
+                        </div>
+                        <i class="fas fa-hourglass-half text-warning" style="font-size:1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Tasa Cumplimiento</p>
+                            <h3 class="mb-0">94.2%</h3>
+                        </div>
+                        <i class="fas fa-chart-pie text-info" style="font-size:1.5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de Búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1">Buscar por máquina o ubicación</label>
+                    <input type="text" name="q" value="" class="form-control form-control-sm" placeholder="Excavadora, Grúa, Compresor...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Tipo de Máquina</label>
+                    <select name="tipo" class="form-select form-select-sm">
+                        <option value="">Todos los tipos</option>
+                        <option value="excav">Excavadoras</option>
+                        <option value="grua">Grúas</option>
+                        <option value="compr">Compresores</option>
+                        <option value="gener">Generadores</option>
+                        <option value="plat">Plataformas</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1">Estado</label>
+                    <select name="estado" class="form-select form-select-sm">
+                        <option value="">Todos los estados</option>
+                        <option value="completada">Completada</option>
+                        <option value="en_proceso">En Proceso</option>
+                        <option value="pendiente">Pendiente</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inspecciones Agrupadas por Semana/Período -->
+    <div class="accordion" id="inspectionsAccordion">
+
+        <!-- Semana Actual -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="true">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    <strong>Semana del 14 al 20 de Abril, 2026</strong>
+                    <span class="ms-auto badge bg-success me-2">8 completadas</span>
+                    <span class="badge bg-warning">5 en proceso</span>
+                </button>
+            </h2>
+            <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#inspectionsAccordion">
+                <div class="accordion-body p-0">
+
+                    <!-- Categoría: Excavadoras -->
+                    <div class="card mb-3 card-equipo">
+                        <div class="card-header py-2" style="background: #f8f9fa;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="categoria-header" style="--cat-color: #0066cc;">
+                                    <span class="fw-bold fs-6">
+                                        <i class="fas fa-digger me-1"></i>
+                                        Excavadoras
+                                    </span>
+                                    <div class="stats-mini">Máquinas pesadas de movimiento de tierra</div>
+                                </div>
+                                <div class="stats-mini text-end">
+                                    <span class="badge bg-success me-1">3 completadas</span>
+                                    <span class="badge bg-warning me-1">2 en proceso</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover table-inspecciones mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:80px">Folio</th>
+                                            <th style="width:200px">Máquina</th>
+                                            <th style="width:150px">Ubicación</th>
+                                            <th style="width:100px">Inspector</th>
+                                            <th style="width:100px">Fecha</th>
+                                            <th style="width:120px">Estado</th>
+                                            <th style="width:80px">Criticidad</th>
+                                            <th style="width:80px">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>INS-2026-001</code></td>
+                                            <td>Excavadora CAT 320</td>
+                                            <td>Área Construcción A</td>
+                                            <td>Juan Pérez</td>
+                                            <td>14/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Completada
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-baja">Baja</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>INS-2026-002</code></td>
+                                            <td>Excavadora VOLVO EC480</td>
+                                            <td>Cantera Norte</td>
+                                            <td>Maria García</td>
+                                            <td>15/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-warning text-dark">
+                                                    <i class="fas fa-hourglass-half me-1"></i>En Proceso
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-alta">Crítica</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>INS-2026-003</code></td>
+                                            <td>Excavadora KOMATSU PC200</td>
+                                            <td>Planta 1</td>
+                                            <td>Carlos López</td>
+                                            <td>16/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Completada
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-baja">Baja</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categoría: Grúas -->
+                    <div class="card mb-3 card-equipo">
+                        <div class="card-header py-2" style="background: #f8f9fa;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="categoria-header" style="--cat-color: #ff6b6b;">
+                                    <span class="fw-bold fs-6">
+                                        <i class="fas fa-arrows me-1"></i>
+                                        Grúas Torre
+                                    </span>
+                                    <div class="stats-mini">Equipos de elevación y movimiento vertical</div>
+                                </div>
+                                <div class="stats-mini text-end">
+                                    <span class="badge bg-success me-1">2 completadas</span>
+                                    <span class="badge bg-warning me-1">1 en proceso</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover table-inspecciones mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:80px">Folio</th>
+                                            <th style="width:200px">Máquina</th>
+                                            <th style="width:150px">Ubicación</th>
+                                            <th style="width:100px">Inspector</th>
+                                            <th style="width:100px">Fecha</th>
+                                            <th style="width:120px">Estado</th>
+                                            <th style="width:80px">Criticidad</th>
+                                            <th style="width:80px">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>INS-2026-004</code></td>
+                                            <td>Grúa Torre 60T</td>
+                                            <td>Área Construcción B</td>
+                                            <td>Juan Pérez</td>
+                                            <td>14/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Completada
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-media">Media</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>INS-2026-005</code></td>
+                                            <td>Grúa Torre 75T</td>
+                                            <td>Zona Industrial</td>
+                                            <td>Carlos López</td>
+                                            <td>16/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-warning text-dark">
+                                                    <i class="fas fa-hourglass-half me-1"></i>En Proceso
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-baja">Baja</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Categoría: Compresores -->
+                    <div class="card card-equipo">
+                        <div class="card-header py-2" style="background: #f8f9fa;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="categoria-header" style="--cat-color: #4ecdc4;">
+                                    <span class="fw-bold fs-6">
+                                        <i class="fas fa-fan me-1"></i>
+                                        Compresores Industriales
+                                    </span>
+                                    <div class="stats-mini">Generadores de aire comprimido de alta presión</div>
+                                </div>
+                                <div class="stats-mini text-end">
+                                    <span class="badge bg-success me-1">2 completadas</span>
+                                    <span class="badge bg-warning me-1">2 en proceso</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover table-inspecciones mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:80px">Folio</th>
+                                            <th style="width:200px">Máquina</th>
+                                            <th style="width:150px">Ubicación</th>
+                                            <th style="width:100px">Inspector</th>
+                                            <th style="width:100px">Fecha</th>
+                                            <th style="width:120px">Estado</th>
+                                            <th style="width:80px">Criticidad</th>
+                                            <th style="width:80px">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>INS-2026-006</code></td>
+                                            <td>Compresor 150HP</td>
+                                            <td>Taller Mantenimiento</td>
+                                            <td>Maria García</td>
+                                            <td>15/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Completada
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-baja">Baja</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><code>INS-2026-007</code></td>
+                                            <td>Compresor 200HP</td>
+                                            <td>Almacén Equipos</td>
+                                            <td>Pedro Ruiz</td>
+                                            <td>17/04/2026</td>
+                                            <td>
+                                                <span class="badge badge-estado bg-warning text-dark">
+                                                    <i class="fas fa-hourglass-half me-1"></i>En Proceso
+                                                </span>
+                                            </td>
+                                            <td><span class="badge criticidad-media">Media</span></td>
+                                            <td>
+                                                <a href="#" class="btn btn-outline-secondary btn-sm" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Semana Anterior -->
+        <div class="accordion-item">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    <strong>Semana del 7 al 13 de Abril, 2026</strong>
+                    <span class="ms-auto badge bg-success me-2">12 completadas</span>
+                </button>
+            </h2>
+            <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#inspectionsAccordion">
+                <div class="accordion-body">
+                    <p class="text-muted mb-0">Todas las inspecciones de esta semana fueron completadas correctamente. Tasa de cumplimiento: 100%</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Animación para el acordeón
+    document.querySelectorAll('.accordion-button').forEach(button => {
+        button.addEventListener('click', function() {
+            this.style.transition = 'all 0.3s ease';
+        });
+    });
+
+    // Función para expandir/colapsar todo
+    function toggleAllAccordions() {
+        const buttons = document.querySelectorAll('.accordion-button');
+        buttons.forEach(button => {
+            const target = document.querySelector(button.getAttribute('data-bs-target'));
+            if (!button.classList.contains('collapsed')) {
+                button.click();
+            }
+        });
+    }
+</script>
+{% endblock %}
