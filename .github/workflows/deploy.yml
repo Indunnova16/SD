@@ -84,14 +84,5 @@ jobs:
             --max-retries 0 --task-timeout 300 --quiet
           gcloud run jobs execute sd-lms-axes-reset --region ${{ env.REGION }} --wait
 
-      - name: Clear Existing Courses
-        run: |
-          gcloud run jobs deploy sd-lms-clear-courses \
-            --image ${{ env.IMAGE }}:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --set-cloudsql-instances ${{ env.CLOUDSQL }} \
-            --set-env-vars "DJANGO_SETTINGS_MODULE=config.settings.cloudrun,DB_NAME=sd_lms,DB_USER=postgres,DB_HOST=/cloudsql/${{ env.CLOUDSQL }}" \
-            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest" \
-            --command "python" --args "manage.py,clear_courses" \
-            --max-retries 0 --task-timeout 300 --quiet
-          gcloud run jobs execute sd-lms-clear-courses --region ${{ env.REGION }} --wait
+      # Disabled: Clear Existing Courses (was deleting data on every deploy)
+      # To clear manually: gcloud run jobs execute sd-lms-clear-courses --region us-central1 --wait
