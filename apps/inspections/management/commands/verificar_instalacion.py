@@ -47,16 +47,21 @@ class Command(BaseCommand):
 
     def _verificar_modelos(self):
         """Verifica que los modelos existan"""
+        import importlib.util
+
         try:
-            # noqa: F401 - imports are used for existence check
-            from apps.inspections.models import (
-                CorrectiveAction,
-                Equipment,
-                EquipmentCategory,
-                Finding,
-                Inspection,
-                InspectionChecklist,
-            )
+            models = [
+                'apps.inspections.models.CorrectiveAction',
+                'apps.inspections.models.Equipment',
+                'apps.inspections.models.EquipmentCategory',
+                'apps.inspections.models.Finding',
+                'apps.inspections.models.Inspection',
+                'apps.inspections.models.InspectionChecklist',
+            ]
+            for model in models:
+                spec = importlib.util.find_spec(model)
+                if spec is None:
+                    raise ImportError(f'Model {model} not found')
 
             return '6 modelos disponibles (Category, Equipment, Inspection, Checklist, Finding, Action)'
         except ImportError as e:
