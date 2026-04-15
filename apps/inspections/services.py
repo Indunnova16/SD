@@ -1,13 +1,14 @@
-"""
-Servicios y lógica de negocio para inspecciones.
+"""Servicios y lógica de negocio para inspecciones.
 
 Incluye operaciones complejas que no pertenecen a las vistas.
 """
 
-from django.utils import timezone
-from django.db.models import Count, Q
 from datetime import timedelta
-from .models import Inspection, Finding, CorrectiveAction
+
+from django.db.models import Count, Q
+from django.utils import timezone
+
+from .models import CorrectiveAction, Equipment, Finding, Inspection
 
 
 class InspectionService:
@@ -160,9 +161,6 @@ class DashboardService:
     @staticmethod
     def get_equipment_stats():
         """Obtiene estadísticas por equipo"""
-        from .models import Equipment
-        from django.db.models import Count
-
         return Equipment.objects.annotate(
             total_inspections=Count('inspections'),
             completed_inspections=Count('inspections', filter=Q(inspections__status='completed')),

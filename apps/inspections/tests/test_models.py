@@ -1,14 +1,16 @@
-"""
-Tests para los modelos de inspecciones.
-"""
+"""Tests para los modelos de inspecciones."""
 
-from django.test import TestCase
-from django.contrib.auth.models import User
-from django.utils import timezone
 from datetime import date
 
+from django.contrib.auth.models import User
+from django.test import TestCase
+
 from apps.inspections.models import (
-    EquipmentCategory, Equipment, Inspection, InspectionChecklist, Finding, CorrectiveAction
+    CorrectiveAction,
+    Equipment,
+    EquipmentCategory,
+    Finding,
+    Inspection,
 )
 
 

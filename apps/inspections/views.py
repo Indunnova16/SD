@@ -1,20 +1,23 @@
-"""
-Vistas para el sistema de inspecciones.
+"""Vistas para el sistema de inspecciones.
 
 Incluye listados, detalles, formularios de inspección y dashboards.
 """
 
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
-from django.db.models import Q, Count
-from django.utils import timezone
-from datetime import timedelta
+from django.views.generic import CreateView, DetailView, ListView
 
-from .models import Inspection, Equipment, EquipmentCategory, Finding, CorrectiveAction
-from .forms import InspectionForm, FindingForm, CorrectiveActionForm
+from .forms import CorrectiveActionForm, FindingForm, InspectionForm
+from .models import (
+    CorrectiveAction,
+    Equipment,
+    EquipmentCategory,
+    Finding,
+    Inspection,
+)
 
 
 @login_required
@@ -31,7 +34,6 @@ def dashboard(request):
 
     # Agrupar por semana
     from django.db.models.functions import TruncWeek
-    from django.db.models import Max
 
     inspections_by_week = (
         Inspection.objects

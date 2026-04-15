@@ -1,13 +1,13 @@
-"""
-Comando para verificar que la instalación del módulo de inspecciones sea correcta.
+"""Comando para verificar que la instalación del módulo de inspecciones sea correcta.
 
 Uso:
     python manage.py verificar_instalacion
 """
 
-from django.core.management.base import BaseCommand
 from django.apps import apps
-from apps.inspections.models import EquipmentCategory, Equipment, Inspection
+from django.core.management.base import BaseCommand
+
+from apps.inspections.models import Equipment, EquipmentCategory, Inspection
 
 
 class Command(BaseCommand):
@@ -48,10 +48,16 @@ class Command(BaseCommand):
     def _verificar_modelos(self):
         """Verifica que los modelos existan"""
         try:
+            # noqa: F401 - imports are used for existence check
             from apps.inspections.models import (
-                EquipmentCategory, Equipment, Inspection,
-                InspectionChecklist, Finding, CorrectiveAction
+                CorrectiveAction,
+                Equipment,
+                EquipmentCategory,
+                Finding,
+                Inspection,
+                InspectionChecklist,
             )
+
             return '6 modelos disponibles (Category, Equipment, Inspection, Checklist, Finding, Action)'
         except ImportError as e:
             raise Exception(f'Error importando modelos: {str(e)}')

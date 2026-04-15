@@ -1,9 +1,15 @@
-"""
-Configuración del panel de administración para inspecciones.
-"""
+"""Configuración del panel de administración para inspecciones."""
 
 from django.contrib import admin
-from .models import EquipmentCategory, Equipment, Inspection, InspectionChecklist, Finding, CorrectiveAction
+
+from .models import (
+    CorrectiveAction,
+    Equipment,
+    EquipmentCategory,
+    Finding,
+    Inspection,
+    InspectionChecklist,
+)
 
 
 @admin.register(EquipmentCategory)

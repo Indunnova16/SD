@@ -1,14 +1,14 @@
-"""
-Comando para cargar equipos del sector energético (transmisión eléctrica).
+"""Comando para cargar equipos del sector energético (transmisión eléctrica).
 
 Uso:
     python manage.py cargar_equipos_energeticos
 """
 
+from datetime import date
+
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-from datetime import date, timedelta
-from apps.inspections.models import EquipmentCategory, Equipment
+
+from apps.inspections.models import Equipment, EquipmentCategory
 
 
 class Command(BaseCommand):

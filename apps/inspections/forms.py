@@ -1,10 +1,8 @@
-"""
-Formularios para el sistema de inspecciones.
-"""
+"""Formularios para el sistema de inspecciones."""
 
 from django import forms
-from django.utils import timezone
-from .models import Inspection, InspectionChecklist, Finding, CorrectiveAction
+
+from .models import CorrectiveAction, Finding, Inspection, InspectionChecklist
 
 
 class InspectionForm(forms.ModelForm):

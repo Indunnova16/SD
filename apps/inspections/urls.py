@@ -1,8 +1,7 @@
-"""
-URLs para el módulo de inspecciones.
-"""
+"""URLs para el módulo de inspecciones."""
 
 from django.urls import path
+
 from . import views
 
 app_name = 'inspections'
