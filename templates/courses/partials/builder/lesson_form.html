@@ -122,6 +122,75 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                   rows="4"
                   placeholder="Contenido de texto o HTML">{% if not is_new %}{{ lesson.content }}{% endif %}</textarea>
     </div>
+
+    <!-- SCORM Configuration -->
+    <div class="form-control mt-2 conditional-field" data-show-for="scorm" style="display:none;">
+        <label class="label py-1">
+            <span class="label-text text-xs">Configuración SCORM</span>
+        </label>
+        <div class="space-y-2">
+            <div class="form-control">
+                <label class="label py-0">
+                    <span class="label-text text-xs">Versión SCORM</span>
+                </label>
+                <select name="scorm_version" class="select select-bordered select-sm w-full">
+                    <option value="1.2">SCORM 1.2</option>
+                    <option value="2004">SCORM 2004</option>
+                </select>
+            </div>
+            <div class="form-control">
+                <label class="label py-0">
+                    <span class="label-text text-xs">URL Base SCORM (opcional)</span>
+                </label>
+                <input type="url"
+                       name="scorm_url"
+                       class="input input-bordered input-sm w-full"
+                       placeholder="https://cdn.ejemplo.com/scorm/">
+            </div>
+            <div class="form-control">
+                <label class="label py-0">
+                    <span class="label-text text-xs">Nota: El archivo debe ser un .zip válido que contenga imsmanifest.xml</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Content -->
+    <div class="form-control mt-2 conditional-field" data-show-for="interactive" style="display:none;">
+        <label class="label py-1">
+            <span class="label-text text-xs">Contenido Interactivo</span>
+        </label>
+        <div class="space-y-2">
+            <div class="form-control">
+                <label class="label py-0">
+                    <span class="label-text text-xs">URL del Contenido Interactivo</span>
+                </label>
+                <input type="url"
+                       name="interactive_url"
+                       class="input input-bordered input-sm w-full"
+                       placeholder="https://ejemplo.com/contenido-interactivo"
+                       value="{% if not is_new %}{{ lesson.video_url }}{% endif %}">
+            </div>
+            <div class="form-control">
+                <label class="label py-0">
+                    <span class="label-text text-xs">Código Embed / iframe (opcional)</span>
+                </label>
+                <textarea name="interactive_code"
+                          class="textarea textarea-bordered textarea-sm w-full"
+                          rows="3"
+                          placeholder="&lt;iframe src=&quot;...&quot;&gt;&lt;/iframe&gt;
+o código embed HTML">{% if not is_new %}{{ lesson.content }}{% endif %}</textarea>
+            </div>
+            <div class="form-control">
+                <label class="label py-1 cursor-pointer justify-start gap-2">
+                    <input type="checkbox"
+                           name="interactive_fullscreen"
+                           class="checkbox checkbox-primary checkbox-sm">
+                    <span class="label-text text-xs">Permitir pantalla completa</span>
+                </label>
+            </div>
+        </div>
+    </div>
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
@@ -562,5 +631,49 @@ if (form) {
     if (select) {
         select.addEventListener('change', updateConditionalFields);
     }
+
+    // Map SCORM and Interactive fields to appropriate model fields before submission
+    form.addEventListener('submit', function(e) {
+        const lessonType = form.querySelector('select[name="lesson_type"]').value;
+
+        if (lessonType === 'scorm') {
+            // Store SCORM config in hidden fields
+            const scormVersion = form.querySelector('select[name="scorm_version"]')?.value || '1.2';
+            const scormUrl = form.querySelector('input[name="scorm_url"]')?.value || '';
+            // Store in content field as JSON metadata
+            const metadata = {
+                scorm_version: scormVersion,
+                scorm_url: scormUrl
+            };
+            const hiddenField = form.querySelector('input[name="content_file"]');
+            if (hiddenField && hiddenField.files.length === 0) {
+                // Show warning if no file uploaded
+                if (!confirm('¿Seguro que deseas continuar sin archivo SCORM?')) {
+                    e.preventDefault();
+                }
+            }
+        } else if (lessonType === 'interactive') {
+            // Map interactive fields
+            const interactiveUrl = form.querySelector('input[name="interactive_url"]')?.value;
+            const interactiveCode = form.querySelector('textarea[name="interactive_code"]')?.value;
+            const allowFullscreen = form.querySelector('input[name="interactive_fullscreen"]')?.checked;
+
+            // Store URL in video_url field
+            if (interactiveUrl) {
+                const videoUrlInput = form.querySelector('input[name="video_url"]');
+                if (videoUrlInput) {
+                    videoUrlInput.value = interactiveUrl;
+                }
+            }
+
+            // Store code in content field
+            if (interactiveCode) {
+                const contentInput = form.querySelector('textarea[name="content"]');
+                if (contentInput) {
+                    contentInput.value = interactiveCode;
+                }
+            }
+        }
+    });
 }
 </script>
