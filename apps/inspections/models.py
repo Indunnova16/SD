@@ -7,7 +7,7 @@ Incluye:
 - Firmas digitales
 """
 
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
@@ -70,7 +70,10 @@ class Inspection(models.Model):
     folio = models.CharField(max_length=50, unique=True)
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name="inspections")
     inspector = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="inspections_conducted"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="inspections_conducted",
     )
     inspection_date = models.DateTimeField(default=timezone.now)
     scheduled_date = models.DateField()
@@ -172,7 +175,10 @@ class CorrectiveAction(models.Model):
     )
     description = models.TextField()
     responsible = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="corrective_actions"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="corrective_actions",
     )
     due_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
