@@ -201,7 +201,9 @@ CACHES = {
 # Session configuration
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-SESSION_COOKIE_AGE = 2592000  # 30 days (increased from 24 hours to prevent session loss when creating courses)
+SESSION_COOKIE_AGE = (
+    2592000  # 30 days (increased from 24 hours to prevent session loss when creating courses)
+)
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = True  # Refresh session on every request to prevent silent expiry
