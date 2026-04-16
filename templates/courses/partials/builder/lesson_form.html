@@ -125,267 +125,12 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
-    <div class="mt-3 conditional-field" data-show-for="quiz" style="display:none;">
+    <div class="mt-3 conditional-field" data-show-for="quiz" style="display:none;" id="quizBuilder">
         <input type="hidden"
                name="quiz_questions"
-               :value="JSON.stringify(questions)">
-        <div class="border border-purple-300 rounded-lg overflow-hidden">
-            <!-- Header -->
-            <div class="bg-purple-100 px-3 py-2 flex items-center justify-between">
-                <h6 class="text-xs font-semibold text-purple-700 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-3.5 w-3.5"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                    Constructor de Quiz
-                </h6>
-                <span class="badge badge-sm badge-primary"
-                      x-text="questions.length + ' pregunta(s)'"></span>
-            </div>
-            <div class="p-3 space-y-2">
-                <!-- List of added questions -->
-                <template x-for="(q, qi) in questions" :key="qi">
-                    <div class="flex items-center gap-2 bg-base-200 p-2 rounded-lg">
-                        <span class="badge badge-sm badge-ghost font-mono" x-text="qi + 1"></span>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-medium truncate" x-text="q.text"></p>
-                            <span class="text-[10px] text-gray-400"
-                                  x-text="questionTypeLabel(q.type) + ' &middot; ' + q.points + ' pts'"></span>
-                        </div>
-                        <button type="button"
-                                @click="editQuestion(qi)"
-                                class="btn btn-ghost btn-xs"
-                                title="Editar">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-3 w-3"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
-                        <button type="button"
-                                @click="removeQuestion(qi)"
-                                class="btn btn-ghost btn-xs text-error"
-                                title="Eliminar">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-3 w-3"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                </template>
-                <!-- Empty state -->
-                <div x-show="questions.length === 0 && !showQuestionForm"
-                     class="text-center py-6 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-8 w-8 mx-auto mb-2 text-purple-300"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-xs">Agrega preguntas a tu quiz</p>
-                </div>
-                <!-- ==================== -->
-                <!-- Question Form -->
-                <!-- ==================== -->
-                <div x-show="showQuestionForm"
-                     x-transition
-                     class="bg-white border border-base-300 rounded-lg p-3 space-y-3">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                        <div class="form-control">
-                            <label class="label py-0">
-                                <span class="label-text text-xs">Tipo de pregunta</span>
-                            </label>
-                            <select x-model="qType"
-                                    class="select select-bordered select-xs w-full"
-                                    @change="if(qType==='true_false'){qAnswers=[];qMatchPairs=[];} else if(qType==='matching'){qAnswers=[];if(qMatchPairs.length<2)qMatchPairs=[{left:'',right:''},{left:'',right:''}];} else {qMatchPairs=[];if(qAnswers.length<2)qAnswers=[{text:'',is_correct:false},{text:'',is_correct:false}];}">
-                                <option value="single_choice">Seleccion unica</option>
-                                <option value="multiple_choice">Seleccion multiple</option>
-                                <option value="true_false">Verdadero / Falso</option>
-                                <option value="matching">Emparejamiento</option>
-                            </select>
-                        </div>
-                        <div class="form-control">
-                            <label class="label py-0">
-                                <span class="label-text text-xs">Puntos</span>
-                            </label>
-                            <input type="number"
-                                   x-model.number="qPoints"
-                                   min="1"
-                                   max="100"
-                                   class="input input-bordered input-xs w-full">
-                        </div>
-                        <div></div>
-                    </div>
-                    <!-- Question Text -->
-                    <div class="form-control">
-                        <label class="label py-0">
-                            <span class="label-text text-xs">Pregunta <span class="text-error">*</span></span>
-                        </label>
-                        <textarea x-model="qText"
-                                  rows="2"
-                                  class="textarea textarea-bordered textarea-xs w-full"
-                                  placeholder="Escribe la pregunta..."></textarea>
-                    </div>
-                    <!-- SINGLE / MULTIPLE CHOICE -->
-                    <div x-show="qType === 'single_choice' || qType === 'multiple_choice'">
-                        <label class="label py-0">
-                            <span class="label-text text-xs">Opciones de respuesta</span>
-                        </label>
-                        <div class="space-y-1 mt-1">
-                            <template x-for="(answer, ai) in qAnswers" :key="ai">
-                                <div class="flex items-center gap-2">
-                                    <template x-if="qType === 'single_choice'">
-                                        <input type="radio"
-                                               :name="'qcorrect'"
-                                               :checked="answer.is_correct"
-                                               class="radio radio-primary radio-xs"
-                                               @change="setSingleCorrect(ai)">
-                                    </template>
-                                    <template x-if="qType === 'multiple_choice'">
-                                        <input type="checkbox"
-                                               :checked="answer.is_correct"
-                                               class="checkbox checkbox-primary checkbox-xs"
-                                               @change="answer.is_correct = $el.checked">
-                                    </template>
-                                    <input type="text"
-                                           x-model="answer.text"
-                                           class="input input-bordered input-xs flex-1"
-                                           :placeholder="'Opcion ' + (ai + 1)">
-                                    <button type="button"
-                                            class="btn btn-ghost btn-xs text-error"
-                                            @click="removeAnswer(ai)"
-                                            x-show="qAnswers.length > 2">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="h-3 w-3"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                        <button type="button" class="btn btn-ghost btn-xs mt-1" @click="addAnswer()">+ Agregar opcion</button>
-                        <p class="text-[10px] text-gray-400" x-show="qType === 'single_choice'">
-                            Selecciona el radio de la respuesta correcta.
-                        </p>
-                        <p class="text-[10px] text-gray-400"
-                           x-show="qType === 'multiple_choice'">Marca las casillas de las respuestas correctas.</p>
-                    </div>
-                    <!-- TRUE / FALSE -->
-                    <div x-show="qType === 'true_false'">
-                        <label class="label py-0">
-                            <span class="label-text text-xs">Respuesta correcta</span>
-                        </label>
-                        <div class="flex gap-4 mt-1">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       value="true"
-                                       x-model="qTrueFalseCorrect"
-                                       class="radio radio-primary radio-xs">
-                                <span class="text-sm">Verdadero</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio"
-                                       value="false"
-                                       x-model="qTrueFalseCorrect"
-                                       class="radio radio-primary radio-xs">
-                                <span class="text-sm">Falso</span>
-                            </label>
-                        </div>
-                    </div>
-                    <!-- MATCHING -->
-                    <div x-show="qType === 'matching'">
-                        <label class="label py-0">
-                            <span class="label-text text-xs">Pares de emparejamiento</span>
-                        </label>
-                        <div class="space-y-1 mt-1">
-                            <div class="grid grid-cols-2 gap-2 text-[10px] font-semibold text-gray-500 px-1">
-                                <span>Elemento</span>
-                                <span>Coincidencia</span>
-                            </div>
-                            <template x-for="(pair, pi) in qMatchPairs" :key="pi">
-                                <div class="flex items-center gap-2">
-                                    <input type="text"
-                                           x-model="pair.left"
-                                           class="input input-bordered input-xs flex-1"
-                                           :placeholder="'Elemento ' + (pi + 1)">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-3 w-3 text-gray-400 flex-shrink-0"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                    </svg>
-                                    <input type="text"
-                                           x-model="pair.right"
-                                           class="input input-bordered input-xs flex-1"
-                                           :placeholder="'Coincidencia ' + (pi + 1)">
-                                    <button type="button"
-                                            class="btn btn-ghost btn-xs text-error"
-                                            @click="removeMatchPair(pi)"
-                                            x-show="qMatchPairs.length > 2">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="h-3 w-3"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </template>
-                        </div>
-                        <button type="button"
-                                class="btn btn-ghost btn-xs mt-1"
-                                @click="addMatchPair()">+ Agregar par</button>
-                    </div>
-                    <!-- Explanation -->
-                    <div class="form-control">
-                        <label class="label py-0">
-                            <span class="label-text text-xs">Explicacion (opcional)</span>
-                        </label>
-                        <input type="text"
-                               x-model="qExplanation"
-                               class="input input-bordered input-xs w-full"
-                               placeholder="Explicacion de la respuesta correcta...">
-                    </div>
-                    <!-- Question form actions -->
-                    <div class="flex gap-2 justify-end">
-                        <button type="button"
-                                class="btn btn-ghost btn-xs"
-                                @click="resetQuestionForm(); showQuestionForm = false;">Cancelar</button>
-                        <button type="button" class="btn btn-primary btn-xs" @click="saveQuestion()">
-                            <span x-text="editingIndex >= 0 ? 'Guardar Cambios' : 'Agregar Pregunta'"></span>
-                        </button>
-                    </div>
-                </div>
-                <!-- Add question button -->
-                <button type="button"
-                        x-show="!showQuestionForm"
-                        @click="resetQuestionForm(); showQuestionForm = true;"
-                        class="btn btn-outline btn-primary btn-xs w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="h-3 w-3"
-                         fill="none"
-                         viewBox="0 0 24 24"
-                         stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Agregar Pregunta
-                </button>
-            </div>
-        </div>
+               id="quizQuestionsInput"
+               value="[]">
+        <!-- Quiz Builder será generado por JavaScript -->
     </div>
     <!-- Actions -->
     <div class="flex gap-2 justify-end mt-3">
@@ -411,6 +156,378 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 </form>
 <script nonce="{{ request.csp_nonce }}">
+// ============================================
+// QUIZ BUILDER - Vanilla JavaScript
+// ============================================
+
+const QuizBuilder = {
+    questions: [],
+    editingIndex: -1,
+    currentForm: null,
+
+    init() {
+        this.currentForm = document.querySelector('form[x-data]');
+        if (!this.currentForm) return;
+
+        this.setupQuizUI();
+        this.loadQuestionsFromInput();
+    },
+
+    setupQuizUI() {
+        const quizBuilder = document.getElementById('quizBuilder');
+        if (!quizBuilder) return;
+
+        // Clear existing content
+        const oldForm = quizBuilder.querySelector('.quiz-form');
+        if (oldForm) oldForm.remove();
+        const oldList = quizBuilder.querySelector('.quiz-list');
+        if (oldList) oldList.remove();
+
+        // Create questions list
+        const listDiv = document.createElement('div');
+        listDiv.className = 'quiz-list space-y-2 mb-4';
+        quizBuilder.appendChild(listDiv);
+
+        // Create question form
+        const formDiv = document.createElement('div');
+        formDiv.className = 'quiz-form hidden bg-white border border-base-300 rounded-lg p-3 space-y-3';
+        formDiv.innerHTML = this.getQuestionFormHTML();
+        quizBuilder.appendChild(formDiv);
+
+        // Create add button
+        const btnDiv = document.createElement('div');
+        btnDiv.className = 'mt-3';
+        btnDiv.innerHTML = `
+            <button type="button" id="quizAddBtn" class="btn btn-outline btn-primary btn-xs w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Agregar Pregunta
+            </button>
+        `;
+        quizBuilder.appendChild(btnDiv);
+
+        // Attach event listeners
+        document.getElementById('quizAddBtn').addEventListener('click', () => this.showForm());
+        this.setupFormListeners();
+        this.renderQuestions();
+    },
+
+    getQuestionFormHTML() {
+        return `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="form-control">
+                    <label class="label py-0"><span class="label-text text-xs">Tipo de pregunta</span></label>
+                    <select id="qType" class="select select-bordered select-xs w-full">
+                        <option value="single_choice">Selección única</option>
+                        <option value="multiple_choice">Selección múltiple</option>
+                        <option value="true_false">Verdadero/Falso</option>
+                        <option value="matching">Emparejamiento</option>
+                        <option value="open">Respuesta abierta</option>
+                    </select>
+                </div>
+                <div class="form-control">
+                    <label class="label py-0"><span class="label-text text-xs">Puntos</span></label>
+                    <input type="number" id="qPoints" min="1" max="100" value="1" class="input input-bordered input-xs w-full">
+                </div>
+            </div>
+
+            <div class="form-control">
+                <label class="label py-0"><span class="label-text text-xs">Pregunta <span class="text-error">*</span></span></label>
+                <textarea id="qText" rows="2" class="textarea textarea-bordered textarea-xs w-full" placeholder="Escribe la pregunta..."></textarea>
+            </div>
+
+            <!-- SINGLE/MULTIPLE CHOICE -->
+            <div id="answersSection" class="hidden">
+                <label class="label py-0"><span class="label-text text-xs">Opciones de respuesta</span></label>
+                <div class="space-y-1 mt-1" id="answersList"></div>
+                <button type="button" id="addAnswerBtn" class="btn btn-ghost btn-xs mt-1">+ Agregar opción</button>
+            </div>
+
+            <!-- TRUE/FALSE -->
+            <div id="trueFalseSection" class="hidden">
+                <label class="label py-0"><span class="label-text text-xs">Respuesta correcta</span></label>
+                <div class="flex gap-4 mt-1">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="tfCorrect" value="true" class="radio radio-primary radio-xs">
+                        <span class="text-sm">Verdadero</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="tfCorrect" value="false" class="radio radio-primary radio-xs">
+                        <span class="text-sm">Falso</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- MATCHING -->
+            <div id="matchingSection" class="hidden">
+                <label class="label py-0"><span class="label-text text-xs">Pares de emparejamiento</span></label>
+                <div id="matchingList" class="space-y-1 mt-1"></div>
+                <button type="button" id="addMatchBtn" class="btn btn-ghost btn-xs mt-1">+ Agregar par</button>
+            </div>
+
+            <div class="form-control">
+                <label class="label py-0"><span class="label-text text-xs">Explicación (opcional)</span></label>
+                <input type="text" id="qExplanation" class="input input-bordered input-xs w-full" placeholder="Explicación de la respuesta...">
+            </div>
+
+            <div class="flex gap-2 justify-end">
+                <button type="button" id="qCancelBtn" class="btn btn-ghost btn-xs">Cancelar</button>
+                <button type="button" id="qSaveBtn" class="btn btn-primary btn-xs">Agregar Pregunta</button>
+            </div>
+        `;
+    },
+
+    setupFormListeners() {
+        const typeSelect = document.getElementById('qType');
+        typeSelect.addEventListener('change', () => this.updateFormSections());
+
+        document.getElementById('addAnswerBtn').addEventListener('click', () => this.addAnswer());
+        document.getElementById('addMatchBtn').addEventListener('click', () => this.addMatch());
+        document.getElementById('qSaveBtn').addEventListener('click', () => this.saveQuestion());
+        document.getElementById('qCancelBtn').addEventListener('click', () => this.hideForm());
+
+        this.updateFormSections();
+    },
+
+    updateFormSections() {
+        const type = document.getElementById('qType').value;
+        document.getElementById('answersSection').classList.toggle('hidden', !['single_choice', 'multiple_choice'].includes(type));
+        document.getElementById('trueFalseSection').classList.toggle('hidden', type !== 'true_false');
+        document.getElementById('matchingSection').classList.toggle('hidden', type !== 'matching');
+
+        if (['single_choice', 'multiple_choice'].includes(type)) {
+            this.renderAnswers();
+        } else if (type === 'matching') {
+            this.renderMatches();
+        }
+    },
+
+    showForm() {
+        this.editingIndex = -1;
+        this.resetForm();
+        document.querySelector('.quiz-form').classList.remove('hidden');
+        document.getElementById('quizAddBtn').classList.add('hidden');
+    },
+
+    hideForm() {
+        document.querySelector('.quiz-form').classList.add('hidden');
+        document.getElementById('quizAddBtn').classList.remove('hidden');
+        this.resetForm();
+    },
+
+    resetForm() {
+        document.getElementById('qType').value = 'single_choice';
+        document.getElementById('qText').value = '';
+        document.getElementById('qPoints').value = '1';
+        document.getElementById('qExplanation').value = '';
+        this.tempAnswers = [{text: '', is_correct: false}, {text: '', is_correct: false}];
+        this.tempMatches = [{left: '', right: ''}, {left: '', right: ''}];
+        this.updateFormSections();
+    },
+
+    addAnswer() {
+        this.tempAnswers.push({text: '', is_correct: false});
+        this.renderAnswers();
+    },
+
+    renderAnswers() {
+        const list = document.getElementById('answersList');
+        list.innerHTML = '';
+        this.tempAnswers.forEach((ans, i) => {
+            const type = document.getElementById('qType').value;
+            const inputType = type === 'single_choice' ? 'radio' : 'checkbox';
+            const inputName = type === 'single_choice' ? `tfCorrect_${i}` : `check_${i}`;
+            list.innerHTML += `
+                <div class="flex items-center gap-2">
+                    <input type="${inputType}" ${inputName} ${ans.is_correct ? 'checked' : ''} class="ans-check" data-idx="${i}">
+                    <input type="text" value="${ans.text}" class="input input-bordered input-xs flex-1 ans-text" data-idx="${i}" placeholder="Opción ${i+1}">
+                    ${this.tempAnswers.length > 2 ? `<button type="button" class="btn btn-ghost btn-xs text-error ans-del" data-idx="${i}">✕</button>` : ''}
+                </div>
+            `;
+        });
+
+        // Attach listeners
+        document.querySelectorAll('.ans-check').forEach(el => {
+            el.addEventListener('change', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                if (document.getElementById('qType').value === 'single_choice') {
+                    this.tempAnswers.forEach((a, i) => a.is_correct = i === idx);
+                } else {
+                    this.tempAnswers[idx].is_correct = e.target.checked;
+                }
+            });
+        });
+
+        document.querySelectorAll('.ans-text').forEach(el => {
+            el.addEventListener('input', (e) => {
+                this.tempAnswers[parseInt(e.target.dataset.idx)].text = e.target.value;
+            });
+        });
+
+        document.querySelectorAll('.ans-del').forEach(el => {
+            el.addEventListener('click', (e) => {
+                this.tempAnswers.splice(parseInt(e.target.dataset.idx), 1);
+                this.renderAnswers();
+            });
+        });
+    },
+
+    addMatch() {
+        this.tempMatches.push({left: '', right: ''});
+        this.renderMatches();
+    },
+
+    renderMatches() {
+        const list = document.getElementById('matchingList');
+        list.innerHTML = '';
+        this.tempMatches.forEach((m, i) => {
+            list.innerHTML += `
+                <div class="flex items-center gap-2">
+                    <input type="text" value="${m.left}" class="input input-bordered input-xs flex-1 match-left" data-idx="${i}" placeholder="Elemento ${i+1}">
+                    <svg class="h-3 w-3 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    <input type="text" value="${m.right}" class="input input-bordered input-xs flex-1 match-right" data-idx="${i}" placeholder="Coincidencia ${i+1}">
+                    ${this.tempMatches.length > 2 ? `<button type="button" class="btn btn-ghost btn-xs text-error match-del" data-idx="${i}">✕</button>` : ''}
+                </div>
+            `;
+        });
+
+        document.querySelectorAll('.match-left').forEach(el => {
+            el.addEventListener('input', (e) => {
+                this.tempMatches[parseInt(e.target.dataset.idx)].left = e.target.value;
+            });
+        });
+
+        document.querySelectorAll('.match-right').forEach(el => {
+            el.addEventListener('input', (e) => {
+                this.tempMatches[parseInt(e.target.dataset.idx)].right = e.target.value;
+            });
+        });
+
+        document.querySelectorAll('.match-del').forEach(el => {
+            el.addEventListener('click', (e) => {
+                this.tempMatches.splice(parseInt(e.target.dataset.idx), 1);
+                this.renderMatches();
+            });
+        });
+    },
+
+    saveQuestion() {
+        const text = document.getElementById('qText').value.trim();
+        if (!text) {
+            alert('Por favor escribe la pregunta');
+            return;
+        }
+
+        const question = {
+            type: document.getElementById('qType').value,
+            text: text,
+            points: parseInt(document.getElementById('qPoints').value),
+            explanation: document.getElementById('qExplanation').value
+        };
+
+        if (['single_choice', 'multiple_choice'].includes(question.type)) {
+            question.answers = this.tempAnswers.filter(a => a.text.trim());
+        } else if (question.type === 'true_false') {
+            question.truefalse_correct = document.querySelector('input[name="tfCorrect"]:checked')?.value === 'true';
+        } else if (question.type === 'matching') {
+            question.pairs = this.tempMatches.filter(m => m.left.trim() && m.right.trim());
+        }
+
+        if (this.editingIndex >= 0) {
+            this.questions[this.editingIndex] = question;
+        } else {
+            this.questions.push(question);
+        }
+
+        this.saveQuestionsToInput();
+        this.renderQuestions();
+        this.hideForm();
+    },
+
+    renderQuestions() {
+        const list = document.querySelector('.quiz-list');
+        list.innerHTML = '';
+
+        if (this.questions.length === 0) {
+            list.innerHTML = '<p class="text-center py-4 text-gray-400">Agrega preguntas a tu quiz</p>';
+            return;
+        }
+
+        this.questions.forEach((q, i) => {
+            const typeLabel = {
+                'single_choice': 'Sel. única',
+                'multiple_choice': 'Sel. múltiple',
+                'true_false': 'V/F',
+                'matching': 'Emparejamiento',
+                'open': 'Abierta'
+            }[q.type] || q.type;
+
+            list.innerHTML += `
+                <div class="flex items-center gap-2 bg-base-200 p-2 rounded-lg">
+                    <span class="badge badge-sm badge-ghost">${i+1}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-medium truncate">${q.text}</p>
+                        <span class="text-[10px] text-gray-400">${typeLabel} • ${q.points} pts</span>
+                    </div>
+                    <button type="button" class="btn btn-ghost btn-xs q-edit" data-idx="${i}" title="Editar">✎</button>
+                    <button type="button" class="btn btn-ghost btn-xs text-error q-del" data-idx="${i}" title="Eliminar">✕</button>
+                </div>
+            `;
+        });
+
+        document.querySelectorAll('.q-edit').forEach(el => {
+            el.addEventListener('click', (e) => this.editQuestion(parseInt(e.target.dataset.idx)));
+        });
+
+        document.querySelectorAll('.q-del').forEach(el => {
+            el.addEventListener('click', (e) => {
+                this.questions.splice(parseInt(e.target.dataset.idx), 1);
+                this.saveQuestionsToInput();
+                this.renderQuestions();
+            });
+        });
+    },
+
+    editQuestion(index) {
+        this.editingIndex = index;
+        const q = this.questions[index];
+        document.getElementById('qType').value = q.type;
+        document.getElementById('qText').value = q.text;
+        document.getElementById('qPoints').value = q.points;
+        document.getElementById('qExplanation').value = q.explanation || '';
+
+        if (q.answers) this.tempAnswers = JSON.parse(JSON.stringify(q.answers));
+        if (q.pairs) this.tempMatches = JSON.parse(JSON.stringify(q.pairs));
+        if (q.truefalse_correct !== undefined) {
+            document.querySelector(`input[name="tfCorrect"][value="${q.truefalse_correct}"]`).checked = true;
+        }
+
+        document.querySelector('.quiz-form').classList.remove('hidden');
+        document.getElementById('quizAddBtn').classList.add('hidden');
+        this.updateFormSections();
+        document.getElementById('qSaveBtn').textContent = 'Guardar Cambios';
+    },
+
+    saveQuestionsToInput() {
+        document.getElementById('quizQuestionsInput').value = JSON.stringify(this.questions);
+    },
+
+    loadQuestionsFromInput() {
+        const input = document.getElementById('quizQuestionsInput');
+        try {
+            this.questions = JSON.parse(input.value || '[]');
+        } catch {
+            this.questions = [];
+        }
+        this.tempAnswers = [{text: '', is_correct: false}, {text: '', is_correct: false}];
+        this.tempMatches = [{left: '', right: ''}, {left: '', right: ''}];
+    }
+};
+
+// ============================================
+// CONDITIONAL FIELDS
+// ============================================
 function updateConditionalFields() {
     const form = document.querySelector('form[x-data]');
     if (!form) return;
@@ -428,6 +545,11 @@ function updateConditionalFields() {
             field.style.display = types.includes(selectedType) ? 'block' : 'none';
         }
     });
+
+    // Initialize quiz builder if quiz type is selected
+    if (selectedType === 'quiz') {
+        setTimeout(() => QuizBuilder.init(), 100);
+    }
 }
 
 // Initialize on load and when type changes
