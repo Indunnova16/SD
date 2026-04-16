@@ -46,47 +46,49 @@
         </div>
     </div>
 </div>
-
 {% if active %}
-<h3 class="text-lg font-semibold mb-3">Desafíos Activos</h3>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    {% for uc in active %}
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h4 class="card-title text-base">{{ uc.challenge.name }}</h4>
-            <div class="flex items-center gap-2 mt-2">
-                <progress class="progress progress-primary flex-1" value="{{ uc.progress_percentage|default:0 }}" max="100"></progress>
-                <span class="text-sm font-medium text-base-content/70">{{ uc.current_value }}/{{ uc.challenge.target_value }}</span>
+    <h3 class="text-lg font-semibold mb-3">Desafíos Activos</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {% for uc in active %}
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h4 class="card-title text-base">{{ uc.challenge.name }}</h4>
+                    <div class="flex items-center gap-2 mt-2">
+                        <progress class="progress progress-primary flex-1"
+                                  value="{{ uc.progress_percentage|default:0 }}"
+                                  max="100"></progress>
+                        <span class="text-sm font-medium text-base-content/70">{{ uc.current_value }}/{{ uc.challenge.target_value }}</span>
+                    </div>
+                </div>
             </div>
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endif %}
-
 {% if completed %}
-<h3 class="text-lg font-semibold mb-3">Desafíos Completados</h3>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {% for uc in completed %}
-    <div class="card bg-base-100 shadow border-l-4 border-success">
-        <div class="card-body">
-            <div class="flex items-center justify-between">
-                <h4 class="card-title text-base">{{ uc.challenge.name }}</h4>
-                <span class="badge badge-success">Completado</span>
+    <h3 class="text-lg font-semibold mb-3">Desafíos Completados</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for uc in completed %}
+            <div class="card bg-base-100 shadow border-l-4 border-success">
+                <div class="card-body">
+                    <div class="flex items-center justify-between">
+                        <h4 class="card-title text-base">{{ uc.challenge.name }}</h4>
+                        <span class="badge badge-success">Completado</span>
+                    </div>
+                    <p class="text-sm text-base-content/60 mt-1">+{{ uc.points_earned }} puntos</p>
+                </div>
             </div>
-            <p class="text-sm text-base-content/60 mt-1">+{{ uc.points_earned }} puntos</p>
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endif %}
-
 {% if not active and not completed %}
-<div class="text-center py-12">
-    <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-    </svg>
-    <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No estás en ningún desafío</h3>
-    <p class="mt-2 text-sm text-gray-500">Únete a un desafío activo para comenzar a ganar puntos</p>
-</div>
+    <div class="text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No estás en ningún desafío</h3>
+        <p class="mt-2 text-sm text-gray-500">Únete a un desafío activo para comenzar a ganar puntos</p>
+    </div>
 {% endif %}

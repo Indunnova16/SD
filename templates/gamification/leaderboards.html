@@ -1,34 +1,29 @@
 {% extends "base.html" %}
-
 {% block title %}Rankings - Gamificación{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Rankings</h1>
-            <p class="text-base-content/70">Compite con tus compañeros</p>
-        </div>
-        <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
-    </div>
-
-    <div hx-get="{% url 'gamification:leaderboard-list' %}"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {% for i in "12" %}
-            <div class="card bg-base-100 shadow animate-pulse">
-                <div class="card-body">
-                    <div class="h-6 bg-base-300 rounded w-1/3 mb-4"></div>
-                    <div class="space-y-3">
-                        {% for j in "12345" %}
-                        <div class="h-12 bg-base-300 rounded"></div>
-                        {% endfor %}
-                    </div>
-                </div>
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Rankings</h1>
+                <p class="text-base-content/70">Compite con tus compañeros</p>
             </div>
-            {% endfor %}
+            <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
+        </div>
+        <div hx-get="{% url 'gamification:leaderboard-list' %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {% for i in "12" %}
+                    <div class="card bg-base-100 shadow animate-pulse">
+                        <div class="card-body">
+                            <div class="h-6 bg-base-300 rounded w-1/3 mb-4"></div>
+                            <div class="space-y-3">
+                                {% for j in "12345" %}<div class="h-12 bg-base-300 rounded"></div>{% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

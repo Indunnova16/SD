@@ -1,73 +1,79 @@
 {% if schedules %}
-<div class="overflow-x-auto">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Plantilla</th>
-                <th>Frecuencia</th>
-                <th>Formato</th>
-                <th>Hora</th>
-                <th>Estado</th>
-                <th>Próxima Ejecución</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for schedule in schedules %}
-            <tr class="hover" id="schedule-{{ schedule.id }}">
-                <td>
-                    <div class="font-medium">{{ schedule.name }}</div>
-                    <div class="text-sm text-gray-500">{{ schedule.template.name }}</div>
-                </td>
-                <td>
-                    <span class="badge badge-outline">{{ schedule.get_frequency_display }}</span>
-                </td>
-                <td>
-                    {% if schedule.format == 'pdf' %}
-                    <span class="badge badge-error badge-sm">PDF</span>
-                    {% elif schedule.format == 'excel' %}
-                    <span class="badge badge-success badge-sm">Excel</span>
-                    {% else %}
-                    <span class="badge badge-sm">{{ schedule.format|upper }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ schedule.time_of_day|time:"H:i" }}</td>
-                <td>
-                    <span class="badge {{ schedule.is_active|yesno:'badge-success,badge-ghost' }}"
-                          hx-post="{% url 'reports:schedule-toggle' schedule.id %}"
-                          hx-swap="outerHTML"
-                          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                          class="cursor-pointer">
-                        {{ schedule.is_active|yesno:"Activo,Inactivo" }}
-                    </span>
-                </td>
-                <td>
-                    {% if schedule.next_run_at %}
-                    {{ schedule.next_run_at|date:"d/m/Y H:i" }}
-                    {% else %}
-                    <span class="text-gray-400">-</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if schedule.recipients %}
-                    <div class="tooltip" data-tip="{{ schedule.recipients|join:', ' }}">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Plantilla</th>
+                    <th>Frecuencia</th>
+                    <th>Formato</th>
+                    <th>Hora</th>
+                    <th>Estado</th>
+                    <th>Próxima Ejecución</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                    <tr class="hover" id="schedule-{{ schedule.id }}">
+                        <td>
+                            <div class="font-medium">{{ schedule.name }}</div>
+                            <div class="text-sm text-gray-500">{{ schedule.template.name }}</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-outline">{{ schedule.get_frequency_display }}</span>
+                        </td>
+                        <td>
+                            {% if schedule.format == 'pdf' %}
+                                <span class="badge badge-error badge-sm">PDF</span>
+                            {% elif schedule.format == 'excel' %}
+                                <span class="badge badge-success badge-sm">Excel</span>
+                            {% else %}
+                                <span class="badge badge-sm">{{ schedule.format|upper }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ schedule.time_of_day|time:"H:i" }}</td>
+                        <td>
+                            <span class="badge {{ schedule.is_active|yesno:'badge-success,badge-ghost' }}"
+                                  hx-post="{% url 'reports:schedule-toggle' schedule.id %}"
+                                  hx-swap="outerHTML"
+                                  hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                  class="cursor-pointer">{{ schedule.is_active|yesno:"Activo,Inactivo" }}</span>
+                        </td>
+                        <td>
+                            {% if schedule.next_run_at %}
+                                {{ schedule.next_run_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if schedule.recipients %}
+                                <div class="tooltip" data-tip="{{ schedule.recipients|join:', ' }}">
+                                    <svg class="w-4 h-4 text-gray-400"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-<div class="text-center py-12">
-    <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-    </svg>
-    <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No hay reportes programados</h3>
-    <p class="mt-2 text-sm text-gray-500">Programa un reporte para recibirlo automáticamente</p>
-</div>
+    <div class="text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+            </path>
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No hay reportes programados</h3>
+        <p class="mt-2 text-sm text-gray-500">Programa un reporte para recibirlo automáticamente</p>
+    </div>
 {% endif %}

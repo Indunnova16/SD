@@ -51,13 +51,12 @@ class PointTransactionAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at"]
     date_hierarchy = "created_at"
 
+    @admin.display(description="Points")
     def points_display(self, obj):
         """Display points with color."""
         if obj.points >= 0:
             return format_html('<span style="color: green;">+{}</span>', obj.points)
         return format_html('<span style="color: red;">{}</span>', obj.points)
-
-    points_display.short_description = "Points"
 
 
 @admin.register(Level)
@@ -175,6 +174,7 @@ class UserChallengeAdmin(admin.ModelAdmin):
     list_filter = ["status", "challenge"]
     search_fields = ["user__email", "challenge__name"]
 
+    @admin.display(description="Progress")
     def progress_percentage(self, obj):
         """Display progress bar."""
         pct = obj.progress_percentage
@@ -187,8 +187,6 @@ class UserChallengeAdmin(admin.ModelAdmin):
             {"success": "#28a745", "info": "#17a2b8", "warning": "#ffc107"}[color],
             pct,
         )
-
-    progress_percentage.short_description = "Progress"
 
 
 @admin.register(Achievement)

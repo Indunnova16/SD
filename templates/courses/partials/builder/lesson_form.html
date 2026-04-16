@@ -3,132 +3,43 @@ Lesson form partial for the course builder.
 Used for both adding new lessons and editing existing ones.
 Context: lesson_form (for new), lesson (for edit), course, module, is_new
 {% endcomment %}
-
-<form {% if is_new %}
-        hx-post="{% url 'courses:builder_add_lesson' course.id module.id %}"
-        hx-target="previous [data-lesson-list]"
-        hx-swap="beforeend"
-        hx-encoding="multipart/form-data"
-        @htmx:after-request="if(event.detail.successful) { showAddLesson = false; }"
-      {% else %}
-        hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}"
-        hx-target="closest [data-lesson-id]"
-        hx-swap="outerHTML"
-        hx-encoding="multipart/form-data"
-      {% endif %}
-      x-data="{
-          lessonType: '{% if is_new %}video{% else %}{{ lesson.lesson_type }}{% endif %}',
-          questions: [],
-          qType: 'single_choice',
-          qText: '',
-          qExplanation: '',
-          qPoints: 1,
-          qTrueFalseCorrect: 'true',
-          qAnswers: [{text:'', is_correct:false}, {text:'', is_correct:false}],
-          qMatchPairs: [{left:'', right:''}, {left:'', right:''}],
-          showQuestionForm: false,
-          editingIndex: -1,
-
-          addAnswer() { this.qAnswers.push({text:'', is_correct:false}); },
-          removeAnswer(i) { this.qAnswers.splice(i, 1); },
-          setSingleCorrect(i) { this.qAnswers.forEach((a,idx) => a.is_correct = (idx===i)); },
-          addMatchPair() { this.qMatchPairs.push({left:'', right:''}); },
-          removeMatchPair(i) { this.qMatchPairs.splice(i, 1); },
-
-          resetQuestionForm() {
-              this.qType = 'single_choice';
-              this.qText = '';
-              this.qExplanation = '';
-              this.qPoints = 1;
-              this.qTrueFalseCorrect = 'true';
-              this.qAnswers = [{text:'', is_correct:false}, {text:'', is_correct:false}];
-              this.qMatchPairs = [{left:'', right:''}, {left:'', right:''}];
-              this.editingIndex = -1;
-          },
-
-          saveQuestion() {
-              if (!this.qText.trim()) return;
-              let q = {
-                  type: this.qType,
-                  text: this.qText,
-                  explanation: this.qExplanation,
-                  points: this.qPoints,
-              };
-              if (this.qType === 'single_choice' || this.qType === 'multiple_choice') {
-                  q.answers = JSON.parse(JSON.stringify(this.qAnswers.filter(a => a.text.trim())));
-              } else if (this.qType === 'true_false') {
-                  q.trueFalseCorrect = this.qTrueFalseCorrect;
-              } else if (this.qType === 'matching') {
-                  q.matchPairs = JSON.parse(JSON.stringify(this.qMatchPairs.filter(p => p.left.trim() && p.right.trim())));
-              }
-              if (this.editingIndex >= 0) {
-                  this.questions[this.editingIndex] = q;
-              } else {
-                  this.questions.push(q);
-              }
-              this.resetQuestionForm();
-              this.showQuestionForm = false;
-          },
-
-          editQuestion(i) {
-              let q = this.questions[i];
-              this.qType = q.type;
-              this.qText = q.text;
-              this.qExplanation = q.explanation || '';
-              this.qPoints = q.points || 1;
-              if (q.type === 'single_choice' || q.type === 'multiple_choice') {
-                  this.qAnswers = JSON.parse(JSON.stringify(q.answers || []));
-                  if (this.qAnswers.length < 2) while (this.qAnswers.length < 2) this.qAnswers.push({text:'', is_correct:false});
-              } else if (q.type === 'true_false') {
-                  this.qTrueFalseCorrect = q.trueFalseCorrect || 'true';
-              } else if (q.type === 'matching') {
-                  this.qMatchPairs = JSON.parse(JSON.stringify(q.matchPairs || []));
-                  if (this.qMatchPairs.length < 2) while (this.qMatchPairs.length < 2) this.qMatchPairs.push({left:'', right:''});
-              }
-              this.editingIndex = i;
-              this.showQuestionForm = true;
-          },
-
-          removeQuestion(i) { this.questions.splice(i, 1); },
-
-          questionTypeLabel(t) {
-              const labels = {single_choice:'Seleccion unica', multiple_choice:'Seleccion multiple', true_false:'V/F', matching:'Emparejamiento'};
-              return labels[t] || t;
-          }
-      }"
-      enctype="multipart/form-data">
-    {% csrf_token %}
-
-    {% if lesson_form.errors %}
-    <div class="alert alert-error text-xs mb-3 py-2">
-        <ul class="list-disc pl-4">
-        {% for field, errors in lesson_form.errors.items %}
-            {% for error in errors %}
-            <li>{{ error }}</li>
-            {% endfor %}
-        {% endfor %}
-        </ul>
-    </div>
+<form {% if is_new %} hx-post="{% url 'courses:builder_add_lesson' course.id module.id %}" hx-target="previous [data-lesson-list]" hx-swap="beforeend" hx-encoding="multipart/form-data" @htmx:after-request="if(event.detail.successful) { showAddLesson = false; }" {% else %} hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}" hx-target="closest [data-lesson-id]" hx-swap="outerHTML" hx-encoding="multipart/form-data" {% endif %} x-data="{ lessonType: '
+    {% if is_new %}
+        video
+    {% else %}
+        {{ lesson.lesson_type }}
     {% endif %}
-
+    ', questions: [], qType: 'single_choice', qText: '', qExplanation: '', qPoints: 1, qTrueFalseCorrect: 'true', qAnswers: [{text:'', is_correct:false}, {text:'', is_correct:false}], qMatchPairs: [{left:'', right:''}, {left:'', right:''}], showQuestionForm: false, editingIndex: -1,  addAnswer() { this.qAnswers.push({text:'', is_correct:false}); }, removeAnswer(i) { this.qAnswers.splice(i, 1); }, setSingleCorrect(i) { this.qAnswers.forEach((a,idx) => a.is_correct = (idx===i)); }, addMatchPair() { this.qMatchPairs.push({left:'', right:''}); }, removeMatchPair(i) { this.qMatchPairs.splice(i, 1); },  resetQuestionForm() { this.qType = 'single_choice'; this.qText = ''; this.qExplanation = ''; this.qPoints = 1; this.qTrueFalseCorrect = 'true'; this.qAnswers = [{text:'', is_correct:false}, {text:'', is_correct:false}]; this.qMatchPairs = [{left:'', right:''}, {left:'', right:''}]; this.editingIndex = -1; },  saveQuestion() { if (!this.qText.trim()) return; let q = { type: this.qType, text: this.qText, explanation: this.qExplanation, points: this.qPoints, }; if (this.qType === 'single_choice' || this.qType === 'multiple_choice') { q.answers = JSON.parse(JSON.stringify(this.qAnswers.filter(a => a.text.trim()))); } else if (this.qType === 'true_false') { q.trueFalseCorrect = this.qTrueFalseCorrect; } else if (this.qType === 'matching') { q.matchPairs = JSON.parse(JSON.stringify(this.qMatchPairs.filter(p => p.left.trim() && p.right.trim()))); } if (this.editingIndex >= 0) { this.questions[this.editingIndex] = q; } else { this.questions.push(q); } this.resetQuestionForm(); this.showQuestionForm = false; },  editQuestion(i) { let q = this.questions[i]; this.qType = q.type; this.qText = q.text; this.qExplanation = q.explanation || ''; this.qPoints = q.points || 1; if (q.type === 'single_choice' || q.type === 'multiple_choice') { this.qAnswers = JSON.parse(JSON.stringify(q.answers || [])); if (this.qAnswers.length < 2) while (this.qAnswers.length < 2) this.qAnswers.push({text:'', is_correct:false}); } else if (q.type === 'true_false') { this.qTrueFalseCorrect = q.trueFalseCorrect || 'true'; } else if (q.type === 'matching') { this.qMatchPairs = JSON.parse(JSON.stringify(q.matchPairs || [])); if (this.qMatchPairs.length < 2) while (this.qMatchPairs.length < 2) this.qMatchPairs.push({left:'', right:''}); } this.editingIndex = i; this.showQuestionForm = true; },  removeQuestion(i) { this.questions.splice(i, 1); },  questionTypeLabel(t) { const labels = {single_choice:'Seleccion unica', multiple_choice:'Seleccion multiple', true_false:'V/F', matching:'Emparejamiento'}; return labels[t] || t; } }" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if lesson_form.errors %}
+        <div class="alert alert-error text-xs mb-3 py-2">
+            <ul class="list-disc pl-4">
+                {% for field, errors in lesson_form.errors.items %}
+                    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- Title -->
         <div class="form-control">
             <label class="label py-1">
                 <span class="label-text text-xs">Titulo <span class="text-error">*</span></span>
             </label>
-            <input type="text" name="title"
+            <input type="text"
+                   name="title"
                    value="{% if not is_new %}{{ lesson.title }}{% endif %}"
                    class="input input-bordered input-sm w-full"
-                   placeholder="Nombre de la leccion" required>
+                   placeholder="Nombre de la leccion"
+                   required>
         </div>
-
         <!-- Type -->
         <div class="form-control">
             <label class="label py-1">
                 <span class="label-text text-xs">Tipo <span class="text-error">*</span></span>
             </label>
-            <select name="lesson_type" class="select select-bordered select-sm w-full"
+            <select name="lesson_type"
+                    class="select select-bordered select-sm w-full"
                     x-model="lessonType">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
@@ -140,91 +51,100 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <option value="presential">Presencial</option>
             </select>
         </div>
-
         <!-- Duration (hide for quiz) -->
         <div class="form-control" x-show="lessonType !== 'quiz'">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
-            <input type="number" name="duration"
+            <input type="number"
+                   name="duration"
                    value="{% if not is_new %}{{ lesson.duration }}{% else %}0{% endif %}"
                    class="input input-bordered input-sm w-full"
-                   min="0" placeholder="Minutos">
+                   min="0"
+                   placeholder="Minutos">
         </div>
-
         <!-- Is Mandatory -->
         <div class="form-control">
             <label class="label py-1 cursor-pointer justify-start gap-2">
-                <input type="checkbox" name="is_mandatory"
+                <input type="checkbox"
+                       name="is_mandatory"
                        {% if is_new or lesson.is_mandatory %}checked{% endif %}
                        class="checkbox checkbox-primary checkbox-sm">
                 <span class="label-text text-xs">Obligatorio</span>
             </label>
         </div>
     </div>
-
     <!-- Description (hide for quiz) -->
     <div class="form-control mt-2" x-show="lessonType !== 'quiz'">
         <label class="label py-1">
             <span class="label-text text-xs">Descripcion</span>
         </label>
-        <textarea name="description" class="textarea textarea-bordered textarea-sm w-full" rows="2"
+        <textarea name="description"
+                  class="textarea textarea-bordered textarea-sm w-full"
+                  rows="2"
                   placeholder="Descripcion de la leccion (opcional)">{% if not is_new %}{{ lesson.description }}{% endif %}</textarea>
     </div>
-
     <!-- Conditional fields based on lesson type -->
-
     <!-- Video: URL -->
     <div class="form-control mt-2" x-show="lessonType === 'video'" x-cloak>
         <label class="label py-1">
             <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
         </label>
-        <input type="url" name="video_url"
+        <input type="url"
+               name="video_url"
                value="{% if not is_new %}{{ lesson.video_url }}{% endif %}"
                class="input input-bordered input-sm w-full"
                placeholder="https://youtube.com/...">
     </div>
-
     <!-- Single file input for video / pdf / scorm / audio -->
-    <div class="form-control mt-2" x-show="['video', 'pdf', 'scorm', 'audio'].includes(lessonType)" x-cloak>
+    <div class="form-control mt-2"
+         x-show="['video', 'pdf', 'scorm', 'audio'].includes(lessonType)"
+         x-cloak>
         <label class="label py-1">
-            <span class="label-text text-xs" x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
+            <span class="label-text text-xs"
+                  x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
         </label>
-        <input type="file" name="content_file"
+        <input type="file"
+               name="content_file"
                class="file-input file-input-bordered file-input-sm w-full"
                :accept="lessonType === 'video' ? 'video/*,audio/*,image/*' : lessonType === 'audio' ? 'audio/*' : lessonType === 'scorm' ? '.zip' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt'">
         {% if not is_new and lesson.content_file %}
-        <span class="text-xs text-gray-400 mt-1">Archivo actual: {{ lesson.content_file.name }}</span>
+            <span class="text-xs text-gray-400 mt-1">Archivo actual: {{ lesson.content_file.name }}</span>
         {% endif %}
     </div>
-
     <!-- Content Text (for text type) -->
     <div class="form-control mt-2" x-show="lessonType === 'text'" x-cloak>
         <label class="label py-1">
             <span class="label-text text-xs">Contenido</span>
         </label>
-        <textarea name="content" class="textarea textarea-bordered textarea-sm w-full" rows="4"
+        <textarea name="content"
+                  class="textarea textarea-bordered textarea-sm w-full"
+                  rows="4"
                   placeholder="Contenido de texto o HTML">{% if not is_new %}{{ lesson.content }}{% endif %}</textarea>
     </div>
-
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
     <div x-show="lessonType === 'quiz'" x-cloak class="mt-3">
-        <input type="hidden" name="quiz_questions" :value="JSON.stringify(questions)">
-
+        <input type="hidden"
+               name="quiz_questions"
+               :value="JSON.stringify(questions)">
         <div class="border border-purple-300 rounded-lg overflow-hidden">
             <!-- Header -->
             <div class="bg-purple-100 px-3 py-2 flex items-center justify-between">
                 <h6 class="text-xs font-semibold text-purple-700 flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-3.5 w-3.5"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                     Constructor de Quiz
                 </h6>
-                <span class="badge badge-sm badge-primary" x-text="questions.length + ' pregunta(s)'"></span>
+                <span class="badge badge-sm badge-primary"
+                      x-text="questions.length + ' pregunta(s)'"></span>
             </div>
-
             <div class="p-3 space-y-2">
                 <!-- List of added questions -->
                 <template x-for="(q, qi) in questions" :key="qi">
@@ -232,37 +152,60 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                         <span class="badge badge-sm badge-ghost font-mono" x-text="qi + 1"></span>
                         <div class="flex-1 min-w-0">
                             <p class="text-xs font-medium truncate" x-text="q.text"></p>
-                            <span class="text-[10px] text-gray-400" x-text="questionTypeLabel(q.type) + ' &middot; ' + q.points + ' pts'"></span>
+                            <span class="text-[10px] text-gray-400"
+                                  x-text="questionTypeLabel(q.type) + ' &middot; ' + q.points + ' pts'"></span>
                         </div>
-                        <button type="button" @click="editQuestion(qi)" class="btn btn-ghost btn-xs" title="Editar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button"
+                                @click="editQuestion(qi)"
+                                class="btn btn-ghost btn-xs"
+                                title="Editar">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-3 w-3"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                         </button>
-                        <button type="button" @click="removeQuestion(qi)" class="btn btn-ghost btn-xs text-error" title="Eliminar">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <button type="button"
+                                @click="removeQuestion(qi)"
+                                class="btn btn-ghost btn-xs text-error"
+                                title="Eliminar">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-3 w-3"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
                 </template>
-
                 <!-- Empty state -->
-                <div x-show="questions.length === 0 && !showQuestionForm" class="text-center py-6 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div x-show="questions.length === 0 && !showQuestionForm"
+                     class="text-center py-6 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-8 w-8 mx-auto mb-2 text-purple-300"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <p class="text-xs">Agrega preguntas a tu quiz</p>
                 </div>
-
                 <!-- ==================== -->
                 <!-- Question Form -->
                 <!-- ==================== -->
-                <div x-show="showQuestionForm" x-transition class="bg-white border border-base-300 rounded-lg p-3 space-y-3">
+                <div x-show="showQuestionForm"
+                     x-transition
+                     class="bg-white border border-base-300 rounded-lg p-3 space-y-3">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div class="form-control">
-                            <label class="label py-0"><span class="label-text text-xs">Tipo de pregunta</span></label>
-                            <select x-model="qType" class="select select-bordered select-xs w-full"
+                            <label class="label py-0">
+                                <span class="label-text text-xs">Tipo de pregunta</span>
+                            </label>
+                            <select x-model="qType"
+                                    class="select select-bordered select-xs w-full"
                                     @change="if(qType==='true_false'){qAnswers=[];qMatchPairs=[];} else if(qType==='matching'){qAnswers=[];if(qMatchPairs.length<2)qMatchPairs=[{left:'',right:''},{left:'',right:''}];} else {qMatchPairs=[];if(qAnswers.length<2)qAnswers=[{text:'',is_correct:false},{text:'',is_correct:false}];}">
                                 <option value="single_choice">Seleccion unica</option>
                                 <option value="multiple_choice">Seleccion multiple</option>
@@ -271,43 +214,61 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                             </select>
                         </div>
                         <div class="form-control">
-                            <label class="label py-0"><span class="label-text text-xs">Puntos</span></label>
-                            <input type="number" x-model.number="qPoints" min="1" max="100"
+                            <label class="label py-0">
+                                <span class="label-text text-xs">Puntos</span>
+                            </label>
+                            <input type="number"
+                                   x-model.number="qPoints"
+                                   min="1"
+                                   max="100"
                                    class="input input-bordered input-xs w-full">
                         </div>
                         <div></div>
                     </div>
-
                     <!-- Question Text -->
                     <div class="form-control">
-                        <label class="label py-0"><span class="label-text text-xs">Pregunta <span class="text-error">*</span></span></label>
-                        <textarea x-model="qText" rows="2"
+                        <label class="label py-0">
+                            <span class="label-text text-xs">Pregunta <span class="text-error">*</span></span>
+                        </label>
+                        <textarea x-model="qText"
+                                  rows="2"
                                   class="textarea textarea-bordered textarea-xs w-full"
                                   placeholder="Escribe la pregunta..."></textarea>
                     </div>
-
                     <!-- SINGLE / MULTIPLE CHOICE -->
                     <div x-show="qType === 'single_choice' || qType === 'multiple_choice'">
-                        <label class="label py-0"><span class="label-text text-xs">Opciones de respuesta</span></label>
+                        <label class="label py-0">
+                            <span class="label-text text-xs">Opciones de respuesta</span>
+                        </label>
                         <div class="space-y-1 mt-1">
                             <template x-for="(answer, ai) in qAnswers" :key="ai">
                                 <div class="flex items-center gap-2">
                                     <template x-if="qType === 'single_choice'">
-                                        <input type="radio" :name="'qcorrect'" :checked="answer.is_correct"
+                                        <input type="radio"
+                                               :name="'qcorrect'"
+                                               :checked="answer.is_correct"
                                                class="radio radio-primary radio-xs"
                                                @change="setSingleCorrect(ai)">
                                     </template>
                                     <template x-if="qType === 'multiple_choice'">
-                                        <input type="checkbox" :checked="answer.is_correct"
+                                        <input type="checkbox"
+                                               :checked="answer.is_correct"
                                                class="checkbox checkbox-primary checkbox-xs"
                                                @change="answer.is_correct = $el.checked">
                                     </template>
-                                    <input type="text" x-model="answer.text"
+                                    <input type="text"
+                                           x-model="answer.text"
                                            class="input input-bordered input-xs flex-1"
                                            :placeholder="'Opcion ' + (ai + 1)">
-                                    <button type="button" class="btn btn-ghost btn-xs text-error"
-                                            @click="removeAnswer(ai)" x-show="qAnswers.length > 2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <button type="button"
+                                            class="btn btn-ghost btn-xs text-error"
+                                            @click="removeAnswer(ai)"
+                                            x-show="qAnswers.length > 2">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-3 w-3"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
@@ -315,28 +276,39 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                             </template>
                         </div>
                         <button type="button" class="btn btn-ghost btn-xs mt-1" @click="addAnswer()">+ Agregar opcion</button>
-                        <p class="text-[10px] text-gray-400" x-show="qType === 'single_choice'">Selecciona el radio de la respuesta correcta.</p>
-                        <p class="text-[10px] text-gray-400" x-show="qType === 'multiple_choice'">Marca las casillas de las respuestas correctas.</p>
+                        <p class="text-[10px] text-gray-400" x-show="qType === 'single_choice'">
+                            Selecciona el radio de la respuesta correcta.
+                        </p>
+                        <p class="text-[10px] text-gray-400"
+                           x-show="qType === 'multiple_choice'">Marca las casillas de las respuestas correctas.</p>
                     </div>
-
                     <!-- TRUE / FALSE -->
                     <div x-show="qType === 'true_false'">
-                        <label class="label py-0"><span class="label-text text-xs">Respuesta correcta</span></label>
+                        <label class="label py-0">
+                            <span class="label-text text-xs">Respuesta correcta</span>
+                        </label>
                         <div class="flex gap-4 mt-1">
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" value="true" x-model="qTrueFalseCorrect" class="radio radio-primary radio-xs">
+                                <input type="radio"
+                                       value="true"
+                                       x-model="qTrueFalseCorrect"
+                                       class="radio radio-primary radio-xs">
                                 <span class="text-sm">Verdadero</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" value="false" x-model="qTrueFalseCorrect" class="radio radio-primary radio-xs">
+                                <input type="radio"
+                                       value="false"
+                                       x-model="qTrueFalseCorrect"
+                                       class="radio radio-primary radio-xs">
                                 <span class="text-sm">Falso</span>
                             </label>
                         </div>
                     </div>
-
                     <!-- MATCHING -->
                     <div x-show="qType === 'matching'">
-                        <label class="label py-0"><span class="label-text text-xs">Pares de emparejamiento</span></label>
+                        <label class="label py-0">
+                            <span class="label-text text-xs">Pares de emparejamiento</span>
+                        </label>
                         <div class="space-y-1 mt-1">
                             <div class="grid grid-cols-2 gap-2 text-[10px] font-semibold text-gray-500 px-1">
                                 <span>Elemento</span>
@@ -344,49 +316,70 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                             </div>
                             <template x-for="(pair, pi) in qMatchPairs" :key="pi">
                                 <div class="flex items-center gap-2">
-                                    <input type="text" x-model="pair.left"
+                                    <input type="text"
+                                           x-model="pair.left"
                                            class="input input-bordered input-xs flex-1"
                                            :placeholder="'Elemento ' + (pi + 1)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-3 w-3 text-gray-400 flex-shrink-0"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                     </svg>
-                                    <input type="text" x-model="pair.right"
+                                    <input type="text"
+                                           x-model="pair.right"
                                            class="input input-bordered input-xs flex-1"
                                            :placeholder="'Coincidencia ' + (pi + 1)">
-                                    <button type="button" class="btn btn-ghost btn-xs text-error"
-                                            @click="removeMatchPair(pi)" x-show="qMatchPairs.length > 2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <button type="button"
+                                            class="btn btn-ghost btn-xs text-error"
+                                            @click="removeMatchPair(pi)"
+                                            x-show="qMatchPairs.length > 2">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-3 w-3"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                                         </svg>
                                     </button>
                                 </div>
                             </template>
                         </div>
-                        <button type="button" class="btn btn-ghost btn-xs mt-1" @click="addMatchPair()">+ Agregar par</button>
+                        <button type="button"
+                                class="btn btn-ghost btn-xs mt-1"
+                                @click="addMatchPair()">+ Agregar par</button>
                     </div>
-
                     <!-- Explanation -->
                     <div class="form-control">
-                        <label class="label py-0"><span class="label-text text-xs">Explicacion (opcional)</span></label>
-                        <input type="text" x-model="qExplanation"
+                        <label class="label py-0">
+                            <span class="label-text text-xs">Explicacion (opcional)</span>
+                        </label>
+                        <input type="text"
+                               x-model="qExplanation"
                                class="input input-bordered input-xs w-full"
                                placeholder="Explicacion de la respuesta correcta...">
                     </div>
-
                     <!-- Question form actions -->
                     <div class="flex gap-2 justify-end">
-                        <button type="button" class="btn btn-ghost btn-xs" @click="resetQuestionForm(); showQuestionForm = false;">Cancelar</button>
+                        <button type="button"
+                                class="btn btn-ghost btn-xs"
+                                @click="resetQuestionForm(); showQuestionForm = false;">Cancelar</button>
                         <button type="button" class="btn btn-primary btn-xs" @click="saveQuestion()">
                             <span x-text="editingIndex >= 0 ? 'Guardar Cambios' : 'Agregar Pregunta'"></span>
                         </button>
                     </div>
                 </div>
-
                 <!-- Add question button -->
-                <button type="button" x-show="!showQuestionForm"
+                <button type="button"
+                        x-show="!showQuestionForm"
                         @click="resetQuestionForm(); showQuestionForm = true;"
                         class="btn btn-outline btn-primary btn-xs w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-3 w-3"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
                     Agregar Pregunta
@@ -394,17 +387,26 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
             </div>
         </div>
     </div>
-
     <!-- Actions -->
     <div class="flex gap-2 justify-end mt-3">
         {% if is_new %}
-        <button type="button" class="btn btn-ghost btn-xs" @click="showAddLesson = false">Cancelar</button>
+            <button type="button"
+                    class="btn btn-ghost btn-xs"
+                    @click="showAddLesson = false">Cancelar</button>
         {% else %}
-        <button type="button" class="btn btn-ghost btn-xs" @click="editingLesson = false">Cancelar</button>
+            <button type="button"
+                    class="btn btn-ghost btn-xs"
+                    @click="editingLesson = false">Cancelar</button>
         {% endif %}
         <button type="submit" class="btn btn-primary btn-xs">
             <span x-show="lessonType === 'quiz'" x-cloak>Crear Quiz</span>
-            <span x-show="lessonType !== 'quiz'">{% if is_new %}Agregar{% else %}Guardar{% endif %}</span>
+            <span x-show="lessonType !== 'quiz'">
+                {% if is_new %}
+                    Agregar
+                {% else %}
+                    Guardar
+                {% endif %}
+            </span>
         </button>
     </div>
 </form>

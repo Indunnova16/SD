@@ -1,128 +1,123 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}{{ action }} Perfil Ocupacional{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    {% if action == "Crear" %}
-    Complete el formulario para crear un nuevo tipo de perfil ocupacional
-    {% else %}
-    Modifique los datos del perfil ocupacional
-    {% endif %}
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {% if action == "Crear" %}
+            Complete el formulario para crear un nuevo tipo de perfil ocupacional
+        {% else %}
+            Modifique los datos del perfil ocupacional
+        {% endif %}
+    </p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="max-w-2xl mx-auto">
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-
-                {% if form.errors %}
-                <div class="alert alert-error mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                        <h3 class="font-bold">Error en el formulario</h3>
-                        <div class="text-xs">Por favor, corrija los errores a continuacion</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Code -->
+    <div class="max-w-2xl mx-auto">
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-error mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="stroke-current shrink-0 h-6 w-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">Error en el formulario</h3>
+                                <div class="text-xs">Por favor, corrija los errores a continuacion</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Code -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Codigo <span class="text-error">*</span></span>
+                                </label>
+                                {{ form.code }}
+                                {% if form.code.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                                <label class="label">
+                                    <span class="label-text-alt">Identificador unico, se convierte a mayusculas automaticamente</span>
+                                </label>
+                            </div>
+                            <!-- Name -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Nombre <span class="text-error">*</span></span>
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Description -->
                         <div class="form-control">
                             <label class="label">
-                                <span class="label-text">Codigo <span class="text-error">*</span></span>
+                                <span class="label-text">Descripcion</span>
                             </label>
-                            {{ form.code }}
-                            {% if form.code.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                            <label class="label">
-                                <span class="label-text-alt">Identificador unico, se convierte a mayusculas automaticamente</span>
-                            </label>
-                        </div>
-
-                        <!-- Name -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Nombre <span class="text-error">*</span></span>
-                            </label>
-                            {{ form.name }}
-                            {% if form.name.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
-                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                                </label>
                             {% endif %}
                         </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Descripcion</span>
-                        </label>
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Order -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Orden</span>
-                            </label>
-                            {{ form.order }}
-                            {% if form.order.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.order.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                            <label class="label">
-                                <span class="label-text-alt">Los perfiles se ordenan de menor a mayor</span>
-                            </label>
-                        </div>
-
-                        <!-- Active -->
-                        <div class="form-control">
-                            <label class="label cursor-pointer justify-start gap-4">
-                                {{ form.is_active }}
-                                <span class="label-text">Perfil activo</span>
-                            </label>
-                            {% if form.is_active.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
-                            </label>
-                            {% endif %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Order -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Orden</span>
+                                </label>
+                                {{ form.order }}
+                                {% if form.order.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.order.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                                <label class="label">
+                                    <span class="label-text-alt">Los perfiles se ordenan de menor a mayor</span>
+                                </label>
+                            </div>
+                            <!-- Active -->
+                            <div class="form-control">
+                                <label class="label cursor-pointer justify-start gap-4">
+                                    {{ form.is_active }}
+                                    <span class="label-text">Perfil activo</span>
+                                </label>
+                                {% if form.is_active.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <!-- Actions -->
-                <div class="flex gap-4">
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        {{ action }} Perfil
-                    </button>
-                    <a href="{% url 'courses:parametrizacion' %}?tab=perfiles" class="btn btn-ghost">
-                        Cancelar
-                    </a>
-                </div>
-            </form>
+                    <div class="divider"></div>
+                    <!-- Actions -->
+                    <div class="flex gap-4">
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 mr-2"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            {{ action }} Perfil
+                        </button>
+                        <a href="{% url 'courses:parametrizacion' %}?tab=perfiles"
+                           class="btn btn-ghost">Cancelar</a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

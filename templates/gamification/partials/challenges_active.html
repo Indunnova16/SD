@@ -1,74 +1,70 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for item in challenges %}
-    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="card-title">{{ item.challenge.name }}</h3>
-                    <span class="badge badge-{{ item.challenge.get_challenge_type_display|lower }}">
-                        {{ item.challenge.get_challenge_type_display }}
-                    </span>
-                </div>
-                <div class="text-right">
-                    <span class="badge badge-primary badge-lg">+{{ item.challenge.points_reward }} pts</span>
-                    {% if item.challenge.badge_reward %}
-                    <div class="mt-1">
-                        <span class="badge badge-secondary">+Insignia</span>
+        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="card-title">{{ item.challenge.name }}</h3>
+                        <span class="badge badge-{{ item.challenge.get_challenge_type_display|lower }}">
+                            {{ item.challenge.get_challenge_type_display }}
+                        </span>
                     </div>
-                    {% endif %}
+                    <div class="text-right">
+                        <span class="badge badge-primary badge-lg">+{{ item.challenge.points_reward }} pts</span>
+                        {% if item.challenge.badge_reward %}
+                            <div class="mt-1">
+                                <span class="badge badge-secondary">+Insignia</span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-
-            <p class="text-base-content/70 my-2">{{ item.challenge.description|truncatechars:100 }}</p>
-
-            <div class="flex justify-between items-center text-sm text-base-content/60 mb-4">
-                <span>Meta: {{ item.challenge.target_value }} {{ item.challenge.target_metric }}</span>
-                <span>Termina: {{ item.challenge.end_date|date:"d M, H:i" }}</span>
-            </div>
-
-            <!-- Challenge Progress -->
-            <div class="mb-4">
-                <div class="flex justify-between text-sm mb-1">
-                    <span>Tiempo</span>
-                    <span>{{ item.challenge.progress_percentage }}%</span>
+                <p class="text-base-content/70 my-2">{{ item.challenge.description|truncatechars:100 }}</p>
+                <div class="flex justify-between items-center text-sm text-base-content/60 mb-4">
+                    <span>Meta: {{ item.challenge.target_value }} {{ item.challenge.target_metric }}</span>
+                    <span>Termina: {{ item.challenge.end_date|date:"d M, H:i" }}</span>
                 </div>
-                <progress class="progress progress-info w-full"
-                          value="{{ item.challenge.progress_percentage }}" max="100"></progress>
-            </div>
-
-            {% if item.user_participation %}
-            <!-- User is enrolled -->
-            <div class="bg-base-200 rounded-lg p-3 mb-4">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium">Tu progreso</span>
-                    <span class="badge badge-{{ item.user_participation.status }}">
-                        {{ item.user_participation.get_status_display }}
-                    </span>
+                <!-- Challenge Progress -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Tiempo</span>
+                        <span>{{ item.challenge.progress_percentage }}%</span>
+                    </div>
+                    <progress class="progress progress-info w-full"
+                              value="{{ item.challenge.progress_percentage }}"
+                              max="100"></progress>
                 </div>
-                <progress class="progress progress-success w-full"
-                          value="{{ item.user_participation.progress_percentage }}" max="100"></progress>
-                <p class="text-xs text-right mt-1">
-                    {{ item.user_participation.current_value }}/{{ item.challenge.target_value }}
-                </p>
+                {% if item.user_participation %}
+                    <!-- User is enrolled -->
+                    <div class="bg-base-200 rounded-lg p-3 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium">Tu progreso</span>
+                            <span class="badge badge-{{ item.user_participation.status }}">{{ item.user_participation.get_status_display }}</span>
+                        </div>
+                        <progress class="progress progress-success w-full"
+                                  value="{{ item.user_participation.progress_percentage }}"
+                                  max="100"></progress>
+                        <p class="text-xs text-right mt-1">{{ item.user_participation.current_value }}/{{ item.challenge.target_value }}</p>
+                    </div>
+                {% else %}
+                    <!-- User can join -->
+                    <button class="btn btn-primary w-full"
+                            hx-post="{% url 'gamification:join-challenge' item.challenge.id %}"
+                            hx-target="closest .card"
+                            hx-swap="outerHTML">Unirme al Desafío</button>
+                {% endif %}
             </div>
-            {% else %}
-            <!-- User can join -->
-            <button class="btn btn-primary w-full"
-                    hx-post="{% url 'gamification:join-challenge' item.challenge.id %}"
-                    hx-target="closest .card"
-                    hx-swap="outerHTML">
-                Unirme al Desafío
-            </button>
-            {% endif %}
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        <p class="text-base-content/60">No hay desafíos activos en este momento</p>
-        <p class="text-sm text-base-content/40">Vuelve más tarde para nuevos desafíos</p>
-    </div>
+        <div class="col-span-full text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-16 w-16 mx-auto text-base-content/30 mb-4"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <p class="text-base-content/60">No hay desafíos activos en este momento</p>
+            <p class="text-sm text-base-content/40">Vuelve más tarde para nuevos desafíos</p>
+        </div>
     {% endfor %}
 </div>

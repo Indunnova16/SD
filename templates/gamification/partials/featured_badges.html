@@ -1,16 +1,15 @@
 <div class="flex flex-wrap gap-3">
     {% for user_badge in featured %}
-    <div class="tooltip" data-tip="{{ user_badge.badge.name }}">
-        <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-md
-            {% if user_badge.badge.rarity == 'legendary' %}bg-gradient-to-br from-yellow-400 to-orange-500
-            {% elif user_badge.badge.rarity == 'epic' %}bg-gradient-to-br from-purple-500 to-pink-500
-            {% elif user_badge.badge.rarity == 'rare' %}bg-gradient-to-br from-blue-500 to-cyan-500
-            {% elif user_badge.badge.rarity == 'uncommon' %}bg-gradient-to-br from-green-500 to-emerald-500
-            {% else %}bg-gradient-to-br from-gray-400 to-gray-500{% endif %}">
-            {% if user_badge.badge.icon %}{{ user_badge.badge.icon }}{% else %}🏅{% endif %}
+        <div class="tooltip" data-tip="{{ user_badge.badge.name }}">
+            <div class="w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-md {% if user_badge.badge.rarity == 'legendary' %}bg-gradient-to-br from-yellow-400 to-orange-500 {% elif user_badge.badge.rarity == 'epic' %}bg-gradient-to-br from-purple-500 to-pink-500 {% elif user_badge.badge.rarity == 'rare' %}bg-gradient-to-br from-blue-500 to-cyan-500 {% elif user_badge.badge.rarity == 'uncommon' %}bg-gradient-to-br from-green-500 to-emerald-500 {% else %}bg-gradient-to-br from-gray-400 to-gray-500{% endif %}">
+                {% if user_badge.badge.icon %}
+                    {{ user_badge.badge.icon }}
+                {% else %}
+                    🏅
+                {% endif %}
+            </div>
         </div>
-    </div>
     {% empty %}
-    <p class="text-base-content/60 text-sm">No hay insignias destacadas. Gana insignias y márcalas como destacadas.</p>
+        <p class="text-base-content/60 text-sm">No hay insignias destacadas. Gana insignias y márcalas como destacadas.</p>
     {% endfor %}
 </div>

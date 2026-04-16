@@ -1,4 +1,7 @@
-<div id="assessment-perf-render" style="width:100%;height:100%;min-height:320px;"></div>
+<div id="assessment-perf-render"
+     style="width:100%;
+            height:100%;
+            min-height:320px"></div>
 <script>
 (function() {
     function init() {
@@ -23,11 +26,11 @@
                 trigger: 'axis',
                 axisPointer: { type: 'cross' },
                 formatter: function(params) {
-                    var result = params[0].name + '<br/>';
+                    var result = params[0].name + '<br />';
                     params.forEach(function(p) {
                         result += p.marker + ' ' + p.seriesName + ': ' + p.value;
                         if (p.seriesName === 'Promedio') result += ' pts';
-                        result += '<br/>';
+                        result += '<br />';
                     });
                     return result;
                 }

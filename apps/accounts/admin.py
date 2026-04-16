@@ -155,10 +155,9 @@ class RoleAdmin(admin.ModelAdmin):
     search_fields = ("name", "description")
     filter_horizontal = ("permissions",)
 
+    @admin.display(description=_("Usuarios"))
     def user_count(self, obj):
         return obj.users.count()
-
-    user_count.short_description = _("Usuarios")
 
 
 @admin.register(Contract)

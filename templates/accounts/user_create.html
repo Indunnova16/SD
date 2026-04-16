@@ -1,31 +1,28 @@
 {% extends "base/base.html" %}
-
 {% block title %}Crear Usuario - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
-                <ul>
-                    <li><a href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'accounts:user_list' %}">Usuarios</a></li>
-                    <li>Crear Usuario</li>
-                </ul>
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
+                    <ul>
+                        <li>
+                            <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:user_list' %}">Usuarios</a>
+                        </li>
+                        <li>Crear Usuario</li>
+                    </ul>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Crear Usuario</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Complete el formulario para crear un nuevo usuario</p>
             </div>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Crear Usuario</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Complete el formulario para crear un nuevo usuario
-            </p>
-        </div>
-
-        <!-- Form -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                {% include "accounts/partials/user_form.html" %}
+            <!-- Form -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">{% include "accounts/partials/user_form.html" %}</div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

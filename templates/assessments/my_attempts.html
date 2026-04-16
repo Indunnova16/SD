@@ -1,121 +1,100 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Mis Evaluaciones{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Historial de tus evaluaciones realizadas
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Historial de tus evaluaciones realizadas</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<!-- Status Tabs -->
-<div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
-    <a href="{% url 'assessments:my_attempts' %}"
-       class="tab {% if not current_status %}tab-active{% endif %}">
-        Todas
-    </a>
-    {% for value, label in statuses %}
-    <a href="{% url 'assessments:my_attempts' %}?status={{ value }}"
-       class="tab {% if current_status == value %}tab-active{% endif %}">
-        {{ label }}
-    </a>
-    {% endfor %}
-</div>
-
-<!-- Attempts Table -->
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="table w-full">
-            <thead>
-                <tr>
-                    <th>Evaluación</th>
-                    <th>Tipo</th>
-                    <th>Intento</th>
-                    <th>Estado</th>
-                    <th>Puntaje</th>
-                    <th>Resultado</th>
-                    <th>Fecha</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for attempt in attempts %}
-                <tr>
-                    <td>
-                        <a href="{% url 'assessments:detail' attempt.assessment.id %}" class="font-medium text-primary hover:underline">
-                            {{ attempt.assessment.title }}
-                        </a>
-                    </td>
-                    <td>
-                        <span class="badge badge-ghost badge-sm">
-                            {{ attempt.assessment.get_assessment_type_display }}
-                        </span>
-                    </td>
-                    <td>{{ attempt.attempt_number }}</td>
-                    <td>
-                        <span class="badge
-                            {% if attempt.status == 'in_progress' %}badge-warning
-                            {% elif attempt.status == 'graded' %}badge-success
-                            {% elif attempt.status == 'submitted' %}badge-info
-                            {% else %}badge-ghost{% endif %}">
-                            {{ attempt.get_status_display }}
-                        </span>
-                    </td>
-                    <td>
-                        {% if attempt.score is not None %}
-                        <span class="font-medium {% if attempt.passed %}text-success{% else %}text-error{% endif %}">
-                            {{ attempt.score|floatformat:0 }}%
-                        </span>
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if attempt.passed is not None %}
-                        {% if attempt.passed %}
-                        <span class="badge badge-success badge-sm">Aprobado</span>
-                        {% else %}
-                        <span class="badge badge-error badge-sm">No aprobado</span>
-                        {% endif %}
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
-                    <td class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ attempt.started_at|date:"d M Y H:i" }}
-                    </td>
-                    <td>
-                        {% if attempt.status == 'in_progress' %}
-                        <a href="{% url 'assessments:take' attempt.id %}" class="btn btn-warning btn-xs">
-                            Continuar
-                        </a>
-                        {% elif attempt.status == 'graded' %}
-                        <a href="{% url 'assessments:result' attempt.id %}" class="btn btn-ghost btn-xs">
-                            Ver
-                        </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="8" class="text-center py-8">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay intentos</h3>
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            No has realizado ninguna evaluación todavía.
-                        </p>
-                        <div class="mt-6">
-                            <a href="{% url 'assessments:list' %}" class="btn btn-primary">
-                                Ver Evaluaciones
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- Status Tabs -->
+    <div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
+        <a href="{% url 'assessments:my_attempts' %}"
+           class="tab {% if not current_status %}tab-active{% endif %}">Todas</a>
+        {% for value, label in statuses %}
+            <a href="{% url 'assessments:my_attempts' %}?status={{ value }}"
+               class="tab {% if current_status == value %}tab-active{% endif %}">{{ label }}</a>
+        {% endfor %}
     </div>
-</div>
+    <!-- Attempts Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table w-full">
+                <thead>
+                    <tr>
+                        <th>Evaluación</th>
+                        <th>Tipo</th>
+                        <th>Intento</th>
+                        <th>Estado</th>
+                        <th>Puntaje</th>
+                        <th>Resultado</th>
+                        <th>Fecha</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'assessments:detail' attempt.assessment.id %}"
+                                   class="font-medium text-primary hover:underline">{{ attempt.assessment.title }}</a>
+                            </td>
+                            <td>
+                                <span class="badge badge-ghost badge-sm">{{ attempt.assessment.get_assessment_type_display }}</span>
+                            </td>
+                            <td>{{ attempt.attempt_number }}</td>
+                            <td>
+                                <span class="badge {% if attempt.status == 'in_progress' %}badge-warning {% elif attempt.status == 'graded' %}badge-success {% elif attempt.status == 'submitted' %}badge-info {% else %}badge-ghost{% endif %}">
+                                    {{ attempt.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if attempt.score is not None %}
+                                    <span class="font-medium {% if attempt.passed %}text-success{% else %}text-error{% endif %}">
+                                        {{ attempt.score|floatformat:0 }}%
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attempt.passed is not None %}
+                                    {% if attempt.passed %}
+                                        <span class="badge badge-success badge-sm">Aprobado</span>
+                                    {% else %}
+                                        <span class="badge badge-error badge-sm">No aprobado</span>
+                                    {% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="text-sm text-gray-500 dark:text-gray-400">{{ attempt.started_at|date:"d M Y H:i" }}</td>
+                            <td>
+                                {% if attempt.status == 'in_progress' %}
+                                    <a href="{% url 'assessments:take' attempt.id %}"
+                                       class="btn btn-warning btn-xs">Continuar</a>
+                                {% elif attempt.status == 'graded' %}
+                                    <a href="{% url 'assessments:result' attempt.id %}"
+                                       class="btn btn-ghost btn-xs">Ver</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-8">
+                                <svg class="mx-auto h-12 w-12 text-gray-400"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay intentos</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No has realizado ninguna evaluación todavía.</p>
+                                <div class="mt-6">
+                                    <a href="{% url 'assessments:list' %}" class="btn btn-primary">Ver Evaluaciones</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

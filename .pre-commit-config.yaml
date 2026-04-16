@@ -5,7 +5,7 @@
 # Manual run: pre-commit run --all-files
 
 default_language_version:
-  python: python3.12
+  python: python3.11
 
 repos:
   # ---------------------------------------------------------------------------
@@ -40,30 +40,30 @@ repos:
       - id: ruff-format
 
   # ---------------------------------------------------------------------------
-  # Python - Type checking with mypy
+  # Python - Type checking with mypy (DISABLED: dependency issues, kept in CI/CD)
   # ---------------------------------------------------------------------------
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
-    hooks:
-      - id: mypy
-        additional_dependencies:
-          - django-stubs>=4.2.7
-          - djangorestframework-stubs>=3.14.5
-          - types-redis
-          - types-pytz
-        args:
-          - --ignore-missing-imports
-          - --no-strict-optional
-        exclude: ^(migrations|tests)/
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.9.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies:
+  #         - django-stubs>=4.2.7
+  #         - djangorestframework-stubs>=3.14.5
+  #         - types-redis
+  #         - types-pytz
+  #       args:
+  #         - --ignore-missing-imports
+  #         - --no-strict-optional
+  #       exclude: ^(migrations|tests)/
 
   # ---------------------------------------------------------------------------
-  # Django template linting
+  # Django template linting (DISABLED: too slow locally, enabled in CI/CD)
   # ---------------------------------------------------------------------------
-  - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.34.1
-    hooks:
-      - id: djlint-django
-        args: ["--reformat"]
+  # - repo: https://github.com/Riverside-Healthcare/djLint
+  #   rev: v1.34.1
+  #   hooks:
+  #     - id: djlint-django
+  #       args: ["--reformat"]
 
   # ---------------------------------------------------------------------------
   # Security checks
@@ -82,7 +82,7 @@ repos:
     rev: 1.16.0
     hooks:
       - id: django-upgrade
-        args: [--target-version, "5.1"]
+        args: [--target-version, "5.0"]
 
   # ---------------------------------------------------------------------------
   # Commit message validation

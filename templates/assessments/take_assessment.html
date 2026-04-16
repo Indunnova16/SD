@@ -1,179 +1,146 @@
 {% extends "base/base.html" %}
 {% load assessment_tags %}
-
 {% block content %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- Header -->
-    <div class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
-        <div class="max-w-4xl mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-                        {{ assessment.title }}
-                    </h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Intento {{ attempt.attempt_number }}
-                    </p>
-                </div>
-                <div class="flex items-center gap-4">
-                    {% if time_limit %}
-                    <div id="timer" class="text-lg font-mono font-bold text-error" role="timer" aria-live="polite" aria-label="Tiempo restante">
-                        {{ time_limit }}:00
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <!-- Header -->
+        <div class="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">{{ assessment.title }}</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Intento {{ attempt.attempt_number }}</p>
                     </div>
-                    {% endif %}
-                    <button type="submit" form="assessment-form" class="btn btn-primary" aria-label="Enviar evaluacion completa">
-                        Enviar Evaluación
-                    </button>
+                    <div class="flex items-center gap-4">
+                        {% if time_limit %}
+                            <div id="timer"
+                                 class="text-lg font-mono font-bold text-error"
+                                 role="timer"
+                                 aria-live="polite"
+                                 aria-label="Tiempo restante">{{ time_limit }}:00</div>
+                        {% endif %}
+                        <button type="submit"
+                                form="assessment-form"
+                                class="btn btn-primary"
+                                aria-label="Enviar evaluacion completa">Enviar Evaluación</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Questions -->
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        <form id="assessment-form" method="post" action="{% url 'assessments:submit' attempt.id %}">
-            {% csrf_token %}
-            <input type="hidden" name="time_spent" id="time_spent" value="0">
-
-            <div class="space-y-6">
-                {% for question in questions %}
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6" data-question-id="{{ question.id }}">
-                    <!-- Question Header -->
-                    <div class="flex items-start gap-4 mb-4">
-                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                            {{ forloop.counter }}
-                        </span>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="badge badge-ghost badge-sm">{{ question.get_question_type_display }}</span>
-                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ question.points }} punto{{ question.points|pluralize:"s" }}</span>
-                            </div>
-                            <p id="question-title-{{ question.id }}" class="text-gray-900 dark:text-white font-medium">
-                                {{ question.text }}
-                            </p>
-                        </div>
-                    </div>
-
-                    {% if question.image %}
-                    <div class="mb-4 pl-12">
-                        <img src="{{ question.image.url }}" alt="Imagen de la pregunta" class="max-w-md rounded-lg">
-                    </div>
-                    {% endif %}
-
-                    <!-- Answers -->
-                    <fieldset class="pl-12 space-y-2" aria-describedby="question-title-{{ question.id }}">
-                        <legend class="sr-only">Opciones para: {{ question.text }}</legend>
-                        {% if question.question_type == 'single_choice' or question.question_type == 'true_false' %}
-                        {% for answer in question.answers.all %}
-                        <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <input type="radio"
-                                   name="question_{{ question.id }}"
-                                   value="{{ answer.id }}"
-                                   class="radio radio-primary"
-                                   aria-describedby="question-title-{{ question.id }}"
-                                   {% if answer.id in answered|default:""  %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %}
-                                   hx-post="{% url 'assessments:save_answer' attempt.id %}"
-                                   hx-trigger="change"
-                                   hx-vals='{"question_id": "{{ question.id }}"}'
-                                   hx-swap="none">
-                            <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
-                        </label>
-                        {% endfor %}
-
-                        {% elif question.question_type == 'multiple_choice' %}
-                        {% for answer in question.answers.all %}
-                        <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                            <input type="checkbox"
-                                   name="question_{{ question.id }}"
-                                   value="{{ answer.id }}"
-                                   class="checkbox checkbox-primary"
-                                   aria-describedby="question-title-{{ question.id }}"
-                                   {% if answer.id in answered|default:""  %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %}>
-                            <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
-                        </label>
-                        {% endfor %}
-
-                        {% elif question.question_type == 'matching' %}
-                        <div x-data="{
-                            pairs: [
-                                {% for answer in question.answers.all %}
-                                { left: '{{ answer.text|escapejs }}', right: '', options: [] },
-                                {% endfor %}
-                            ],
-                            rightOptions: [
-                                {% for answer in question.answers.all %}
-                                '{{ answer.feedback|escapejs }}',
-                                {% endfor %}
-                            ],
-                            init() {
-                                // Shuffle right options
-                                this.rightOptions = this.rightOptions.sort(() => Math.random() - 0.5);
-                                // Restore saved answers
-                                {% if answered %}
-                                    {% with current=answered|get_item:question.id %}
-                                        {% if current and current.text %}
-                                        try {
-                                            const saved = JSON.parse('{{ current.text|escapejs }}');
-                                            saved.forEach(s => {
-                                                const p = this.pairs.find(p => p.left === s.left);
-                                                if (p) p.right = s.right;
-                                            });
-                                        } catch(e) {}
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endif %}
-                            },
-                            getMatchingJson() {
-                                return JSON.stringify(this.pairs.map(p => ({ left: p.left, right: p.right })));
-                            }
-                        }">
-                            <div class="space-y-3">
-                                <template x-for="(pair, index) in pairs" :key="index">
-                                    <div class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700">
-                                        <span class="flex-1 text-gray-900 dark:text-white font-medium" x-text="pair.left"></span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                        </svg>
-                                        <select x-model="pair.right"
-                                                @change="$nextTick(() => { document.getElementById('matching_{{ question.id }}').value = getMatchingJson(); })"
-                                                class="select select-bordered select-sm flex-1 dark:bg-gray-700 dark:text-white">
-                                            <option value="">-- Seleccionar --</option>
-                                            <template x-for="opt in rightOptions" :key="opt">
-                                                <option :value="opt" x-text="opt" :selected="pair.right === opt"></option>
-                                            </template>
-                                        </select>
+        <!-- Questions -->
+        <div class="max-w-4xl mx-auto px-4 py-8">
+            <form id="assessment-form"
+                  method="post"
+                  action="{% url 'assessments:submit' attempt.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="time_spent" id="time_spent" value="0">
+                <div class="space-y-6">
+                    {% for question in questions %}
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+                             data-question-id="{{ question.id }}">
+                            <!-- Question Header -->
+                            <div class="flex items-start gap-4 mb-4">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">
+                                    {{ forloop.counter }}
+                                </span>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="badge badge-ghost badge-sm">{{ question.get_question_type_display }}</span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ question.points }} punto{{ question.points|pluralize:"s" }}</span>
                                     </div>
-                                </template>
+                                    <p id="question-title-{{ question.id }}"
+                                       class="text-gray-900 dark:text-white font-medium">{{ question.text }}</p>
+                                </div>
                             </div>
-                            <input type="hidden" name="matching_{{ question.id }}" id="matching_{{ question.id }}"
-                                   :value="getMatchingJson()">
+                            {% if question.image %}
+                                <div class="mb-4 pl-12">
+                                    <img src="{{ question.image.url }}"
+                                         alt="Imagen de la pregunta"
+                                         class="max-w-md rounded-lg">
+                                </div>
+                            {% endif %}
+                            <!-- Answers -->
+                            <fieldset class="pl-12 space-y-2"
+                                      aria-describedby="question-title-{{ question.id }}">
+                                <legend class="sr-only">Opciones para: {{ question.text }}</legend>
+                                {% if question.question_type == 'single_choice' or question.question_type == 'true_false' %}
+                                    {% for answer in question.answers.all %}
+                                        <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" class="radio radio-primary" aria-describedby="question-title-{{ question.id }}" {% if answer.id in answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %} hx-post="{% url 'assessments:save_answer' attempt.id %}" hx-trigger="change" hx-vals='{"question_id": "{{ question.id }}"}' hx-swap="none">
+                                            <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% elif question.question_type == 'multiple_choice' %}
+                                    {% for answer in question.answers.all %}
+                                        <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                            <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}" class="checkbox checkbox-primary" aria-describedby="question-title-{{ question.id }}" {% if answer.id in answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %}>
+                                            <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
+                                        </label>
+                                    {% endfor %}
+                                {% elif question.question_type == 'matching' %}
+                                    <div x-data="{ pairs: [
+                                        {% for answer in question.answers.all %}{ left: '{{ answer.text|escapejs }}', right: '', options: [] },{% endfor %}
+                                        ], rightOptions: [
+                                        {% for answer in question.answers.all %}'{{ answer.feedback|escapejs }}',{% endfor %}
+                                        ], init() { // Shuffle right options this.rightOptions = this.rightOptions.sort(() => Math.random() - 0.5); // Restore saved answers
+                                        {% if answered %}
+                                            {% with current=answered|get_item:question.id %}
+                                                {% if current and current.text %}
+                                                    try { const saved = JSON.parse('{{ current.text|escapejs }}'); saved.forEach(s => { const p = this.pairs.find(p => p.left === s.left); if (p) p.right = s.right; }); } catch(e) {}
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                                        }, getMatchingJson() { return JSON.stringify(this.pairs.map(p => ({ left: p.left, right: p.right }))); } }">
+                                        <div class="space-y-3">
+                                            <template x-for="(pair, index) in pairs" :key="index">
+                                                <div class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700">
+                                                    <span class="flex-1 text-gray-900 dark:text-white font-medium"
+                                                          x-text="pair.left"></span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="h-5 w-5 text-gray-400 flex-shrink-0"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                    </svg>
+                                                    <select x-model="pair.right"
+                                                            @change="$nextTick(() => { document.getElementById('matching_{{ question.id }}').value = getMatchingJson(); })"
+                                                            class="select select-bordered select-sm flex-1 dark:bg-gray-700 dark:text-white">
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <template x-for="opt in rightOptions" :key="opt">
+                                                            <option :value="opt" x-text="opt" :selected="pair.right === opt"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <input type="hidden"
+                                               name="matching_{{ question.id }}"
+                                               id="matching_{{ question.id }}"
+                                               :value="getMatchingJson()">
+                                    </div>
+                                {% elif question.question_type == 'short_answer' or question.question_type == 'essay' %}
+                                    <textarea name="text_answer_{{ question.id }}"
+                                              rows="{% if question.question_type == 'essay' %}6{% else %}2{% endif %}"
+                                              class="textarea textarea-bordered w-full dark:bg-gray-700 dark:text-white"
+                                              aria-describedby="question-title-{{ question.id }}"
+                                              aria-label="Respuesta a la pregunta {{ forloop.counter }}"
+                                              placeholder="Escribe tu respuesta aquí...">{% if answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{{ current.text }}{% endwith %}{% endif %}</textarea>
+                                {% endif %}
+                            </fieldset>
                         </div>
-
-                        {% elif question.question_type == 'short_answer' or question.question_type == 'essay' %}
-                        <textarea name="text_answer_{{ question.id }}"
-                                  rows="{% if question.question_type == 'essay' %}6{% else %}2{% endif %}"
-                                  class="textarea textarea-bordered w-full dark:bg-gray-700 dark:text-white"
-                                  aria-describedby="question-title-{{ question.id }}"
-                                  aria-label="Respuesta a la pregunta {{ forloop.counter }}"
-                                  placeholder="Escribe tu respuesta aquí...">{% if answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{{ current.text }}{% endwith %}{% endif %}</textarea>
-                        {% endif %}
-                    </fieldset>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
-
-            <!-- Submit -->
-            <div class="mt-8 flex justify-end">
-                <button type="submit" class="btn btn-primary btn-lg" aria-label="Enviar evaluacion y finalizar">
-                    Enviar Evaluación
-                </button>
-            </div>
-        </form>
+                <!-- Submit -->
+                <div class="mt-8 flex justify-end">
+                    <button type="submit"
+                            class="btn btn-primary btn-lg"
+                            aria-label="Enviar evaluacion y finalizar">Enviar Evaluación</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-
-{% if time_limit %}
-<script>
+    {% if time_limit %}
+        <script>
 (function() {
     let timeRemaining = {{ time_limit }} * 60;
     const timerEl = document.getElementById('timer');
@@ -201,6 +168,6 @@
 
     setInterval(updateTimer, 1000);
 })();
-</script>
-{% endif %}
+        </script>
+    {% endif %}
 {% endblock %}

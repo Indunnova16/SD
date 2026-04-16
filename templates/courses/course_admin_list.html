@@ -1,87 +1,110 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Administracion de Cursos{% endblock %}
 {% block page_description %}
-<div class="flex items-center justify-between">
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Gestione parametros, categorias y estados de todos los cursos
-    </p>
-    <div class="flex gap-2">
-        <a href="{% url 'courses:parametrizacion' %}" class="btn btn-ghost btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Parametrizacion
-        </a>
-        <a href="{% url 'courses:create' %}" class="btn btn-primary btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-            </svg>
-            Nuevo Curso
-        </a>
-    </div>
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<!-- Filters Card -->
-<div class="card bg-base-100 shadow mb-6">
-    <div class="card-body">
-        <form method="get"
-              hx-get="{% url 'courses:course_admin_list' %}"
-              hx-trigger="submit, change from:select"
-              hx-target="#course-admin-table"
-              hx-swap="innerHTML">
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Buscar</span></label>
-                    <input type="text" name="search" value="{{ search }}"
-                           placeholder="Titulo o codigo..."
-                           class="input input-bordered w-full input-sm">
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Categoria</span></label>
-                    <select name="category" class="select select-bordered select-sm w-full">
-                        <option value="">Todas</option>
-                        <option value="none" {% if category_filter == 'none' %}selected{% endif %}>Sin Categoria</option>
-                        {% for cat in categories %}
-                        <option value="{{ cat.id }}" {% if category_filter == cat.id|stringformat:"d" %}selected{% endif %}>{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Estado</span></label>
-                    <select name="status" class="select select-bordered select-sm w-full">
-                        <option value="">Todos</option>
-                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
-                        <option value="published" {% if status_filter == 'published' %}selected{% endif %}>Publicado</option>
-                        <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archivado</option>
-                    </select>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Tipo</span></label>
-                    <select name="type" class="select select-bordered select-sm w-full">
-                        <option value="">Todos</option>
-                        <option value="mandatory" {% if type_filter == 'mandatory' %}selected{% endif %}>Obligatorio</option>
-                        <option value="optional" {% if type_filter == 'optional' %}selected{% endif %}>Opcional</option>
-                        <option value="refresher" {% if type_filter == 'refresher' %}selected{% endif %}>Refuerzo</option>
-                    </select>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">&nbsp;</span></label>
-                    <button type="submit" class="btn btn-primary btn-sm w-full">Filtrar</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Table -->
-<div class="card bg-base-100 shadow">
-    <div class="card-body">
-        <div id="course-admin-table">
-            {% include "courses/partials/course_admin_table.html" %}
+    <div class="flex items-center justify-between">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Gestione parametros, categorias y estados de todos los cursos
+        </p>
+        <div class="flex gap-2">
+            <a href="{% url 'courses:parametrizacion' %}"
+               class="btn btn-ghost btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-1"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Parametrizacion
+            </a>
+            <a href="{% url 'courses:create' %}" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-1"
+                     viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Nuevo Curso
+            </a>
         </div>
     </div>
-</div>
+{% endblock %}
+{% block dashboard_content %}
+    <!-- Filters Card -->
+    <div class="card bg-base-100 shadow mb-6">
+        <div class="card-body">
+            <form method="get"
+                  hx-get="{% url 'courses:course_admin_list' %}"
+                  hx-trigger="submit, change from:select"
+                  hx-target="#course-admin-table"
+                  hx-swap="innerHTML">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Buscar</span>
+                        </label>
+                        <input type="text"
+                               name="search"
+                               value="{{ search }}"
+                               placeholder="Titulo o codigo..."
+                               class="input input-bordered w-full input-sm">
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Categoria</span>
+                        </label>
+                        <select name="category" class="select select-bordered select-sm w-full">
+                            <option value="">Todas</option>
+                            <option value="none" {% if category_filter == 'none' %}selected{% endif %}>Sin Categoria</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}"
+                                        {% if category_filter == cat.id|stringformat:"d" %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Estado</span>
+                        </label>
+                        <select name="status" class="select select-bordered select-sm w-full">
+                            <option value="">Todos</option>
+                            <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
+                            <option value="published"
+                                    {% if status_filter == 'published' %}selected{% endif %}>Publicado</option>
+                            <option value="archived"
+                                    {% if status_filter == 'archived' %}selected{% endif %}>Archivado</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Tipo</span>
+                        </label>
+                        <select name="type" class="select select-bordered select-sm w-full">
+                            <option value="">Todos</option>
+                            <option value="mandatory"
+                                    {% if type_filter == 'mandatory' %}selected{% endif %}>Obligatorio</option>
+                            <option value="optional"
+                                    {% if type_filter == 'optional' %}selected{% endif %}>Opcional</option>
+                            <option value="refresher"
+                                    {% if type_filter == 'refresher' %}selected{% endif %}>Refuerzo</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">&nbsp;</span>
+                        </label>
+                        <button type="submit" class="btn btn-primary btn-sm w-full">Filtrar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Table -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <div id="course-admin-table">{% include "courses/partials/course_admin_table.html" %}</div>
+        </div>
+    </div>
 {% endblock %}

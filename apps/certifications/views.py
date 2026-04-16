@@ -78,7 +78,7 @@ def verify_certificate(request, certificate_number=None):
             CertificateVerification.objects.create(
                 certificate=certificate,
                 ip_address=request.META.get("REMOTE_ADDR", ""),
-                user_agent=request.META.get("HTTP_USER_AGENT", ""),
+                user_agent=request.headers.get("user-agent", ""),
                 is_valid=is_valid,
             )
 

@@ -1,178 +1,163 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Mis Cursos{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Gestiona tu progreso de formación
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestiona tu progreso de formación</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<!-- Status Tabs -->
-<div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
-    <a href="{% url 'courses:my_courses' %}"
-       class="tab {% if not current_status %}tab-active{% endif %}">
-        Todos
-    </a>
-    <a href="{% url 'courses:my_courses' %}?status=in_progress"
-       class="tab {% if current_status == 'in_progress' %}tab-active{% endif %}">
-        En Progreso
-    </a>
-    <a href="{% url 'courses:my_courses' %}?status=completed"
-       class="tab {% if current_status == 'completed' %}tab-active{% endif %}">
-        Completados
-    </a>
-    <a href="{% url 'courses:my_courses' %}?status=enrolled"
-       class="tab {% if current_status == 'enrolled' %}tab-active{% endif %}">
-        Pendientes
-    </a>
-    <a href="{% url 'courses:my_courses' %}?status=expired"
-       class="tab {% if current_status == 'expired' %}tab-active{% endif %}">
-        Expirados
-    </a>
-</div>
-
-<!-- Course Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for enrollment in enrollments %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <!-- Progress Header -->
-        <div class="h-2 bg-gray-200 dark:bg-gray-700">
-            <div class="h-2 bg-primary" style="width: {{ enrollment.progress }}%"></div>
-        </div>
-
-        <div class="p-4">
-            <!-- Course Info -->
-            <div class="flex items-start gap-4">
-                <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                    {% if enrollment.course.thumbnail %}
-                    <img src="{{ enrollment.course.thumbnail.url }}" class="w-full h-full object-cover rounded-lg">
-                    {% else %}
-                    <svg class="w-8 h-8 text-white opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                    {% endif %}
+    <!-- Status Tabs -->
+    <div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
+        <a href="{% url 'courses:my_courses' %}"
+           class="tab {% if not current_status %}tab-active{% endif %}">Todos</a>
+        <a href="{% url 'courses:my_courses' %}?status=in_progress"
+           class="tab {% if current_status == 'in_progress' %}tab-active{% endif %}">En Progreso</a>
+        <a href="{% url 'courses:my_courses' %}?status=completed"
+           class="tab {% if current_status == 'completed' %}tab-active{% endif %}">Completados</a>
+        <a href="{% url 'courses:my_courses' %}?status=enrolled"
+           class="tab {% if current_status == 'enrolled' %}tab-active{% endif %}">Pendientes</a>
+        <a href="{% url 'courses:my_courses' %}?status=expired"
+           class="tab {% if current_status == 'expired' %}tab-active{% endif %}">Expirados</a>
+    </div>
+    <!-- Course Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for enrollment in enrollments %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                <!-- Progress Header -->
+                <div class="h-2 bg-gray-200 dark:bg-gray-700">
+                    <div class="h-2 bg-primary" style="width: {{ enrollment.progress }}%"></div>
                 </div>
-
-                <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-gray-900 dark:text-white truncate">
-                        {{ enrollment.course.title }}
-                    </h3>
-                    {% if enrollment.course.category %}
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ enrollment.course.category.name }}
-                    </p>
+                <div class="p-4">
+                    <!-- Course Info -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                            {% if enrollment.course.thumbnail %}
+                                <img src="{{ enrollment.course.thumbnail.url }}"
+                                     class="w-full h-full object-cover rounded-lg">
+                            {% else %}
+                                <svg class="w-8 h-8 text-white opacity-75"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-900 dark:text-white truncate">{{ enrollment.course.title }}</h3>
+                            {% if enrollment.course.category %}
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ enrollment.course.category.name }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Status & Progress -->
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            {% if enrollment.status == 'expired' %}
+                                <span class="badge badge-error gap-1">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                    Vencido
+                                </span>
+                            {% elif enrollment.status == 'completed' %}
+                                <span class="badge badge-success gap-1">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    Completado
+                                </span>
+                            {% elif enrollment.status == 'in_progress' %}
+                                <span class="badge badge-primary">{{ enrollment.progress|floatformat:0 }}% completado</span>
+                            {% else %}
+                                <span class="badge badge-ghost">Sin iniciar</span>
+                            {% endif %}
+                        </div>
+                        <a href="{% url 'courses:detail' enrollment.course.id %}"
+                           class="btn btn-ghost btn-sm">
+                            {% if enrollment.status == 'completed' %}
+                                Revisar
+                            {% elif enrollment.status == 'in_progress' %}
+                                Continuar
+                            {% else %}
+                                Empezar
+                            {% endif %}
+                        </a>
+                    </div>
+                    <!-- Course validity info (not started yet) -->
+                    {% if enrollment.status == 'enrolled' and enrollment.course.validity_months %}
+                        <div class="mt-3 text-xs text-info flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Tienes {{ enrollment.course.validity_months }} mes{{ enrollment.course.validity_months|pluralize:"es" }} para completarlo una vez inicies
+                        </div>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Status & Progress -->
-            <div class="mt-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
+                    <!-- Expired Alert -->
                     {% if enrollment.status == 'expired' %}
-                    <span class="badge badge-error gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                        </svg>
-                        Vencido
-                    </span>
-                    {% elif enrollment.status == 'completed' %}
-                    <span class="badge badge-success gap-1">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                        </svg>
-                        Completado
-                    </span>
-                    {% elif enrollment.status == 'in_progress' %}
-                    <span class="badge badge-primary">{{ enrollment.progress|floatformat:0 }}% completado</span>
-                    {% else %}
-                    <span class="badge badge-ghost">Sin iniciar</span>
+                        <div class="mt-3 alert alert-error shadow-sm py-2 px-3">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="stroke-current shrink-0 h-5 w-5"
+                                 fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                            <div class="flex-1">
+                                <span class="text-xs font-semibold">Este curso ha vencido</span>
+                            </div>
+                            <form method="post"
+                                  action="{% url 'courses:reenable_course' enrollment.id %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-warning btn-xs"
+                                        onclick="return confirm('Al habilitar de nuevo este curso tendrá 5 días menos de plazo. ¿Continuar?')">
+                                    Habilitar de nuevo
+                                </button>
+                            </form>
+                        </div>
+                        <!-- Due Date Warning - Expiring Soon (3 days or less) -->
+                    {% elif enrollment.is_expiring_soon %}
+                        <div class="mt-3 alert alert-warning shadow-sm py-2 px-3">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="stroke-current shrink-0 h-5 w-5"
+                                 fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            </svg>
+                            <span class="text-xs font-semibold">
+                                {% if enrollment.days_until_due == 0 %}
+                                    Vence hoy
+                                {% elif enrollment.days_until_due == 1 %}
+                                    Vence mañana
+                                {% else %}
+                                    Quedan {{ enrollment.days_until_due }} días
+                                {% endif %}
+                                - Fecha límite: {{ enrollment.due_date|date:"d M Y" }}
+                            </span>
+                        </div>
+                        <!-- Due Date - Normal -->
+                    {% elif enrollment.due_date and enrollment.status != 'completed' %}
+                        <div class="mt-3 text-xs text-warning flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Fecha límite: {{ enrollment.due_date|date:"d M Y" }}
+                        </div>
                     {% endif %}
                 </div>
-
-                <a href="{% url 'courses:detail' enrollment.course.id %}" class="btn btn-ghost btn-sm">
-                    {% if enrollment.status == 'completed' %}
-                    Revisar
-                    {% elif enrollment.status == 'in_progress' %}
-                    Continuar
-                    {% else %}
-                    Empezar
-                    {% endif %}
-                </a>
             </div>
-
-            <!-- Course validity info (not started yet) -->
-            {% if enrollment.status == 'enrolled' and enrollment.course.validity_months %}
-            <div class="mt-3 text-xs text-info flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
-                Tienes {{ enrollment.course.validity_months }} mes{{ enrollment.course.validity_months|pluralize:"es" }} para completarlo una vez inicies
-            </div>
-            {% endif %}
-
-            <!-- Expired Alert -->
-            {% if enrollment.status == 'expired' %}
-            <div class="mt-3 alert alert-error shadow-sm py-2 px-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <div class="flex-1">
-                    <span class="text-xs font-semibold">Este curso ha vencido</span>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tienes cursos</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Explora el catálogo y encuentra cursos para tu formación.</p>
+                <div class="mt-6">
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary">Explorar Cursos</a>
                 </div>
-                <form method="post" action="{% url 'courses:reenable_course' enrollment.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-warning btn-xs"
-                            onclick="return confirm('Al habilitar de nuevo este curso tendrá 5 días menos de plazo. ¿Continuar?')">
-                        Habilitar de nuevo
-                    </button>
-                </form>
             </div>
-
-            <!-- Due Date Warning - Expiring Soon (3 days or less) -->
-            {% elif enrollment.is_expiring_soon %}
-            <div class="mt-3 alert alert-warning shadow-sm py-2 px-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <span class="text-xs font-semibold">
-                    {% if enrollment.days_until_due == 0 %}
-                        Vence hoy
-                    {% elif enrollment.days_until_due == 1 %}
-                        Vence mañana
-                    {% else %}
-                        Quedan {{ enrollment.days_until_due }} días
-                    {% endif %}
-                    - Fecha límite: {{ enrollment.due_date|date:"d M Y" }}
-                </span>
-            </div>
-
-            <!-- Due Date - Normal -->
-            {% elif enrollment.due_date and enrollment.status != 'completed' %}
-            <div class="mt-3 text-xs text-warning flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                Fecha límite: {{ enrollment.due_date|date:"d M Y" }}
-            </div>
-            {% endif %}
-        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tienes cursos</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Explora el catálogo y encuentra cursos para tu formación.
-        </p>
-        <div class="mt-6">
-            <a href="{% url 'courses:list' %}" class="btn btn-primary">
-                Explorar Cursos
-            </a>
-        </div>
-    </div>
-    {% endfor %}
-</div>
 {% endblock %}

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Certificado - {{ certificate.certificate_number }}</title>
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <title>Certificado - {{ certificate.certificate_number }}</title>
+        <style>
         @page {
             size: landscape;
             margin: 0;
@@ -79,51 +79,54 @@
             left: 50%;
             transform: translateX(-50%);
         }
-    </style>
-</head>
-<body>
-    <div class="certificate">
-        <div class="header">
-            <div class="title">Certificado</div>
-            <div class="subtitle">S.D. S.A.S. - Sistema de Gestión de Aprendizaje</div>
-        </div>
-
-        <p>Se certifica que</p>
-        <div class="recipient">{{ user.get_full_name }}</div>
-
-        <p>ha completado satisfactoriamente el curso</p>
-        <div class="course-title">{{ course.title }}</div>
-
-        <div class="details">
-            {% if certificate.score %}
-            <p>Puntaje: {{ certificate.score }}%</p>
-            {% endif %}
-            <p>Fecha de emisión: {{ issued_date|date:"d \d\e F \d\e Y" }}</p>
-            {% if expires_date %}
-            <p>Fecha de vencimiento: {{ expires_date|date:"d \d\e F \d\e Y" }}</p>
-            {% endif %}
-        </div>
-
-        <div class="footer">
-            <div class="signature">
-                {% if template and template.signature_image %}
-                <img src="{{ template.signature_image.url }}" alt="Firma" style="height: 60px;">
-                {% endif %}
-                <div class="signature-line"></div>
-                <div>{% if template %}{{ template.signer_name }}{% endif %}</div>
-                <div>{% if template %}{{ template.signer_title }}{% endif %}</div>
+        </style>
+    </head>
+    <body>
+        <div class="certificate">
+            <div class="header">
+                <div class="title">Certificado</div>
+                <div class="subtitle">S.D. S.A.S. - Sistema de Gestión de Aprendizaje</div>
             </div>
-            <div class="qr-code">
-                {% if certificate.qr_code %}
-                <img src="{{ certificate.qr_code.url }}" alt="QR" style="width: 100px; height: 100px;">
+            <p>Se certifica que</p>
+            <div class="recipient">{{ user.get_full_name }}</div>
+            <p>ha completado satisfactoriamente el curso</p>
+            <div class="course-title">{{ course.title }}</div>
+            <div class="details">
+                {% if certificate.score %}
+                    <p>Puntaje: {{ certificate.score }}%</p>
                 {% endif %}
+                <p>Fecha de emisión: {{ issued_date|date:"d \d\e F \d\e Y" }}</p>
+                {% if expires_date %}<p>Fecha de vencimiento: {{ expires_date|date:"d \d\e F \d\e Y" }}</p>{% endif %}
+            </div>
+            <div class="footer">
+                <div class="signature">
+                    {% if template and template.signature_image %}
+                        <img src="{{ template.signature_image.url }}"
+                             alt="Firma"
+                             style="height: 60px">
+                    {% endif %}
+                    <div class="signature-line"></div>
+                    <div>
+                        {% if template %}{{ template.signer_name }}{% endif %}
+                    </div>
+                    <div>
+                        {% if template %}{{ template.signer_title }}{% endif %}
+                    </div>
+                </div>
+                <div class="qr-code">
+                    {% if certificate.qr_code %}
+                        <img src="{{ certificate.qr_code.url }}"
+                             alt="QR"
+                             style="width: 100px;
+                                    height: 100px">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="cert-number">
+                Certificado No: {{ certificate_number }}
+                <br>
+                Verificar en: {{ verification_url }}
             </div>
         </div>
-
-        <div class="cert-number">
-            Certificado No: {{ certificate_number }}<br>
-            Verificar en: {{ verification_url }}
-        </div>
-    </div>
-</body>
+    </body>
 </html>

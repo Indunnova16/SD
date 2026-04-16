@@ -1,126 +1,130 @@
 {% extends "base/base.html" %}
 {% load static %}
-
 {% block title %}Inicio - SD LMS{% endblock %}
-
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Welcome Section -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-            Bienvenido{% if user.is_authenticated %}, {{ user.first_name }}{% endif %}
-        </h1>
-        <p class="mt-2 text-gray-600 dark:text-gray-400">
-            Sistema de Gestión de Aprendizaje de SD S.A.S.
-        </p>
-    </div>
-
-    {% if user.is_authenticated %}
-    <!-- Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div class="stat-title text-gray-500 dark:text-gray-400">Cursos Asignados</div>
-            <div class="stat-value text-primary-500">{{ enrolled_courses_count|default:0 }}</div>
-            <div class="stat-desc text-gray-500">Activos</div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                Bienvenido
+                {% if user.is_authenticated %}, {{ user.first_name }}{% endif %}
+            </h1>
+            <p class="mt-2 text-gray-600 dark:text-gray-400">Sistema de Gestión de Aprendizaje de SD S.A.S.</p>
         </div>
-        <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div class="stat-title text-gray-500 dark:text-gray-400">Completados</div>
-            <div class="stat-value text-success">{{ completed_courses_count|default:0 }}</div>
-            <div class="stat-desc text-gray-500">Este año</div>
-        </div>
-        <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div class="stat-title text-gray-500 dark:text-gray-400">Certificados</div>
-            <div class="stat-value text-info">{{ certificates_count|default:0 }}</div>
-            <div class="stat-desc text-gray-500">Vigentes</div>
-        </div>
-        <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-            <div class="stat-title text-gray-500 dark:text-gray-400">Progreso General</div>
-            <div class="stat-value text-warning">{{ overall_progress|default:0 }}%</div>
-            <div class="stat-desc text-gray-500">Promedio</div>
-        </div>
-    </div>
-
-    <!-- Current Courses -->
-    <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Continuar Aprendiendo</h2>
-            <a href="{% url 'courses:list' %}" class="btn btn-ghost btn-sm">Ver todos →</a>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4"
-             hx-get="{% url 'courses:my_courses' %}"
-             hx-trigger="load"
-             hx-swap="innerHTML">
-            <!-- Loading placeholder -->
-            <div class="card bg-white dark:bg-gray-800 shadow animate-pulse">
-                <div class="card-body">
-                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
-                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
-                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+        {% if user.is_authenticated %}
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div class="stat-title text-gray-500 dark:text-gray-400">Cursos Asignados</div>
+                    <div class="stat-value text-primary-500">{{ enrolled_courses_count|default:0 }}</div>
+                    <div class="stat-desc text-gray-500">Activos</div>
+                </div>
+                <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div class="stat-title text-gray-500 dark:text-gray-400">Completados</div>
+                    <div class="stat-value text-success">{{ completed_courses_count|default:0 }}</div>
+                    <div class="stat-desc text-gray-500">Este año</div>
+                </div>
+                <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div class="stat-title text-gray-500 dark:text-gray-400">Certificados</div>
+                    <div class="stat-value text-info">{{ certificates_count|default:0 }}</div>
+                    <div class="stat-desc text-gray-500">Vigentes</div>
+                </div>
+                <div class="stat bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                    <div class="stat-title text-gray-500 dark:text-gray-400">Progreso General</div>
+                    <div class="stat-value text-warning">{{ overall_progress|default:0 }}%</div>
+                    <div class="stat-desc text-gray-500">Promedio</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <a href="{% url 'courses:catalog' %}" class="card bg-primary-500 hover:bg-primary-600 text-white shadow-lg transition-colors">
-            <div class="card-body">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                </svg>
-                <h3 class="card-title text-lg">Catálogo de Cursos</h3>
-                <p class="text-primary-100">Explorar cursos disponibles</p>
+            <!-- Current Courses -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Continuar Aprendiendo</h2>
+                    <a href="{% url 'courses:list' %}" class="btn btn-ghost btn-sm">Ver todos →</a>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4"
+                     hx-get="{% url 'courses:my_courses' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <!-- Loading placeholder -->
+                    <div class="card bg-white dark:bg-gray-800 shadow animate-pulse">
+                        <div class="card-body">
+                            <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+                            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2"></div>
+                            <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </a>
-
-        <a href="{% url 'learning_paths:list' %}" class="card bg-secondary-500 hover:bg-secondary-600 text-white shadow-lg transition-colors">
-            <div class="card-body">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                </svg>
-                <h3 class="card-title text-lg">Rutas de Aprendizaje</h3>
-                <p class="text-secondary-100">Ver rutas asignadas</p>
-            </div>
-        </a>
-
-        <a href="{% url 'lessons_learned:list' %}" class="card bg-warning hover:bg-yellow-600 text-white shadow-lg transition-colors">
-            <div class="card-body">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                </svg>
-                <h3 class="card-title text-lg">Lecciones Aprendidas</h3>
-                <p class="text-yellow-100">Compartir conocimiento</p>
-            </div>
-        </a>
-
-        <a href="{% url 'accounts:certificates' %}" class="card bg-success hover:bg-green-600 text-white shadow-lg transition-colors">
-            <div class="card-body">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                </svg>
-                <h3 class="card-title text-lg">Mis Certificados</h3>
-                <p class="text-green-100">Ver certificaciones</p>
-            </div>
-        </a>
-    </div>
-
-    {% else %}
-    <!-- Hero Section for non-authenticated users -->
-    <div class="hero min-h-[60vh] bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl shadow-xl">
-        <div class="hero-content text-center text-white">
-            <div class="max-w-md">
-                <h1 class="text-5xl font-bold">SD LMS</h1>
-                <p class="py-6">
-                    Sistema de Gestión de Aprendizaje para el personal de SD S.A.S.
-                    Capacitación continua para la excelencia operacional.
-                </p>
-                <a href="{% url 'accounts:login' %}" class="btn btn-lg bg-white text-primary-600 hover:bg-gray-100">
-                    Iniciar Sesión
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <a href="{% url 'courses:catalog' %}"
+                   class="card bg-primary-500 hover:bg-primary-600 text-white shadow-lg transition-colors">
+                    <div class="card-body">
+                        <svg class="w-8 h-8 mb-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <h3 class="card-title text-lg">Catálogo de Cursos</h3>
+                        <p class="text-primary-100">Explorar cursos disponibles</p>
+                    </div>
+                </a>
+                <a href="{% url 'learning_paths:list' %}"
+                   class="card bg-secondary-500 hover:bg-secondary-600 text-white shadow-lg transition-colors">
+                    <div class="card-body">
+                        <svg class="w-8 h-8 mb-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        <h3 class="card-title text-lg">Rutas de Aprendizaje</h3>
+                        <p class="text-secondary-100">Ver rutas asignadas</p>
+                    </div>
+                </a>
+                <a href="{% url 'lessons_learned:list' %}"
+                   class="card bg-warning hover:bg-yellow-600 text-white shadow-lg transition-colors">
+                    <div class="card-body">
+                        <svg class="w-8 h-8 mb-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        <h3 class="card-title text-lg">Lecciones Aprendidas</h3>
+                        <p class="text-yellow-100">Compartir conocimiento</p>
+                    </div>
+                </a>
+                <a href="{% url 'accounts:certificates' %}"
+                   class="card bg-success hover:bg-green-600 text-white shadow-lg transition-colors">
+                    <div class="card-body">
+                        <svg class="w-8 h-8 mb-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        <h3 class="card-title text-lg">Mis Certificados</h3>
+                        <p class="text-green-100">Ver certificaciones</p>
+                    </div>
                 </a>
             </div>
-        </div>
+        {% else %}
+            <!-- Hero Section for non-authenticated users -->
+            <div class="hero min-h-[60vh] bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl shadow-xl">
+                <div class="hero-content text-center text-white">
+                    <div class="max-w-md">
+                        <h1 class="text-5xl font-bold">SD LMS</h1>
+                        <p class="py-6">
+                            Sistema de Gestión de Aprendizaje para el personal de SD S.A.S.
+                            Capacitación continua para la excelencia operacional.
+                        </p>
+                        <a href="{% url 'accounts:login' %}"
+                           class="btn btn-lg bg-white text-primary-600 hover:bg-gray-100">Iniciar Sesión</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    {% endif %}
-</div>
 {% endblock %}

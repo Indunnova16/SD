@@ -1,211 +1,225 @@
 {% extends "base/dashboard.html" %}
 {% load course_tags %}
-
 {% block page_title %}{{ course.title }}{% endblock %}
 {% block page_description %}
-<div class="flex items-center gap-2 mt-1">
-    {% if course.category %}
-    <span class="badge badge-ghost">{{ course.category.name }}</span>
-    {% endif %}
-    {% if course.course_type == 'mandatory' %}
-    <span class="badge badge-error">Obligatorio</span>
-    {% endif %}
-</div>
+    <div class="flex items-center gap-2 mt-1">
+        {% if course.category %}<span class="badge badge-ghost">{{ course.category.name }}</span>{% endif %}
+        {% if course.course_type == 'mandatory' %}<span class="badge badge-error">Obligatorio</span>{% endif %}
+    </div>
 {% endblock %}
-
 {% block main_classes %}lg:col-span-3{% endblock %}
-
 {% block sidebar %}
-<div class="lg:col-span-1">
-    <!-- Course Info Card -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
-        <!-- Enrollment Status -->
-        <div id="enrollment-status">
-            {% include "courses/partials/enrollment_status.html" %}
-        </div>
-
-        <!-- Course Stats -->
-        <div class="border-t dark:border-gray-700 mt-4 pt-4">
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Duración total</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ course.total_duration }} min</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Módulos</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ course.modules.count }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Tipo</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ course.get_course_type_display }}</span>
-                </div>
-                {% if course.validity_months %}
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Validez</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ course.validity_months }} meses</span>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Prerequisites -->
-        {% if course.prerequisites.exists %}
-        <div class="border-t dark:border-gray-700 mt-4 pt-4">
-            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Prerrequisitos</h4>
-            <ul class="space-y-2 text-sm">
-                {% for prereq in course.prerequisites.all %}
-                <li class="flex items-center gap-2">
-                    <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
-                    <a href="{% url 'courses:detail' prereq.id %}" class="text-primary hover:underline">
-                        {{ prereq.title }}
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Banner Image -->
-    {% if course.banner_image %}
-    <div class="rounded-xl overflow-hidden shadow-lg -mt-2">
-        <img src="{{ course.banner_image.url }}" alt="{{ course.title }}"
-             class="w-full h-48 md:h-64 object-cover">
-    </div>
-    {% endif %}
-
-    <!-- Description -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
-         {% if course.theme_color %}style="border-left: 4px solid {{ course.theme_color }}"{% endif %}>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
-            {% if course.theme_color %}style="color: {{ course.theme_color }}"{% endif %}>Descripción</h2>
-        <p class="text-gray-600 dark:text-gray-300">{{ course.description }}</p>
-
-        {% if course.objectives %}
-        <h3 class="text-md font-semibold text-gray-900 dark:text-white mt-4 mb-2">Objetivos</h3>
-        <div class="text-gray-600 dark:text-gray-300">{{ course.objectives|linebreaks }}</div>
-        {% endif %}
-    </div>
-
-    <!-- Course Content -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contenido del Curso</h2>
-
-        <div class="space-y-4">
-            {% for module in course.modules.all %}
-            <div class="border dark:border-gray-700 rounded-lg overflow-hidden"
-                 {% if course.theme_color %}style="border-color: {{ course.theme_color }}20"{% endif %}>
-                {% if module.cover_image %}
-                <div class="relative">
-                    <img src="{{ module.cover_image.url }}" alt="{{ module.title }}"
-                         class="w-full h-32 object-cover">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <div class="absolute bottom-0 left-0 right-0 px-4 py-3 flex justify-between items-center">
-                        <h3 class="font-medium text-white">
-                            {{ forloop.counter }}. {{ module.title }}
-                        </h3>
-                        <span class="text-sm text-white/80">
-                            {{ module.lessons.count }} lecciones
-                        </span>
+    <div class="lg:col-span-1">
+        <!-- Course Info Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
+            <!-- Enrollment Status -->
+            <div id="enrollment-status">{% include "courses/partials/enrollment_status.html" %}</div>
+            <!-- Course Stats -->
+            <div class="border-t dark:border-gray-700 mt-4 pt-4">
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Duración total</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ course.total_duration }} min</span>
                     </div>
-                </div>
-                {% else %}
-                <div class="px-4 py-3 flex justify-between items-center"
-                     {% if course.theme_color %}style="background-color: {{ course.theme_color }}10"{% endif %}>
-                    <h3 class="font-medium text-gray-900 dark:text-white"
-                        {% if course.theme_color %}style="color: {{ course.theme_color }}"{% endif %}>
-                        {{ forloop.counter }}. {{ module.title }}
-                    </h3>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ module.lessons.count }} lecciones
-                    </span>
-                </div>
-                {% endif %}
-
-                <ul class="divide-y dark:divide-gray-700">
-                    {% for lesson in module.lessons.all %}
-                    <li class="px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <div class="flex items-center gap-3">
-                            <!-- Lesson Type Icon -->
-                            {% if lesson.lesson_type == 'video' %}
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span class="sr-only">Video:</span>
-                            {% elif lesson.lesson_type == 'quiz' %}
-                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            <span class="sr-only">Quiz:</span>
-                            {% elif lesson.lesson_type == 'pdf' %}
-                            <svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
-                            </svg>
-                            <span class="sr-only">PDF:</span>
-                            {% else %}
-                            <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" role="img">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                            <span class="sr-only">Documento:</span>
-                            {% endif %}
-
-                            <div>
-                                <span class="text-gray-900 dark:text-white">{{ lesson.title }}</span>
-                                {% if lesson.is_mandatory %}
-                                <span class="text-xs text-error ml-1">*</span>
-                                {% endif %}
-                            </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Módulos</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ course.modules.count }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Tipo</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ course.get_course_type_display }}</span>
+                    </div>
+                    {% if course.validity_months %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 dark:text-gray-400">Validez</span>
+                            <span class="font-medium text-gray-900 dark:text-white">{{ course.validity_months }} meses</span>
                         </div>
-
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-500 dark:text-gray-400">{{ lesson.duration }} min</span>
-
-                            {% if enrollment %}
-                                {% with access=lesson_accessibility|get_item:lesson.id progress=lesson_progress|get_item:lesson.id %}
-                                {% if access.is_completed %}
-                                <svg class="w-5 h-5 text-success" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                </svg>
-                                <a href="{% url 'courses:lesson' course.id lesson.id %}" class="btn btn-ghost btn-xs">Repasar</a>
-                                {% elif access.is_accessible %}
-                                {% if progress %}
-                                <div class="radial-progress text-primary text-xs" style="--value:{{ progress.progress_percent }}; --size:1.5rem; --thickness:2px;">
-                                </div>
-                                {% endif %}
-                                <a href="{% url 'courses:lesson' course.id lesson.id %}" class="btn btn-primary btn-xs">
-                                    {% if progress %}Continuar{% else %}Iniciar{% endif %}
-                                </a>
-                                {% else %}
-                                <svg class="w-5 h-5 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                                </svg>
-                                <span class="text-xs text-gray-400">Bloqueado</span>
-                                {% endif %}
-                                {% endwith %}
-                            {% else %}
-                            <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                            </svg>
-                            <span class="sr-only">Bloqueado - Necesita inscripcion</span>
-                            {% endif %}
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
+                    {% endif %}
+                </div>
             </div>
-            {% empty %}
-            <p class="text-gray-500 dark:text-gray-400 text-center py-4">
-                Este curso aún no tiene contenido.
-            </p>
-            {% endfor %}
+            <!-- Prerequisites -->
+            {% if course.prerequisites.exists %}
+                <div class="border-t dark:border-gray-700 mt-4 pt-4">
+                    <h4 class="font-medium text-gray-900 dark:text-white mb-2">Prerrequisitos</h4>
+                    <ul class="space-y-2 text-sm">
+                        {% for prereq in course.prerequisites.all %}
+                            <li class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-warning"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <a href="{% url 'courses:detail' prereq.id %}"
+                                   class="text-primary hover:underline">{{ prereq.title }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
         </div>
     </div>
-</div>
+{% endblock %}
+{% block dashboard_content %}
+    <div class="space-y-6">
+        <!-- Banner Image -->
+        {% if course.banner_image %}
+            <div class="rounded-xl overflow-hidden shadow-lg -mt-2">
+                <img src="{{ course.banner_image.url }}"
+                     alt="{{ course.title }}"
+                     class="w-full h-48 md:h-64 object-cover">
+            </div>
+        {% endif %}
+        <!-- Description -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
+             {% if course.theme_color %}style="border-left: 4px solid {{ course.theme_color }}"{% endif %}>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3"
+                {% if course.theme_color %}style="color: {{ course.theme_color }}"{% endif %}>Descripción</h2>
+            <p class="text-gray-600 dark:text-gray-300">{{ course.description }}</p>
+            {% if course.objectives %}
+                <h3 class="text-md font-semibold text-gray-900 dark:text-white mt-4 mb-2">Objetivos</h3>
+                <div class="text-gray-600 dark:text-gray-300">{{ course.objectives|linebreaks }}</div>
+            {% endif %}
+        </div>
+        <!-- Course Content -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contenido del Curso</h2>
+            <div class="space-y-4">
+                {% for module in course.modules.all %}
+                    <div class="border dark:border-gray-700 rounded-lg overflow-hidden"
+                         {% if course.theme_color %}style="border-color: {{ course.theme_color }}20"{% endif %}>
+                        {% if module.cover_image %}
+                            <div class="relative">
+                                <img src="{{ module.cover_image.url }}"
+                                     alt="{{ module.title }}"
+                                     class="w-full h-32 object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                <div class="absolute bottom-0 left-0 right-0 px-4 py-3 flex justify-between items-center">
+                                    <h3 class="font-medium text-white">{{ forloop.counter }}. {{ module.title }}</h3>
+                                    <span class="text-sm text-white/80">{{ module.lessons.count }} lecciones</span>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="px-4 py-3 flex justify-between items-center"
+                                 {% if course.theme_color %}style="background-color: {{ course.theme_color }}10"{% endif %}>
+                                <h3 class="font-medium text-gray-900 dark:text-white"
+                                    {% if course.theme_color %}style="color: {{ course.theme_color }}"{% endif %}>
+                                    {{ forloop.counter }}. {{ module.title }}
+                                </h3>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ module.lessons.count }} lecciones</span>
+                            </div>
+                        {% endif %}
+                        <ul class="divide-y dark:divide-gray-700">
+                            {% for lesson in module.lessons.all %}
+                                <li class="px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <div class="flex items-center gap-3">
+                                        <!-- Lesson Type Icon -->
+                                        {% if lesson.lesson_type == 'video' %}
+                                            <svg class="w-5 h-5 text-primary"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 aria-hidden="true"
+                                                 role="img">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="sr-only">Video:</span>
+                                        {% elif lesson.lesson_type == 'quiz' %}
+                                            <svg class="w-5 h-5 text-secondary"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 aria-hidden="true"
+                                                 role="img">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                            </svg>
+                                            <span class="sr-only">Quiz:</span>
+                                        {% elif lesson.lesson_type == 'pdf' %}
+                                            <svg class="w-5 h-5 text-error"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 aria-hidden="true"
+                                                 role="img">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <span class="sr-only">PDF:</span>
+                                        {% else %}
+                                            <svg class="w-5 h-5 text-info"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 aria-hidden="true"
+                                                 role="img">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <span class="sr-only">Documento:</span>
+                                        {% endif %}
+                                        <div>
+                                            <span class="text-gray-900 dark:text-white">{{ lesson.title }}</span>
+                                            {% if lesson.is_mandatory %}<span class="text-xs text-error ml-1">*</span>{% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ lesson.duration }} min</span>
+                                        {% if enrollment %}
+                                            {% with access=lesson_accessibility|get_item:lesson.id progress=lesson_progress|get_item:lesson.id %}
+                                                {% if access.is_completed %}
+                                                    <svg class="w-5 h-5 text-success"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 20 20"
+                                                         aria-hidden="true">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    <a href="{% url 'courses:lesson' course.id lesson.id %}"
+                                                       class="btn btn-ghost btn-xs">Repasar</a>
+                                                {% elif access.is_accessible %}
+                                                    {% if progress %}
+                                                        <div class="radial-progress text-primary text-xs"
+                                                             style="--value:{{ progress.progress_percent }};
+                                                                    --size:1.5rem;
+                                                                    --thickness:2px"></div>
+                                                    {% endif %}
+                                                    <a href="{% url 'courses:lesson' course.id lesson.id %}"
+                                                       class="btn btn-primary btn-xs">
+                                                        {% if progress %}
+                                                            Continuar
+                                                        {% else %}
+                                                            Iniciar
+                                                        {% endif %}
+                                                    </a>
+                                                {% else %}
+                                                    <svg class="w-5 h-5 text-gray-300 dark:text-gray-600"
+                                                         fill="none"
+                                                         stroke="currentColor"
+                                                         viewBox="0 0 24 24"
+                                                         aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                    <span class="text-xs text-gray-400">Bloqueado</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <svg class="w-5 h-5 text-gray-300"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24"
+                                                 aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                            <span class="sr-only">Bloqueado - Necesita inscripcion</span>
+                                        {% endif %}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-4">Este curso aún no tiene contenido.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 {% endblock %}

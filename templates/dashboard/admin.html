@@ -1,85 +1,111 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Panel de Analítica{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Métricas y seguimiento del sistema de formación
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Métricas y seguimiento del sistema de formación</p>
 {% endblock %}
-
 {% block extra_css %}
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-<script>document.dispatchEvent(new Event('echarts:ready'));</script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script>document.dispatchEvent(new Event('echarts:ready'));</script>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Filter Bar -->
-    {% include "dashboard/partials/filter_bar.html" %}
-
-    <!-- Stats Cards Row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
-         hx-get="{% url 'reports:dashboard-stats' %}"
-         hx-trigger="load, filterChanged from:body"
-         hx-include="#dashboard-filters"
-         hx-swap="innerHTML">
-        {% for i in "1234" %}
-        <div class="card bg-base-100 shadow animate-pulse">
-            <div class="card-body">
-                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
-                <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-            </div>
+    <div class="space-y-6">
+        <!-- Filter Bar -->
+        {% include "dashboard/partials/filter_bar.html" %}
+        <!-- Stats Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+             hx-get="{% url 'reports:dashboard-stats' %}"
+             hx-trigger="load, filterChanged from:body"
+             hx-include="#dashboard-filters"
+             hx-swap="innerHTML">
+            {% for i in "1234" %}
+                <div class="card bg-base-100 shadow animate-pulse">
+                    <div class="card-body">
+                        <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                        <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-
-    <!-- Charts Row 1: Compliance + Training Trend -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Compliance Chart -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title text-lg">Estado de Inscripciones</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Distribución por estado actual</p>
-                <div id="compliance-chart"
-                     hx-get="{% url 'reports:dashboard-compliance-chart' %}"
-                     hx-trigger="load, filterChanged from:body"
-                     hx-include="#dashboard-filters"
-                     hx-swap="innerHTML"
-                     class="h-72">
-                    <div class="flex items-center justify-center h-full">
-                        <span class="loading loading-spinner loading-lg"></span>
+        <!-- Charts Row 1: Compliance + Training Trend -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Compliance Chart -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Estado de Inscripciones</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Distribución por estado actual</p>
+                    <div id="compliance-chart"
+                         hx-get="{% url 'reports:dashboard-compliance-chart' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML"
+                         class="h-72">
+                        <div class="flex items-center justify-center h-full">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Training Trend Chart -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Tendencia de Completados</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Cursos completados por semana</p>
+                    <div id="training-trend-chart"
+                         hx-get="{% url 'reports:dashboard-training-trend' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML"
+                         class="h-72">
+                        <div class="flex items-center justify-center h-full">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Training Trend Chart -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title text-lg">Tendencia de Completados</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Cursos completados por semana</p>
-                <div id="training-trend-chart"
-                     hx-get="{% url 'reports:dashboard-training-trend' %}"
-                     hx-trigger="load, filterChanged from:body"
-                     hx-include="#dashboard-filters"
-                     hx-swap="innerHTML"
-                     class="h-72">
-                    <div class="flex items-center justify-center h-full">
-                        <span class="loading loading-spinner loading-lg"></span>
+        <!-- Charts Row 2: Course Progress + Course Types -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Course Progress (wider) -->
+            <div class="card bg-base-100 shadow lg:col-span-2">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Progreso por Curso</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Top 10 cursos con más inscripciones</p>
+                    <div hx-get="{% url 'reports:dashboard-course-progress' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML"
+                         class="h-80">
+                        <div class="flex items-center justify-center h-full">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Course Type Distribution -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Tipos de Curso</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Distribución por categoría</p>
+                    <div hx-get="{% url 'reports:dashboard-course-types' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML"
+                         class="h-72">
+                        <div class="flex items-center justify-center h-full">
+                            <span class="loading loading-spinner loading-lg"></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Charts Row 2: Course Progress + Course Types -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Course Progress (wider) -->
-        <div class="card bg-base-100 shadow lg:col-span-2">
+        <!-- Charts Row 3: Assessment Performance -->
+        <div class="card bg-base-100 shadow">
             <div class="card-body">
-                <h3 class="card-title text-lg">Progreso por Curso</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Top 10 cursos con más inscripciones</p>
-                <div hx-get="{% url 'reports:dashboard-course-progress' %}"
+                <h3 class="card-title text-lg">Rendimiento en Evaluaciones</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">
+                    Aprobados, intentos totales y puntaje promedio por evaluación
+                </p>
+                <div hx-get="{% url 'reports:dashboard-assessment-performance' %}"
                      hx-trigger="load, filterChanged from:body"
                      hx-include="#dashboard-filters"
                      hx-swap="innerHTML"
@@ -90,121 +116,83 @@
                 </div>
             </div>
         </div>
-
-        <!-- Course Type Distribution -->
+        <!-- Tables Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Expiring Certifications -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="card-title text-lg">Certificaciones por Vencer</h3>
+                        <a href="{% url 'certifications:my_certificates' %}?status=expiring"
+                           class="btn btn-ghost btn-sm"
+                           aria-label="Ver todas las certificaciones por vencer">Ver todas</a>
+                    </div>
+                    <div hx-get="{% url 'reports:dashboard-expiring-certs' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML">
+                        <div class="flex items-center justify-center h-32">
+                            <span class="loading loading-spinner loading-md"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Overdue Assignments -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="card-title text-lg">Asignaciones Vencidas</h3>
+                        <a href="{% url 'learning_paths:my_paths' %}?status=overdue"
+                           class="btn btn-ghost btn-sm"
+                           aria-label="Ver todas las asignaciones vencidas">Ver todas</a>
+                    </div>
+                    <div hx-get="{% url 'reports:dashboard-overdue-assignments' %}"
+                         hx-trigger="load, filterChanged from:body"
+                         hx-include="#dashboard-filters"
+                         hx-swap="innerHTML">
+                        <div class="flex items-center justify-center h-32">
+                            <span class="loading loading-spinner loading-md"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Recent Activity -->
         <div class="card bg-base-100 shadow">
             <div class="card-body">
-                <h3 class="card-title text-lg">Tipos de Curso</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Distribución por categoría</p>
-                <div hx-get="{% url 'reports:dashboard-course-types' %}"
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="card-title text-lg">Actividad Reciente</h3>
+                    <div class="flex gap-2">
+                        <label for="activity-filter" class="sr-only">Filtrar actividad por tipo</label>
+                        <select id="activity-filter"
+                                class="select select-bordered select-sm"
+                                hx-get="{% url 'reports:dashboard-recent-activity' %}"
+                                hx-trigger="change"
+                                hx-target="#activity-list"
+                                hx-include="#dashboard-filters"
+                                name="filter"
+                                aria-label="Filtrar actividad reciente">
+                            <option value="all">Todas</option>
+                            <option value="enrollments">Inscripciones</option>
+                            <option value="completions">Completados</option>
+                            <option value="certifications">Certificaciones</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="activity-list"
+                     hx-get="{% url 'reports:dashboard-recent-activity' %}"
                      hx-trigger="load, filterChanged from:body"
                      hx-include="#dashboard-filters"
                      hx-swap="innerHTML"
-                     class="h-72">
-                    <div class="flex items-center justify-center h-full">
-                        <span class="loading loading-spinner loading-lg"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Charts Row 3: Assessment Performance -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h3 class="card-title text-lg">Rendimiento en Evaluaciones</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 -mt-1">Aprobados, intentos totales y puntaje promedio por evaluación</p>
-            <div hx-get="{% url 'reports:dashboard-assessment-performance' %}"
-                 hx-trigger="load, filterChanged from:body"
-                 hx-include="#dashboard-filters"
-                 hx-swap="innerHTML"
-                 class="h-80">
-                <div class="flex items-center justify-center h-full">
-                    <span class="loading loading-spinner loading-lg"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tables Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Expiring Certifications -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="card-title text-lg">Certificaciones por Vencer</h3>
-                    <a href="{% url 'certifications:my_certificates' %}?status=expiring" class="btn btn-ghost btn-sm" aria-label="Ver todas las certificaciones por vencer">
-                        Ver todas
-                    </a>
-                </div>
-                <div hx-get="{% url 'reports:dashboard-expiring-certs' %}"
-                     hx-trigger="load, filterChanged from:body"
-                     hx-include="#dashboard-filters"
-                     hx-swap="innerHTML">
+                     role="region"
+                     aria-live="polite"
+                     aria-label="Lista de actividad reciente">
                     <div class="flex items-center justify-center h-32">
-                        <span class="loading loading-spinner loading-md"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Overdue Assignments -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="card-title text-lg">Asignaciones Vencidas</h3>
-                    <a href="{% url 'learning_paths:my_paths' %}?status=overdue" class="btn btn-ghost btn-sm" aria-label="Ver todas las asignaciones vencidas">
-                        Ver todas
-                    </a>
-                </div>
-                <div hx-get="{% url 'reports:dashboard-overdue-assignments' %}"
-                     hx-trigger="load, filterChanged from:body"
-                     hx-include="#dashboard-filters"
-                     hx-swap="innerHTML">
-                    <div class="flex items-center justify-center h-32">
-                        <span class="loading loading-spinner loading-md"></span>
+                        <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
+                        <span class="sr-only">Cargando actividad reciente...</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Recent Activity -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="card-title text-lg">Actividad Reciente</h3>
-                <div class="flex gap-2">
-                    <label for="activity-filter" class="sr-only">Filtrar actividad por tipo</label>
-                    <select id="activity-filter"
-                            class="select select-bordered select-sm"
-                            hx-get="{% url 'reports:dashboard-recent-activity' %}"
-                            hx-trigger="change"
-                            hx-target="#activity-list"
-                            hx-include="#dashboard-filters"
-                            name="filter"
-                            aria-label="Filtrar actividad reciente">
-                        <option value="all">Todas</option>
-                        <option value="enrollments">Inscripciones</option>
-                        <option value="completions">Completados</option>
-                        <option value="certifications">Certificaciones</option>
-                    </select>
-                </div>
-            </div>
-            <div id="activity-list"
-                 hx-get="{% url 'reports:dashboard-recent-activity' %}"
-                 hx-trigger="load, filterChanged from:body"
-                 hx-include="#dashboard-filters"
-                 hx-swap="innerHTML"
-                 role="region"
-                 aria-live="polite"
-                 aria-label="Lista de actividad reciente">
-                <div class="flex items-center justify-center h-32">
-                    <span class="loading loading-spinner loading-md" aria-hidden="true"></span>
-                    <span class="sr-only">Cargando actividad reciente...</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

@@ -5,29 +5,23 @@
             <div class="avatar placeholder mb-4">
                 <div class="bg-primary text-primary-content rounded-full w-24">
                     {% if user_obj.photo %}
-                    <img src="{{ user_obj.photo.url }}" alt="{{ user_obj.get_full_name }}">
+                        <img src="{{ user_obj.photo.url }}" alt="{{ user_obj.get_full_name }}">
                     {% else %}
-                    <span class="text-3xl">{{ user_obj.first_name.0|default:"#"|upper }}</span>
+                        <span class="text-3xl">{{ user_obj.first_name.0|default:"#"|upper }}</span>
                     {% endif %}
                 </div>
             </div>
             <h2 class="card-title">{{ user_obj.get_full_name|default:user_obj.email }}</h2>
             <p class="text-gray-500">{{ user_obj.job_position|default:"Sin cargo" }}</p>
-
             <div class="flex gap-2 mt-2">
-                <div class="badge badge-primary">
-                    {{ user_obj.get_status_display }}
-                </div>
+                <div class="badge badge-primary">{{ user_obj.get_status_display }}</div>
                 {% if user_obj.is_active %}
-                <div class="badge badge-success">Activo</div>
+                    <div class="badge badge-success">Activo</div>
                 {% else %}
-                <div class="badge badge-ghost">Inactivo</div>
+                    <div class="badge badge-ghost">Inactivo</div>
                 {% endif %}
-                {% if user_obj.is_staff %}
-                <div class="badge badge-warning">Staff</div>
-                {% endif %}
+                {% if user_obj.is_staff %}<div class="badge badge-warning">Staff</div>{% endif %}
             </div>
-
             <div class="stats shadow mt-4 w-full">
                 <div class="stat py-3">
                     <div class="stat-title text-xs">Miembro desde</div>
@@ -36,14 +30,12 @@
             </div>
         </div>
     </div>
-
     <!-- Info Cards -->
     <div class="lg:col-span-2 space-y-6">
         <!-- Personal Info -->
         <div class="card bg-base-100 shadow-lg">
             <div class="card-body">
                 <h3 class="card-title text-lg mb-4">Información Personal</h3>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-gray-500 text-sm">Correo electrónico</label>
@@ -64,12 +56,10 @@
                 </div>
             </div>
         </div>
-
         <!-- Work Info -->
         <div class="card bg-base-100 shadow-lg">
             <div class="card-body">
                 <h3 class="card-title text-lg mb-4">Información Laboral</h3>
-
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="text-gray-500 text-sm">Cargo</label>
@@ -95,29 +85,27 @@
                         <label class="text-gray-500 text-sm">Cuenta</label>
                         <p class="font-medium">
                             {% if user_obj.is_active %}
-                            <span class="text-success">Activa</span>
+                                <span class="text-success">Activa</span>
                             {% else %}
-                            <span class="text-error">Inactiva</span>
+                                <span class="text-error">Inactiva</span>
                             {% endif %}
                         </p>
                     </div>
                     {% if user_obj.is_staff %}
-                    <div>
-                        <label class="text-gray-500 text-sm">Permisos</label>
-                        <p class="font-medium">
-                            <span class="text-warning">Acceso administrativo</span>
-                        </p>
-                    </div>
+                        <div>
+                            <label class="text-gray-500 text-sm">Permisos</label>
+                            <p class="font-medium">
+                                <span class="text-warning">Acceso administrativo</span>
+                            </p>
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
-
         <!-- Security -->
         <div class="card bg-base-100 shadow-lg">
             <div class="card-body">
                 <h3 class="card-title text-lg mb-4">Seguridad</h3>
-
                 <div class="space-y-4">
                     <div>
                         <label class="text-gray-500 text-sm">Cuenta creada</label>

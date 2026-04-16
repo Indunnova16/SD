@@ -2,7 +2,6 @@
     <div class="card-body">
         <h3 class="card-title text-xl">{{ challenge.name }}</h3>
         <p class="text-base-content/70">{{ challenge.description }}</p>
-
         <!-- Challenge Info -->
         <div class="grid grid-cols-2 gap-4 mt-4">
             <div>
@@ -18,10 +17,10 @@
                 <p class="font-medium text-primary">{{ challenge.points_reward }} puntos</p>
             </div>
             {% if challenge.badge_reward %}
-            <div>
-                <span class="text-sm text-base-content/60">Insignia</span>
-                <p class="font-medium">{{ challenge.badge_reward.name }}</p>
-            </div>
+                <div>
+                    <span class="text-sm text-base-content/60">Insignia</span>
+                    <p class="font-medium">{{ challenge.badge_reward.name }}</p>
+                </div>
             {% endif %}
             <div>
                 <span class="text-sm text-base-content/60">Fecha inicio</span>
@@ -32,35 +31,36 @@
                 <p class="font-medium">{{ challenge.end_date|date:"d/m/Y H:i" }}</p>
             </div>
         </div>
-
         {% if participation %}
-        <div class="mt-6 p-4 bg-base-200 rounded-lg">
-            <h4 class="font-semibold mb-3">Tu Progreso</h4>
-            <div class="flex items-center gap-3">
-                <progress class="progress progress-primary flex-1" value="{{ participation.progress_percentage|default:0 }}" max="100"></progress>
-                <span class="text-sm font-medium">{{ participation.current_value }}/{{ challenge.target_value }}</span>
+            <div class="mt-6 p-4 bg-base-200 rounded-lg">
+                <h4 class="font-semibold mb-3">Tu Progreso</h4>
+                <div class="flex items-center gap-3">
+                    <progress class="progress progress-primary flex-1"
+                              value="{{ participation.progress_percentage|default:0 }}"
+                              max="100"></progress>
+                    <span class="text-sm font-medium">{{ participation.current_value }}/{{ challenge.target_value }}</span>
+                </div>
+                <div class="mt-2">
+                    {% if participation.is_completed %}
+                        <span class="badge badge-success">Completado</span>
+                    {% else %}
+                        <span class="badge badge-info">En Progreso</span>
+                    {% endif %}
+                </div>
             </div>
-            <div class="mt-2">
-                {% if participation.is_completed %}
-                <span class="badge badge-success">Completado</span>
-                {% else %}
-                <span class="badge badge-info">En Progreso</span>
-                {% endif %}
-            </div>
-        </div>
         {% else %}
-        <div class="card-actions justify-end mt-6">
-            <button class="btn btn-primary"
-                    hx-post="{% url 'gamification:join-challenge' challenge.id %}"
-                    hx-target="closest .card"
-                    hx-swap="outerHTML"
-                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                Unirse al Desafío
-            </button>
-        </div>
+            <div class="card-actions justify-end mt-6">
+                <button class="btn btn-primary"
+                        hx-post="{% url 'gamification:join-challenge' challenge.id %}"
+                        hx-target="closest .card"
+                        hx-swap="outerHTML"
+                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Unirse al Desafío
+                </button>
+            </div>
         {% endif %}
     </div>
 </div>

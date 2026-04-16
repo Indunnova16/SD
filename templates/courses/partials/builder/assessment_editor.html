@@ -2,8 +2,8 @@
 Inline assessment question editor for the course builder.
 Context: course, assessment, questions
 {% endcomment %}
-
-<div class="mt-4 border border-base-300 rounded-lg p-4" x-data="{ showAddQuestion: false }">
+<div class="mt-4 border border-base-300 rounded-lg p-4"
+     x-data="{ showAddQuestion: false }">
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
         <div>
@@ -14,26 +14,36 @@ Context: course, assessment, questions
                 <span class="badge badge-xs badge-primary">Min: {{ assessment.passing_score }}%</span>
             </div>
         </div>
-        <button class="btn btn-primary btn-xs" @click="showAddQuestion = !showAddQuestion">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button class="btn btn-primary btn-xs"
+                @click="showAddQuestion = !showAddQuestion">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-3 w-3"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Agregar Pregunta
         </button>
     </div>
-
     <!-- Add Question Form -->
     <div x-show="showAddQuestion" x-cloak x-transition class="mb-4">
         {% include "courses/partials/builder/question_form.html" with course=course assessment=assessment is_edit=False %}
     </div>
-
     <!-- Question List (sortable) -->
-    <div id="question-list-{{ assessment.id }}" data-question-list="{{ assessment.id }}" class="space-y-2">
+    <div id="question-list-{{ assessment.id }}"
+         data-question-list="{{ assessment.id }}"
+         class="space-y-2">
         {% for question in questions %}
             {% include "courses/partials/builder/question_item.html" with question=question course=course assessment=assessment %}
         {% empty %}
-            <div class="text-center py-6 text-gray-400 text-sm" id="empty-questions-{{ assessment.id }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="text-center py-6 text-gray-400 text-sm"
+                 id="empty-questions-{{ assessment.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-8 w-8 mx-auto mb-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 No hay preguntas aun. Haz clic en "Agregar Pregunta" para empezar.
@@ -41,7 +51,6 @@ Context: course, assessment, questions
         {% endfor %}
     </div>
 </div>
-
 <script>
 document.addEventListener('htmx:afterSwap', function() {
     const list = document.getElementById('question-list-{{ assessment.id }}');

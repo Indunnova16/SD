@@ -1,125 +1,133 @@
 {% if talks %}
-<div class="overflow-x-auto">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Fecha/Hora</th>
-                <th>Título</th>
-                <th>Proyecto</th>
-                <th>Conductor</th>
-                <th>Asistentes</th>
-                <th>Estado</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for talk in talks %}
-            <tr class="hover">
-                <td>
-                    <div class="font-medium">{{ talk.scheduled_at|date:"d/m/Y" }}</div>
-                    <div class="text-sm text-gray-500">{{ talk.scheduled_at|time:"H:i" }}</div>
-                </td>
-                <td>
-                    <div class="font-medium">{{ talk.title|truncatechars:35 }}</div>
-                    {% if talk.template %}
-                    <div class="text-xs text-gray-500">{{ talk.template.name }}</div>
-                    {% endif %}
-                </td>
-                <td>{{ talk.project_name|truncatechars:25 }}</td>
-                <td>
-                    <div class="flex items-center gap-2">
-                        <div class="avatar placeholder">
-                            <div class="bg-neutral text-neutral-content rounded-full w-6">
-                                <span class="text-xs">{{ talk.conducted_by.first_name.0 }}{{ talk.conducted_by.last_name.0 }}</span>
+    <div class="overflow-x-auto">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Título</th>
+                    <th>Proyecto</th>
+                    <th>Conductor</th>
+                    <th>Asistentes</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for talk in talks %}
+                    <tr class="hover">
+                        <td>
+                            <div class="font-medium">{{ talk.scheduled_at|date:"d/m/Y" }}</div>
+                            <div class="text-sm text-gray-500">{{ talk.scheduled_at|time:"H:i" }}</div>
+                        </td>
+                        <td>
+                            <div class="font-medium">{{ talk.title|truncatechars:35 }}</div>
+                            {% if talk.template %}<div class="text-xs text-gray-500">{{ talk.template.name }}</div>{% endif %}
+                        </td>
+                        <td>{{ talk.project_name|truncatechars:25 }}</td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral text-neutral-content rounded-full w-6">
+                                        <span class="text-xs">{{ talk.conducted_by.first_name.0 }}{{ talk.conducted_by.last_name.0 }}</span>
+                                    </div>
+                                </div>
+                                <span class="text-sm">{{ talk.conducted_by.get_full_name }}</span>
                             </div>
-                        </div>
-                        <span class="text-sm">{{ talk.conducted_by.get_full_name }}</span>
-                    </div>
-                </td>
-                <td>
-                    <div class="flex items-center gap-1">
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                        <span>{{ talk.attendees.count }}</span>
-                        {% if talk.signed_attendees_count > 0 %}
-                        <span class="text-success text-xs">({{ talk.signed_attendees_count }} firmados)</span>
-                        {% endif %}
-                    </div>
-                </td>
-                <td>
-                    {% if talk.status == 'scheduled' %}
-                    <span class="badge badge-info badge-sm">Programada</span>
-                    {% elif talk.status == 'in_progress' %}
-                    <span class="badge badge-warning badge-sm">En progreso</span>
-                    {% elif talk.status == 'completed' %}
-                    <span class="badge badge-success badge-sm">Completada</span>
-                    {% elif talk.status == 'cancelled' %}
-                    <span class="badge badge-error badge-sm">Cancelada</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <div class="dropdown dropdown-end">
-                        <label tabindex="0" class="btn btn-ghost btn-sm">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
-                            </svg>
-                        </label>
-                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
-                            <li><a href="{% url 'preop_talks:detail' talk.id %}">Ver detalles</a></li>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-1">
+                                <svg class="w-4 h-4 text-gray-400"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                    </path>
+                                </svg>
+                                <span>{{ talk.attendees.count }}</span>
+                                {% if talk.signed_attendees_count > 0 %}
+                                    <span class="text-success text-xs">({{ talk.signed_attendees_count }} firmados)</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
                             {% if talk.status == 'scheduled' %}
-                            <li>
-                                <button hx-post="{% url 'preop_talks:start' talk.id %}"
-                                        hx-swap="none">
-                                    Iniciar charla
-                                </button>
-                            </li>
+                                <span class="badge badge-info badge-sm">Programada</span>
                             {% elif talk.status == 'in_progress' %}
-                            <li><a href="{% url 'preop_talks:conduct' talk.id %}">Continuar</a></li>
+                                <span class="badge badge-warning badge-sm">En progreso</span>
+                            {% elif talk.status == 'completed' %}
+                                <span class="badge badge-success badge-sm">Completada</span>
+                            {% elif talk.status == 'cancelled' %}
+                                <span class="badge badge-error badge-sm">Cancelada</span>
                             {% endif %}
-                            {% if talk.status == 'completed' %}
-                            <li><a href="{% url 'preop_talks:report' talk.id %}">Ver reporte</a></li>
-                            <li><a href="{% url 'preop_talks:export-pdf' talk.id %}">Exportar PDF</a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- Pagination -->
-{% if talks.has_other_pages %}
-<div class="flex justify-center mt-4">
-    <div class="join">
-        {% if talks.has_previous %}
-        <button class="join-item btn btn-sm"
-                hx-get="{% url 'preop_talks:list' %}?page={{ talks.previous_page_number }}"
-                hx-target="#talks-table"
-                hx-include="[name='date_from'],[name='date_to'],[name='status'],[name='search']">
-            «
-        </button>
-        {% endif %}
-        <button class="join-item btn btn-sm">{{ talks.number }} / {{ talks.paginator.num_pages }}</button>
-        {% if talks.has_next %}
-        <button class="join-item btn btn-sm"
-                hx-get="{% url 'preop_talks:list' %}?page={{ talks.next_page_number }}"
-                hx-target="#talks-table"
-                hx-include="[name='date_from'],[name='date_to'],[name='status'],[name='search']">
-            »
-        </button>
-        {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown dropdown-end">
+                                <label tabindex="0" class="btn btn-ghost btn-sm">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                                        </path>
+                                    </svg>
+                                </label>
+                                <ul tabindex="0"
+                                    class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
+                                    <li>
+                                        <a href="{% url 'preop_talks:detail' talk.id %}">Ver detalles</a>
+                                    </li>
+                                    {% if talk.status == 'scheduled' %}
+                                        <li>
+                                            <button hx-post="{% url 'preop_talks:start' talk.id %}" hx-swap="none">Iniciar charla</button>
+                                        </li>
+                                    {% elif talk.status == 'in_progress' %}
+                                        <li>
+                                            <a href="{% url 'preop_talks:conduct' talk.id %}">Continuar</a>
+                                        </li>
+                                    {% endif %}
+                                    {% if talk.status == 'completed' %}
+                                        <li>
+                                            <a href="{% url 'preop_talks:report' talk.id %}">Ver reporte</a>
+                                        </li>
+                                        <li>
+                                            <a href="{% url 'preop_talks:export-pdf' talk.id %}">Exportar PDF</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
-{% endif %}
+    <!-- Pagination -->
+    {% if talks.has_other_pages %}
+        <div class="flex justify-center mt-4">
+            <div class="join">
+                {% if talks.has_previous %}
+                    <button class="join-item btn btn-sm"
+                            hx-get="{% url 'preop_talks:list' %}?page={{ talks.previous_page_number }}"
+                            hx-target="#talks-table"
+                            hx-include="[name='date_from'],[name='date_to'],[name='status'],[name='search']">«</button>
+                {% endif %}
+                <button class="join-item btn btn-sm">{{ talks.number }} / {{ talks.paginator.num_pages }}</button>
+                {% if talks.has_next %}
+                    <button class="join-item btn btn-sm"
+                            hx-get="{% url 'preop_talks:list' %}?page={{ talks.next_page_number }}"
+                            hx-target="#talks-table"
+                            hx-include="[name='date_from'],[name='date_to'],[name='status'],[name='search']">»</button>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 {% else %}
-<div class="text-center py-12">
-    <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-    </svg>
-    <h4 class="mt-4 font-medium text-gray-900 dark:text-white">No se encontraron charlas</h4>
-    <p class="mt-1 text-sm text-gray-500">Ajusta los filtros o crea una nueva charla</p>
-</div>
+    <div class="text-center py-12">
+        <svg class="w-12 h-12 mx-auto text-gray-400"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+            </path>
+        </svg>
+        <h4 class="mt-4 font-medium text-gray-900 dark:text-white">No se encontraron charlas</h4>
+        <p class="mt-1 text-sm text-gray-500">Ajusta los filtros o crea una nueva charla</p>
+    </div>
 {% endif %}

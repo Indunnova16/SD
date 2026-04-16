@@ -1,200 +1,221 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Reportes{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Genera y descarga reportes del sistema
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Genera y descarga reportes del sistema</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Report Templates -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h3 class="card-title">Plantillas de Reportes</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                {% for template in templates %}
-                <div class="border border-base-300 rounded-lg p-4 hover:border-primary transition-colors cursor-pointer"
-                     x-data="{ showModal: false }"
-                     @click="showModal = true">
-                    <div class="flex items-start gap-3">
-                        <div class="p-2 bg-primary-100 dark:bg-primary-900 rounded-lg">
-                            {% if template.report_type == 'training' %}
-                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                            </svg>
-                            {% elif template.report_type == 'compliance' %}
-                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                            {% else %}
-                            <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            {% endif %}
+    <div class="space-y-6">
+        <!-- Report Templates -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">Plantillas de Reportes</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    {% for template in templates %}
+                        <div class="border border-base-300 rounded-lg p-4 hover:border-primary transition-colors cursor-pointer"
+                             x-data="{ showModal: false }"
+                             @click="showModal = true">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 bg-primary-100 dark:bg-primary-900 rounded-lg">
+                                    {% if template.report_type == 'training' %}
+                                        <svg class="w-6 h-6 text-primary-600"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                                            </path>
+                                        </svg>
+                                    {% elif template.report_type == 'compliance' %}
+                                        <svg class="w-6 h-6 text-primary-600"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                            </path>
+                                        </svg>
+                                    {% else %}
+                                        <svg class="w-6 h-6 text-primary-600"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                            </path>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-white">{{ template.name }}</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ template.description|truncatechars:60 }}</p>
+                                </div>
+                            </div>
+                            <!-- Modal for generating report -->
+                            <div x-show="showModal"
+                                 x-cloak
+                                 class="modal modal-open"
+                                 @click.self="showModal = false">
+                                <div class="modal-box" @click.stop>
+                                    <h3 class="font-bold text-lg">Generar: {{ template.name }}</h3>
+                                    <form hx-post="{% url 'reports:generate' template.id %}"
+                                          hx-target="#generated-reports"
+                                          hx-swap="afterbegin"
+                                          @htmx:after-request="showModal = false">
+                                        {% csrf_token %}
+                                        <div class="py-4 space-y-4">
+                                            <div class="form-control">
+                                                <label class="label">
+                                                    <span class="label-text">Formato</span>
+                                                </label>
+                                                <select name="format" class="select select-bordered w-full">
+                                                    <option value="pdf">PDF</option>
+                                                    <option value="excel">Excel</option>
+                                                    <option value="csv">CSV</option>
+                                                </select>
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="form-control">
+                                                    <label class="label">
+                                                        <span class="label-text">Fecha inicio</span>
+                                                    </label>
+                                                    <input type="date" name="start_date" class="input input-bordered">
+                                                </div>
+                                                <div class="form-control">
+                                                    <label class="label">
+                                                        <span class="label-text">Fecha fin</span>
+                                                    </label>
+                                                    <input type="date" name="end_date" class="input input-bordered">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-action">
+                                            <button type="button" class="btn" @click="showModal = false">Cancelar</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <span class="loading loading-spinner loading-sm htmx-indicator"></span>
+                                                Generar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900 dark:text-white">{{ template.name }}</h4>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ template.description|truncatechars:60 }}</p>
+                    {% empty %}
+                        <div class="col-span-full text-center py-8 text-gray-500">No hay plantillas de reportes disponibles</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!-- Generated Reports -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-center">
+                    <h3 class="card-title">Mis Reportes Generados</h3>
+                    <button class="btn btn-ghost btn-sm"
+                            hx-get="{% url 'reports:my-reports' %}"
+                            hx-target="#generated-reports"
+                            hx-swap="innerHTML">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                        Actualizar
+                    </button>
+                </div>
+                <div id="generated-reports"
+                     hx-get="{% url 'reports:my-reports' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML"
+                     class="mt-4">
+                    <div class="flex justify-center py-8">
+                        <span class="loading loading-spinner loading-md"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Scheduled Reports -->
+        {% if user.is_staff %}
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <div class="flex justify-between items-center">
+                        <h3 class="card-title">Reportes Programados</h3>
+                        <button class="btn btn-primary btn-sm"
+                                onclick="document.getElementById('schedule-modal').showModal()">
+                            <svg class="w-4 h-4 mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Nuevo
+                        </button>
+                    </div>
+                    <div hx-get="{% url 'reports:scheduled-list' %}"
+                         hx-trigger="load"
+                         hx-swap="innerHTML"
+                         class="mt-4">
+                        <div class="flex justify-center py-8">
+                            <span class="loading loading-spinner loading-md"></span>
                         </div>
                     </div>
-
-                    <!-- Modal for generating report -->
-                    <div x-show="showModal"
-                         x-cloak
-                         class="modal modal-open"
-                         @click.self="showModal = false">
-                        <div class="modal-box" @click.stop>
-                            <h3 class="font-bold text-lg">Generar: {{ template.name }}</h3>
-                            <form hx-post="{% url 'reports:generate' template.id %}"
-                                  hx-target="#generated-reports"
-                                  hx-swap="afterbegin"
-                                  @htmx:after-request="showModal = false">
-                                {% csrf_token %}
-                                <div class="py-4 space-y-4">
-                                    <div class="form-control">
-                                        <label class="label">
-                                            <span class="label-text">Formato</span>
-                                        </label>
-                                        <select name="format" class="select select-bordered w-full">
-                                            <option value="pdf">PDF</option>
-                                            <option value="excel">Excel</option>
-                                            <option value="csv">CSV</option>
-                                        </select>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div class="form-control">
-                                            <label class="label">
-                                                <span class="label-text">Fecha inicio</span>
-                                            </label>
-                                            <input type="date" name="start_date" class="input input-bordered">
-                                        </div>
-                                        <div class="form-control">
-                                            <label class="label">
-                                                <span class="label-text">Fecha fin</span>
-                                            </label>
-                                            <input type="date" name="end_date" class="input input-bordered">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-action">
-                                    <button type="button" class="btn" @click="showModal = false">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">
-                                        <span class="loading loading-spinner loading-sm htmx-indicator"></span>
-                                        Generar
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Schedule Modal -->
+    <dialog id="schedule-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Programar Reporte</h3>
+            <form hx-post="{% url 'reports:schedule-create' %}"
+                  hx-target="#scheduled-reports"
+                  hx-swap="innerHTML">
+                {% csrf_token %}
+                <div class="py-4 space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Plantilla</span>
+                        </label>
+                        <select name="template" class="select select-bordered w-full" required>
+                            {% for template in templates %}<option value="{{ template.id }}">{{ template.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Frecuencia</span>
+                        </label>
+                        <select name="frequency" class="select select-bordered w-full" required>
+                            <option value="daily">Diario</option>
+                            <option value="weekly">Semanal</option>
+                            <option value="biweekly">Quincenal</option>
+                            <option value="monthly">Mensual</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Hora de ejecución</span>
+                        </label>
+                        <input type="time"
+                               name="time_of_day"
+                               class="input input-bordered"
+                               value="08:00"
+                               required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Destinatarios (emails separados por coma)</span>
+                        </label>
+                        <input type="text"
+                               name="recipients"
+                               class="input input-bordered"
+                               placeholder="email1@example.com, email2@example.com">
                     </div>
                 </div>
-                {% empty %}
-                <div class="col-span-full text-center py-8 text-gray-500">
-                    No hay plantillas de reportes disponibles
+                <div class="modal-action">
+                    <button type="button"
+                            class="btn"
+                            onclick="document.getElementById('schedule-modal').close()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Programar</button>
                 </div>
-                {% endfor %}
-            </div>
+            </form>
         </div>
-    </div>
-
-    <!-- Generated Reports -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-center">
-                <h3 class="card-title">Mis Reportes Generados</h3>
-                <button class="btn btn-ghost btn-sm"
-                        hx-get="{% url 'reports:my-reports' %}"
-                        hx-target="#generated-reports"
-                        hx-swap="innerHTML">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Actualizar
-                </button>
-            </div>
-            <div id="generated-reports"
-                 hx-get="{% url 'reports:my-reports' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML"
-                 class="mt-4">
-                <div class="flex justify-center py-8">
-                    <span class="loading loading-spinner loading-md"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scheduled Reports -->
-    {% if user.is_staff %}
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-center">
-                <h3 class="card-title">Reportes Programados</h3>
-                <button class="btn btn-primary btn-sm"
-                        onclick="document.getElementById('schedule-modal').showModal()">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Nuevo
-                </button>
-            </div>
-            <div hx-get="{% url 'reports:scheduled-list' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML"
-                 class="mt-4">
-                <div class="flex justify-center py-8">
-                    <span class="loading loading-spinner loading-md"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-
-<!-- Schedule Modal -->
-<dialog id="schedule-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg">Programar Reporte</h3>
-        <form hx-post="{% url 'reports:schedule-create' %}"
-              hx-target="#scheduled-reports"
-              hx-swap="innerHTML">
-            {% csrf_token %}
-            <div class="py-4 space-y-4">
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Plantilla</span></label>
-                    <select name="template" class="select select-bordered w-full" required>
-                        {% for template in templates %}
-                        <option value="{{ template.id }}">{{ template.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Frecuencia</span></label>
-                    <select name="frequency" class="select select-bordered w-full" required>
-                        <option value="daily">Diario</option>
-                        <option value="weekly">Semanal</option>
-                        <option value="biweekly">Quincenal</option>
-                        <option value="monthly">Mensual</option>
-                    </select>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Hora de ejecución</span></label>
-                    <input type="time" name="time_of_day" class="input input-bordered" value="08:00" required>
-                </div>
-                <div class="form-control">
-                    <label class="label"><span class="label-text">Destinatarios (emails separados por coma)</span></label>
-                    <input type="text" name="recipients" class="input input-bordered" placeholder="email1@example.com, email2@example.com">
-                </div>
-            </div>
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="document.getElementById('schedule-modal').close()">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Programar</button>
-            </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
         </form>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    </dialog>
 {% endblock %}

@@ -1,186 +1,176 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Crear Curso{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Complete el formulario para crear un nuevo curso
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Complete el formulario para crear un nuevo curso</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto">
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                {% if form.errors %}
-                <div class="alert alert-error mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                        <h3 class="font-bold">Error en el formulario</h3>
-                        <div class="text-xs">Por favor, corrija los errores a continuación</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="space-y-6">
-                    <!-- Basic Information -->
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">Información Básica</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text">Código <span class="text-error">*</span></span>
-                                </label>
-                                {{ form.code }}
-                                {% if form.code.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text">Categoría</span>
-                                </label>
-                                {{ form.category }}
-                                {% if form.category.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.category.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-control md:col-span-2">
-                                <label class="label">
-                                    <span class="label-text">Título <span class="text-error">*</span></span>
-                                </label>
-                                {{ form.title }}
-                                {% if form.title.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.title.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-control md:col-span-2">
-                                <label class="label">
-                                    <span class="label-text">Descripción <span class="text-error">*</span></span>
-                                </label>
-                                {{ form.description }}
-                                {% if form.description.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-control md:col-span-2">
-                                <label class="label">
-                                    <span class="label-text">Objetivos</span>
-                                </label>
-                                {{ form.objectives }}
-                                {% if form.objectives.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.objectives.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <!-- Course Configuration -->
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">Configuración del Curso</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text">Tipo <span class="text-error">*</span></span>
-                                </label>
-                                {{ form.course_type }}
-                                {% if form.course_type.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.course_type.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text">Validez (meses)</span>
-                                </label>
-                                {{ form.validity_months }}
-                                {% if form.validity_months.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.validity_months.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                                <label class="label">
-                                    <span class="label-text-alt">Dejar vacío para validez permanente</span>
-                                </label>
-                            </div>
-
-                            <div class="form-control">
-                                <label class="label">
-                                    <span class="label-text">Estado <span class="text-error">*</span></span>
-                                </label>
-                                {{ form.status }}
-                                {% if form.status.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
-                                </label>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="alert alert-info mt-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>La duración del curso se calculará automáticamente sumando la duración de cada temática/lección.</span>
-                        </div>
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <!-- Target Profiles -->
-                    <div>
-                        <h3 class="text-lg font-semibold mb-4">Perfiles Objetivo</h3>
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Seleccione los perfiles para este curso</span>
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {{ form.target_profiles }}
-                            </div>
-                            {% if form.target_profiles.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.target_profiles.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <!-- Actions -->
-                    <div class="flex gap-4">
-                        <button type="submit" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+    <div class="max-w-4xl mx-auto">
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-error mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="stroke-current shrink-0 h-6 w-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Crear Curso
-                        </button>
-                        <a href="{% url 'courses:list' %}" class="btn btn-ghost">
-                            Cancelar
-                        </a>
+                            <div>
+                                <h3 class="font-bold">Error en el formulario</h3>
+                                <div class="text-xs">Por favor, corrija los errores a continuación</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="space-y-6">
+                        <!-- Basic Information -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Información Básica</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Código <span class="text-error">*</span></span>
+                                    </label>
+                                    {{ form.code }}
+                                    {% if form.code.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.code.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Categoría</span>
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.category.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text">Título <span class="text-error">*</span></span>
+                                    </label>
+                                    {{ form.title }}
+                                    {% if form.title.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.title.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text">Descripción <span class="text-error">*</span></span>
+                                    </label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text">Objetivos</span>
+                                    </label>
+                                    {{ form.objectives }}
+                                    {% if form.objectives.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.objectives.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <!-- Course Configuration -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Configuración del Curso</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Tipo <span class="text-error">*</span></span>
+                                    </label>
+                                    {{ form.course_type }}
+                                    {% if form.course_type.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.course_type.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Validez (meses)</span>
+                                    </label>
+                                    {{ form.validity_months }}
+                                    {% if form.validity_months.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.validity_months.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                    <label class="label">
+                                        <span class="label-text-alt">Dejar vacío para validez permanente</span>
+                                    </label>
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Estado <span class="text-error">*</span></span>
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-4">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     class="stroke-current shrink-0 w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <span>La duración del curso se calculará automáticamente sumando la duración de cada temática/lección.</span>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <!-- Target Profiles -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Perfiles Objetivo</h3>
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Seleccione los perfiles para este curso</span>
+                                </label>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">{{ form.target_profiles }}</div>
+                                {% if form.target_profiles.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.target_profiles.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="divider"></div>
+                        <!-- Actions -->
+                        <div class="flex gap-4">
+                            <button type="submit" class="btn btn-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5 mr-2"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Crear Curso
+                            </button>
+                            <a href="{% url 'courses:list' %}" class="btn btn-ghost">Cancelar</a>
+                        </div>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

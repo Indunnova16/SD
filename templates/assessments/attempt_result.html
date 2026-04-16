@@ -1,170 +1,161 @@
 {% extends "base/dashboard.html" %}
 {% load assessment_tags %}
-
 {% block page_title %}Resultado de Evaluación{% endblock %}
 {% block page_description %}
-<div class="flex items-center gap-2 mt-1">
-    <span class="badge {% if attempt.passed %}badge-success{% else %}badge-error{% endif %}">
-        {% if attempt.passed %}Aprobado{% else %}No aprobado{% endif %}
-    </span>
-    <span class="text-sm text-gray-500 dark:text-gray-400">
-        {{ attempt.submitted_at|date:"d M Y H:i" }}
-    </span>
-</div>
+    <div class="flex items-center gap-2 mt-1">
+        <span class="badge {% if attempt.passed %}badge-success{% else %}badge-error{% endif %}">
+            {% if attempt.passed %}
+                Aprobado
+            {% else %}
+                No aprobado
+            {% endif %}
+        </span>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ attempt.submitted_at|date:"d M Y H:i" }}</span>
+    </div>
 {% endblock %}
-
 {% block main_classes %}lg:col-span-3{% endblock %}
-
 {% block sidebar %}
-<div class="lg:col-span-1">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
-        <!-- Score -->
-        <div class="text-center mb-4">
-            <div class="radial-progress {% if attempt.passed %}text-success{% else %}text-error{% endif %} mx-auto"
-                 style="--value:{{ attempt.score }}; --size:8rem; --thickness:8px;">
-                <span class="text-2xl font-bold">{{ attempt.score|floatformat:0 }}%</span>
+    <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
+            <!-- Score -->
+            <div class="text-center mb-4">
+                <div class="radial-progress {% if attempt.passed %}text-success{% else %}text-error{% endif %} mx-auto"
+                     style="--value:{{ attempt.score }};
+                            --size:8rem;
+                            --thickness:8px">
+                    <span class="text-2xl font-bold">{{ attempt.score|floatformat:0 }}%</span>
+                </div>
+                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {{ attempt.points_earned }}/{{ assessment.total_points }} puntos
+                </p>
             </div>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                {{ attempt.points_earned }}/{{ assessment.total_points }} puntos
-            </p>
-        </div>
-
-        <!-- Stats -->
-        <div class="border-t dark:border-gray-700 pt-4 space-y-3 text-sm">
-            <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Intento</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ attempt.attempt_number }}</span>
+            <!-- Stats -->
+            <div class="border-t dark:border-gray-700 pt-4 space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Intento</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ attempt.attempt_number }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Tiempo</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{% widthratio attempt.time_spent 60 1 %} min</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-500 dark:text-gray-400">Mínimo para aprobar</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
+                </div>
             </div>
-            <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Tiempo</span>
-                <span class="font-medium text-gray-900 dark:text-white">
-                    {% widthratio attempt.time_spent 60 1 %} min
-                </span>
+            <!-- Actions -->
+            <div class="border-t dark:border-gray-700 mt-4 pt-4 space-y-2">
+                <a href="{% url 'assessments:detail' assessment.id %}"
+                   class="btn btn-primary btn-block">Volver a la Evaluación</a>
+                <a href="{% url 'assessments:my_attempts' %}"
+                   class="btn btn-ghost btn-block">Mis Intentos</a>
             </div>
-            <div class="flex justify-between">
-                <span class="text-gray-500 dark:text-gray-400">Mínimo para aprobar</span>
-                <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
-            </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="border-t dark:border-gray-700 mt-4 pt-4 space-y-2">
-            <a href="{% url 'assessments:detail' assessment.id %}" class="btn btn-primary btn-block">
-                Volver a la Evaluación
-            </a>
-            <a href="{% url 'assessments:my_attempts' %}" class="btn btn-ghost btn-block">
-                Mis Intentos
-            </a>
         </div>
     </div>
-</div>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Assessment Info -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ assessment.title }}</h2>
-        <p class="text-gray-600 dark:text-gray-400 mt-1">{{ assessment.description }}</p>
-    </div>
-
-    <!-- Question Review -->
-    {% if show_correct %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revisión de Respuestas</h2>
-
-        <div class="space-y-6">
-            {% for question in questions %}
-            {% with user_answer=user_answers|get_item:question.id %}
-            <div class="border dark:border-gray-700 rounded-lg p-4">
-                <!-- Question -->
-                <div class="flex items-start gap-3 mb-4">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full
-                        {% if user_answer and user_answer.is_correct %}bg-success{% else %}bg-error{% endif %}
-                        text-white flex items-center justify-center text-sm">
-                        {% if user_answer and user_answer.is_correct %}
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                        </svg>
-                        {% else %}
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                        {% endif %}
-                    </span>
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-900 dark:text-white">{{ question.text }}</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {{ question.get_question_type_display }} - {{ question.points }} punto{{ question.points|pluralize:"s" }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Answers -->
-                <div class="pl-9 space-y-2">
-                    {% if question.question_type == 'matching' %}
-                    <!-- Matching: show pairs with correct answers -->
-                    <div class="space-y-2">
-                        {% for answer in question.answers.all %}
-                        <div class="flex items-center gap-2 p-2 rounded bg-success/10">
-                            <span class="font-medium text-gray-900 dark:text-white">{{ answer.text }}</span>
-                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                            </svg>
-                            <span class="text-success font-medium">{{ answer.feedback }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% if user_answer and not user_answer.is_correct %}
-                    <p class="text-sm text-error mt-2">Tu respuesta no fue correcta.</p>
-                    {% endif %}
-                    {% else %}
-                    {% for answer in question.answers.all %}
-                    <div class="flex items-center gap-2 p-2 rounded
-                        {% if answer.is_correct %}bg-success/10 text-success
-                        {% elif user_answer and answer in user_answer.selected_answers.all and not answer.is_correct %}bg-error/10 text-error
-                        {% else %}text-gray-600 dark:text-gray-400{% endif %}">
-                        {% if answer.is_correct %}
-                        <svg class="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                        </svg>
-                        {% elif user_answer and answer in user_answer.selected_answers.all %}
-                        <svg class="w-4 h-4 text-error" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                        {% else %}
-                        <span class="w-4 h-4"></span>
-                        {% endif %}
-                        <span>{{ answer.text }}</span>
-                    </div>
-                    {% endfor %}
-                    {% endif %}
-                </div>
-
-                <!-- Explanation -->
-                {% if question.explanation %}
-                <div class="mt-4 pl-9">
-                    <div class="bg-info/10 rounded-lg p-3">
-                        <p class="text-sm text-info font-medium">Explicación:</p>
-                        <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ question.explanation }}</p>
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-            {% endwith %}
-            {% endfor %}
+    <div class="space-y-6">
+        <!-- Assessment Info -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ assessment.title }}</h2>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">{{ assessment.description }}</p>
         </div>
+        <!-- Question Review -->
+        {% if show_correct %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Revisión de Respuestas</h2>
+                <div class="space-y-6">
+                    {% for question in questions %}
+                        {% with user_answer=user_answers|get_item:question.id %}
+                            <div class="border dark:border-gray-700 rounded-lg p-4">
+                                <!-- Question -->
+                                <div class="flex items-start gap-3 mb-4">
+                                    <span class="flex-shrink-0 w-6 h-6 rounded-full {% if user_answer and user_answer.is_correct %}bg-success{% else %}bg-error{% endif %} text-white flex items-center justify-center text-sm">
+                                        {% if user_answer and user_answer.is_correct %}
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                    </span>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ question.text }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                            {{ question.get_question_type_display }} - {{ question.points }} punto{{ question.points|pluralize:"s" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <!-- Answers -->
+                                <div class="pl-9 space-y-2">
+                                    {% if question.question_type == 'matching' %}
+                                        <!-- Matching: show pairs with correct answers -->
+                                        <div class="space-y-2">
+                                            {% for answer in question.answers.all %}
+                                                <div class="flex items-center gap-2 p-2 rounded bg-success/10">
+                                                    <span class="font-medium text-gray-900 dark:text-white">{{ answer.text }}</span>
+                                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                    </svg>
+                                                    <span class="text-success font-medium">{{ answer.feedback }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% if user_answer and not user_answer.is_correct %}
+                                            <p class="text-sm text-error mt-2">Tu respuesta no fue correcta.</p>
+                                        {% endif %}
+                                    {% else %}
+                                        {% for answer in question.answers.all %}
+                                            <div class="flex items-center gap-2 p-2 rounded {% if answer.is_correct %}bg-success/10 text-success {% elif user_answer and answer in user_answer.selected_answers.all and not answer.is_correct %}bg-error/10 text-error {% else %}text-gray-600 dark:text-gray-400{% endif %}">
+                                                {% if answer.is_correct %}
+                                                    <svg class="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                {% elif user_answer and answer in user_answer.selected_answers.all %}
+                                                    <svg class="w-4 h-4 text-error" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                    </svg>
+                                                {% else %}
+                                                    <span class="w-4 h-4"></span>
+                                                {% endif %}
+                                                <span>{{ answer.text }}</span>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <!-- Explanation -->
+                                {% if question.explanation %}
+                                    <div class="mt-4 pl-9">
+                                        <div class="bg-info/10 rounded-lg p-3">
+                                            <p class="text-sm text-info font-medium">Explicación:</p>
+                                            <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ question.explanation }}</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Revisión no disponible</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Las respuestas correctas no están disponibles para esta evaluación.
+                </p>
+            </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Revisión no disponible</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Las respuestas correctas no están disponibles para esta evaluación.
-        </p>
-    </div>
-    {% endif %}
-</div>
 {% endblock %}

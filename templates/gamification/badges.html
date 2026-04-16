@@ -1,30 +1,27 @@
 {% extends "base.html" %}
-
 {% block title %}Insignias - Gamificación{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Mis Insignias</h1>
-            <p class="text-base-content/70">Colecciona insignias completando actividades</p>
-        </div>
-        <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
-    </div>
-
-    <div hx-get="{% url 'gamification:badges-grid' %}"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {% for i in "123456" %}
-            <div class="card bg-base-100 shadow animate-pulse">
-                <div class="card-body items-center">
-                    <div class="w-16 h-16 bg-base-300 rounded-full"></div>
-                    <div class="h-4 bg-base-300 rounded w-3/4 mt-2"></div>
-                </div>
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Mis Insignias</h1>
+                <p class="text-base-content/70">Colecciona insignias completando actividades</p>
             </div>
-            {% endfor %}
+            <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
+        </div>
+        <div hx-get="{% url 'gamification:badges-grid' %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {% for i in "123456" %}
+                    <div class="card bg-base-100 shadow animate-pulse">
+                        <div class="card-body items-center">
+                            <div class="w-16 h-16 bg-base-300 rounded-full"></div>
+                            <div class="h-4 bg-base-300 rounded w-3/4 mt-2"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

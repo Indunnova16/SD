@@ -1,156 +1,141 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Certificado{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">
-    {{ certificate.certificate_number }}
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{{ certificate.certificate_number }}</p>
 {% endblock %}
-
 {% block main_classes %}lg:col-span-3{% endblock %}
-
 {% block sidebar %}
-<div class="lg:col-span-1">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
-        <!-- Status -->
-        <div class="text-center mb-4">
-            <span class="badge badge-lg
-                {% if certificate.status == 'issued' %}badge-success
-                {% elif certificate.status == 'revoked' %}badge-error
-                {% elif certificate.status == 'expired' %}badge-warning
-                {% else %}badge-ghost{% endif %}">
-                {{ certificate.get_status_display }}
-            </span>
-        </div>
-
-        <!-- QR Code -->
-        {% if certificate.qr_code %}
-        <div class="text-center mb-4">
-            <img src="{{ certificate.qr_code.url }}" alt="QR de verificación" class="mx-auto w-32 h-32">
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Escanea para verificar
-            </p>
-        </div>
-        {% endif %}
-
-        <!-- Actions -->
-        <div class="space-y-2">
-            {% if certificate.certificate_file %}
-            <a href="{% url 'certifications:download' certificate.id %}" class="btn btn-primary btn-block">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                </svg>
-                Descargar PDF
-            </a>
+    <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
+            <!-- Status -->
+            <div class="text-center mb-4">
+                <span class="badge badge-lg {% if certificate.status == 'issued' %}badge-success {% elif certificate.status == 'revoked' %}badge-error {% elif certificate.status == 'expired' %}badge-warning {% else %}badge-ghost{% endif %}">
+                    {{ certificate.get_status_display }}
+                </span>
+            </div>
+            <!-- QR Code -->
+            {% if certificate.qr_code %}
+                <div class="text-center mb-4">
+                    <img src="{{ certificate.qr_code.url }}"
+                         alt="QR de verificación"
+                         class="mx-auto w-32 h-32">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Escanea para verificar</p>
+                </div>
             {% endif %}
-
-            <a href="{% url 'certifications:verify_number' certificate.certificate_number %}"
-               class="btn btn-ghost btn-block" target="_blank">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                </svg>
-                Verificar Certificado
-            </a>
-
-            <a href="{% url 'certifications:my_certificates' %}" class="btn btn-ghost btn-block">
-                Volver a Certificados
-            </a>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Certificate Preview -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <!-- Header -->
-        <div class="h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <div class="text-center text-white">
-                <svg class="w-16 h-16 mx-auto mb-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                </svg>
-                <h2 class="text-2xl font-bold">Certificado de Completación</h2>
+            <!-- Actions -->
+            <div class="space-y-2">
+                {% if certificate.certificate_file %}
+                    <a href="{% url 'certifications:download' certificate.id %}"
+                       class="btn btn-primary btn-block">
+                        <svg class="w-4 h-4 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Descargar PDF
+                    </a>
+                {% endif %}
+                <a href="{% url 'certifications:verify_number' certificate.certificate_number %}"
+                   class="btn btn-ghost btn-block"
+                   target="_blank">
+                    <svg class="w-4 h-4 mr-2"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Verificar Certificado
+                </a>
+                <a href="{% url 'certifications:my_certificates' %}"
+                   class="btn btn-ghost btn-block">Volver a Certificados</a>
             </div>
         </div>
-
-        <!-- Content -->
-        <div class="p-8 text-center">
-            <p class="text-gray-600 dark:text-gray-400 mb-2">Se certifica que</p>
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                {{ certificate.user.get_full_name }}
-            </h3>
-            <p class="text-gray-600 dark:text-gray-400 mb-2">ha completado satisfactoriamente el curso</p>
-            <h4 class="text-xl font-semibold text-primary mb-6">
-                {{ certificate.course.title }}
-            </h4>
-
-            {% if certificate.score %}
-            <p class="text-gray-600 dark:text-gray-400 mb-4">
-                Con un puntaje de <span class="font-bold text-success">{{ certificate.score|floatformat:0 }}%</span>
-            </p>
-            {% endif %}
-
-            <div class="border-t dark:border-gray-700 pt-6 mt-6">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Certificado No. <span class="font-mono">{{ certificate.certificate_number }}</span>
-                </p>
+    </div>
+{% endblock %}
+{% block dashboard_content %}
+    <div class="space-y-6">
+        <!-- Certificate Preview -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <!-- Header -->
+            <div class="h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <div class="text-center text-white">
+                    <svg class="w-16 h-16 mx-auto mb-2 opacity-80"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                    <h2 class="text-2xl font-bold">Certificado de Completación</h2>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="p-8 text-center">
+                <p class="text-gray-600 dark:text-gray-400 mb-2">Se certifica que</p>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">{{ certificate.user.get_full_name }}</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-2">ha completado satisfactoriamente el curso</p>
+                <h4 class="text-xl font-semibold text-primary mb-6">{{ certificate.course.title }}</h4>
+                {% if certificate.score %}
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">
+                        Con un puntaje de <span class="font-bold text-success">{{ certificate.score|floatformat:0 }}%</span>
+                    </p>
+                {% endif %}
+                <div class="border-t dark:border-gray-700 pt-6 mt-6">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Certificado No. <span class="font-mono">{{ certificate.certificate_number }}</span>
+                    </p>
+                    {% if certificate.issued_at %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Emitido el {{ certificate.issued_at|date:"d de F de Y" }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Certificate Details -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detalles del Certificado</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Titular</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{ certificate.user.get_full_name }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Correo</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{ certificate.user.email }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Curso</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{ certificate.course.title }}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Código del curso</p>
+                    <p class="font-medium text-gray-900 dark:text-white">{{ certificate.course.code }}</p>
+                </div>
                 {% if certificate.issued_at %}
-                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Emitido el {{ certificate.issued_at|date:"d de F de Y" }}
-                </p>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Fecha de emisión</p>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ certificate.issued_at|date:"d M Y" }}</p>
+                    </div>
+                {% endif %}
+                {% if certificate.expires_at %}
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Fecha de vencimiento</p>
+                        <p class="font-medium text-gray-900 dark:text-white">{{ certificate.expires_at|date:"d M Y" }}</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
-    </div>
-
-    <!-- Certificate Details -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Detalles del Certificado</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Titular</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.user.get_full_name }}</p>
+        {% if certificate.status == 'revoked' %}
+            <div class="bg-error/10 border border-error rounded-lg p-4">
+                <h3 class="font-semibold text-error mb-2">Certificado Revocado</h3>
+                <p class="text-sm text-gray-700 dark:text-gray-300">
+                    Este certificado fue revocado el {{ certificate.revoked_at|date:"d M Y" }}.
+                </p>
+                {% if certificate.revoked_reason %}
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                        <span class="font-medium">Motivo:</span> {{ certificate.revoked_reason }}
+                    </p>
+                {% endif %}
             </div>
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Correo</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.user.email }}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Curso</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.course.title }}</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Código del curso</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.course.code }}</p>
-            </div>
-            {% if certificate.issued_at %}
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Fecha de emisión</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.issued_at|date:"d M Y" }}</p>
-            </div>
-            {% endif %}
-            {% if certificate.expires_at %}
-            <div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Fecha de vencimiento</p>
-                <p class="font-medium text-gray-900 dark:text-white">{{ certificate.expires_at|date:"d M Y" }}</p>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if certificate.status == 'revoked' %}
-    <div class="bg-error/10 border border-error rounded-lg p-4">
-        <h3 class="font-semibold text-error mb-2">Certificado Revocado</h3>
-        <p class="text-sm text-gray-700 dark:text-gray-300">
-            Este certificado fue revocado el {{ certificate.revoked_at|date:"d M Y" }}.
-        </p>
-        {% if certificate.revoked_reason %}
-        <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            <span class="font-medium">Motivo:</span> {{ certificate.revoked_reason }}
-        </p>
         {% endif %}
     </div>
-    {% endif %}
-</div>
 {% endblock %}

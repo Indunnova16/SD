@@ -212,7 +212,7 @@ class CertificateViewSet(viewsets.ModelViewSet):
 
         # Log verification
         ip_address = request.META.get("REMOTE_ADDR", "")
-        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        user_agent = request.headers.get("user-agent", "")
 
         is_valid = certificate.status == Certificate.Status.ISSUED
         if certificate.expires_at and certificate.expires_at < timezone.now():

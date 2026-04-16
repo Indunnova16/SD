@@ -1,93 +1,97 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Lecciones Aprendidas{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Aprende de la experiencia del equipo
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Aprende de la experiencia del equipo</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Filters and Actions -->
-    <div class="flex flex-wrap justify-between items-center gap-4">
-        <div class="flex flex-wrap gap-2">
-            <!-- Category Filter -->
-            <select class="select select-bordered select-sm"
-                    hx-get="{% url 'lessons_learned:list' %}"
-                    hx-target="#lessons-grid"
-                    hx-include="[name='severity'],[name='type'],[name='search']"
-                    name="category">
-                <option value="">Todas las categorías</option>
-                {% for category in categories %}
-                <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
-                    {{ category.name }}
-                </option>
-                {% endfor %}
-            </select>
-
-            <!-- Severity Filter -->
-            <select class="select select-bordered select-sm"
-                    hx-get="{% url 'lessons_learned:list' %}"
-                    hx-target="#lessons-grid"
-                    hx-include="[name='category'],[name='type'],[name='search']"
-                    name="severity">
-                <option value="">Todas las severidades</option>
-                <option value="critical" {% if request.GET.severity == 'critical' %}selected{% endif %}>Crítica</option>
-                <option value="high" {% if request.GET.severity == 'high' %}selected{% endif %}>Alta</option>
-                <option value="medium" {% if request.GET.severity == 'medium' %}selected{% endif %}>Media</option>
-                <option value="low" {% if request.GET.severity == 'low' %}selected{% endif %}>Baja</option>
-            </select>
-
-            <!-- Type Filter -->
-            <select class="select select-bordered select-sm"
-                    hx-get="{% url 'lessons_learned:list' %}"
-                    hx-target="#lessons-grid"
-                    hx-include="[name='category'],[name='severity'],[name='search']"
-                    name="type">
-                <option value="">Todos los tipos</option>
-                <option value="incident" {% if request.GET.type == 'incident' %}selected{% endif %}>Incidente</option>
-                <option value="near_miss" {% if request.GET.type == 'near_miss' %}selected{% endif %}>Casi accidente</option>
-                <option value="good_practice" {% if request.GET.type == 'good_practice' %}selected{% endif %}>Buena práctica</option>
-                <option value="improvement" {% if request.GET.type == 'improvement' %}selected{% endif %}>Mejora</option>
-                <option value="observation" {% if request.GET.type == 'observation' %}selected{% endif %}>Observación</option>
-            </select>
-        </div>
-
-        <div class="flex gap-2">
-            <!-- Search -->
-            <div class="form-control">
-                <input type="search"
-                       name="search"
-                       placeholder="Buscar..."
-                       class="input input-bordered input-sm w-64"
-                       hx-get="{% url 'lessons_learned:list' %}"
-                       hx-target="#lessons-grid"
-                       hx-trigger="keyup changed delay:300ms"
-                       hx-include="[name='category'],[name='severity'],[name='type']"
-                       value="{{ request.GET.search }}">
+    <div class="space-y-6">
+        <!-- Filters and Actions -->
+        <div class="flex flex-wrap justify-between items-center gap-4">
+            <div class="flex flex-wrap gap-2">
+                <!-- Category Filter -->
+                <select class="select select-bordered select-sm"
+                        hx-get="{% url 'lessons_learned:list' %}"
+                        hx-target="#lessons-grid"
+                        hx-include="[name='severity'],[name='type'],[name='search']"
+                        name="category">
+                    <option value="">Todas las categorías</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}"
+                                {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <!-- Severity Filter -->
+                <select class="select select-bordered select-sm"
+                        hx-get="{% url 'lessons_learned:list' %}"
+                        hx-target="#lessons-grid"
+                        hx-include="[name='category'],[name='type'],[name='search']"
+                        name="severity">
+                    <option value="">Todas las severidades</option>
+                    <option value="critical"
+                            {% if request.GET.severity == 'critical' %}selected{% endif %}>Crítica</option>
+                    <option value="high"
+                            {% if request.GET.severity == 'high' %}selected{% endif %}>Alta</option>
+                    <option value="medium"
+                            {% if request.GET.severity == 'medium' %}selected{% endif %}>Media</option>
+                    <option value="low" {% if request.GET.severity == 'low' %}selected{% endif %}>Baja</option>
+                </select>
+                <!-- Type Filter -->
+                <select class="select select-bordered select-sm"
+                        hx-get="{% url 'lessons_learned:list' %}"
+                        hx-target="#lessons-grid"
+                        hx-include="[name='category'],[name='severity'],[name='search']"
+                        name="type">
+                    <option value="">Todos los tipos</option>
+                    <option value="incident"
+                            {% if request.GET.type == 'incident' %}selected{% endif %}>Incidente</option>
+                    <option value="near_miss"
+                            {% if request.GET.type == 'near_miss' %}selected{% endif %}>Casi accidente</option>
+                    <option value="good_practice"
+                            {% if request.GET.type == 'good_practice' %}selected{% endif %}>Buena práctica</option>
+                    <option value="improvement"
+                            {% if request.GET.type == 'improvement' %}selected{% endif %}>Mejora</option>
+                    <option value="observation"
+                            {% if request.GET.type == 'observation' %}selected{% endif %}>Observación</option>
+                </select>
             </div>
-
-            <!-- New Lesson Button -->
-            {% if user.is_staff or perms.lessons_learned.add_lessonlearned %}
-            <a href="{% url 'lessons_learned:create' %}" class="btn btn-primary btn-sm">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Nueva Lección
-            </a>
-            {% endif %}
+            <div class="flex gap-2">
+                <!-- Search -->
+                <div class="form-control">
+                    <input type="search"
+                           name="search"
+                           placeholder="Buscar..."
+                           class="input input-bordered input-sm w-64"
+                           hx-get="{% url 'lessons_learned:list' %}"
+                           hx-target="#lessons-grid"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="[name='category'],[name='severity'],[name='type']"
+                           value="{{ request.GET.search }}">
+                </div>
+                <!-- New Lesson Button -->
+                {% if user.is_staff or perms.lessons_learned.add_lessonlearned %}
+                    <a href="{% url 'lessons_learned:create' %}"
+                       class="btn btn-primary btn-sm">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Nueva Lección
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Lessons Grid -->
+        <div id="lessons-grid"
+             hx-get="{% url 'lessons_learned:list' %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="flex justify-center py-12">
+                <span class="loading loading-spinner loading-lg"></span>
+            </div>
         </div>
     </div>
-
-    <!-- Lessons Grid -->
-    <div id="lessons-grid"
-         hx-get="{% url 'lessons_learned:list' %}"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-        <div class="flex justify-center py-12">
-            <span class="loading loading-spinner loading-lg"></span>
-        </div>
-    </div>
-</div>
 {% endblock %}

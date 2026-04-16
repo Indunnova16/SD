@@ -1,41 +1,30 @@
 {# Card Component #}
 {# Usage: {% include "components/card.html" with title="Card Title" %} #}
-
 <div class="card bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-200 {{ extra_classes }}">
     {% if image %}
-    <figure>
-        <img src="{{ image }}" alt="{{ image_alt|default:title }}" class="w-full h-48 object-cover"/>
-    </figure>
+        <figure>
+            <img src="{{ image }}"
+                 alt="{{ image_alt|default:title }}"
+                 class="w-full h-48 object-cover" />
+        </figure>
     {% endif %}
-
     <div class="card-body">
-        {% if badge %}
-        <div class="badge {{ badge_class|default:'badge-primary' }}">{{ badge }}</div>
-        {% endif %}
-
+        {% if badge %}<div class="badge {{ badge_class|default:'badge-primary' }}">{{ badge }}</div>{% endif %}
         {% if title %}
-        <h2 class="card-title text-gray-900 dark:text-white">
-            {{ title }}
-            {% if is_new %}
-            <div class="badge badge-secondary">NUEVO</div>
-            {% endif %}
-        </h2>
+            <h2 class="card-title text-gray-900 dark:text-white">
+                {{ title }}
+                {% if is_new %}<div class="badge badge-secondary">NUEVO</div>{% endif %}
+            </h2>
         {% endif %}
-
-        {% if description %}
-        <p class="text-gray-600 dark:text-gray-300">{{ description }}</p>
-        {% endif %}
-
+        {% if description %}<p class="text-gray-600 dark:text-gray-300">{{ description }}</p>{% endif %}
         {% block card_content %}{% endblock %}
-
         {% if actions %}
-        <div class="card-actions justify-end mt-4">
-            {% for action in actions %}
-            <a href="{{ action.url }}" class="btn {{ action.class|default:'btn-primary' }}">
-                {{ action.label }}
-            </a>
-            {% endfor %}
-        </div>
+            <div class="card-actions justify-end mt-4">
+                {% for action in actions %}
+                    <a href="{{ action.url }}"
+                       class="btn {{ action.class|default:'btn-primary' }}">{{ action.label }}</a>
+                {% endfor %}
+            </div>
         {% endif %}
     </div>
 </div>

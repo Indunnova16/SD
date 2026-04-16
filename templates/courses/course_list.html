@@ -1,168 +1,165 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Catálogo de Cursos{% endblock %}
 {% block page_description %}
-<div class="flex items-center justify-between">
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Explora todos los cursos disponibles para tu formación
-    </p>
-    {% if user.is_staff %}
-    <a href="{% url 'courses:create' %}" class="btn btn-primary btn-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-        </svg>
-        Crear Curso
-    </a>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block main_classes %}lg:col-span-3{% endblock %}
-
-{% block sidebar %}
-<div class="lg:col-span-1">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-        <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Filtros</h3>
-
-        <!-- Search -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
-            <input type="text"
-                   name="search"
-                   value="{{ search_query|default:'' }}"
-                   placeholder="Buscar cursos..."
-                   class="input input-bordered w-full input-sm"
-                   hx-get="{% url 'courses:list' %}"
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-target="#course-grid"
-                   hx-include="[name='category'],[name='subcategory'],[name='type']">
-        </div>
-
-        <!-- Categories -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categorías</label>
-            <div class="space-y-2">
-                <a href="{% url 'courses:list' %}"
-                   class="block px-3 py-2 rounded text-sm {% if not current_category %}bg-primary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
-                    Todas ({{ courses.count }})
-                </a>
-                {% for cat in categories %}
-                <a href="{% url 'courses:list' %}?category={{ cat.slug }}"
-                   class="block px-3 py-2 rounded text-sm {% if current_category == cat.slug and not current_subcategory %}bg-primary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
-                    {{ cat.name }} ({{ cat.course_count }})
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Subcategories -->
-        {% if subcategories %}
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subcategorías</label>
-            <div class="space-y-2">
-                <a href="{% url 'courses:list' %}?category={{ current_category }}"
-                   class="block px-3 py-2 rounded text-sm {% if not current_subcategory %}bg-secondary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
-                    Todas
-                </a>
-                {% for subcat in subcategories %}
-                <a href="{% url 'courses:list' %}?category={{ current_category }}&subcategory={{ subcat.slug }}"
-                   class="block px-3 py-2 rounded text-sm {% if current_subcategory == subcat.slug %}bg-secondary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
-                    {{ subcat.name }} ({{ subcat.course_count }})
-                </a>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Course Type -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo</label>
-            <select name="type" class="select select-bordered select-sm w-full"
-                    hx-get="{% url 'courses:list' %}"
-                    hx-trigger="change"
-                    hx-target="#course-grid"
-                    hx-include="[name='search'],[name='category'],[name='subcategory']">
-                <option value="">Todos</option>
-                <option value="mandatory" {% if current_type == 'mandatory' %}selected{% endif %}>Obligatorio</option>
-                <option value="optional" {% if current_type == 'optional' %}selected{% endif %}>Opcional</option>
-                <option value="refresher" {% if current_type == 'refresher' %}selected{% endif %}>Refuerzo</option>
-            </select>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<div id="course-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-    {% for course in courses %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
-        <!-- Thumbnail -->
-        <div class="h-40 bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-            {% if course.thumbnail %}
-            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-full object-cover">
-            {% else %}
-            <svg class="w-16 h-16 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-            {% endif %}
-        </div>
-
-        <div class="p-4">
-            <!-- Badges -->
-            <div class="flex gap-2 mb-2">
-                {% if course.course_type == 'mandatory' %}
-                <span class="badge badge-error badge-sm">Obligatorio</span>
-                {% elif course.course_type == 'refresher' %}
-                <span class="badge badge-warning badge-sm">Refuerzo</span>
-                {% else %}
-                <span class="badge badge-info badge-sm">Opcional</span>
-                {% endif %}
-            </div>
-
-            <!-- Title -->
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                {{ course.title }}
-            </h3>
-
-            <!-- Meta -->
-            <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    <div class="flex items-center justify-between">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Explora todos los cursos disponibles para tu formación</p>
+        {% if user.is_staff %}
+            <a href="{% url 'courses:create' %}" class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-2"
+                     viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                 </svg>
-                {{ course.total_duration }} min
-
-                {% if course.category %}
-                <span class="mx-2">•</span>
-                <span>{{ course.category.name }}</span>
-                {% endif %}
+                Crear Curso
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block main_classes %}lg:col-span-3{% endblock %}
+{% block sidebar %}
+    <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Filtros</h3>
+            <!-- Search -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
+                <input type="text"
+                       name="search"
+                       value="{{ search_query|default:'' }}"
+                       placeholder="Buscar cursos..."
+                       class="input input-bordered w-full input-sm"
+                       hx-get="{% url 'courses:list' %}"
+                       hx-trigger="keyup changed delay:500ms"
+                       hx-target="#course-grid"
+                       hx-include="[name='category'],[name='subcategory'],[name='type']">
             </div>
-
-            <!-- Action -->
-            <div class="flex justify-between items-center">
-                {% if course.id in user_enrollments %}
-                <a href="{% url 'courses:detail' course.id %}" class="btn btn-primary btn-sm">
-                    Continuar
-                </a>
-                {% else %}
-                <a href="{% url 'courses:detail' course.id %}" class="btn btn-outline btn-primary btn-sm">
-                    Ver Curso
-                </a>
-                {% endif %}
-
-                <span class="text-xs text-gray-400">{{ course.modules.count }} módulos</span>
+            <!-- Categories -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Categorías</label>
+                <div class="space-y-2">
+                    <a href="{% url 'courses:list' %}"
+                       class="block px-3 py-2 rounded text-sm {% if not current_category %}bg-primary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                        Todas ({{ courses.count }})
+                    </a>
+                    {% for cat in categories %}
+                        <a href="{% url 'courses:list' %}?category={{ cat.slug }}"
+                           class="block px-3 py-2 rounded text-sm {% if current_category == cat.slug and not current_subcategory %}bg-primary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            {{ cat.name }} ({{ cat.course_count }})
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Subcategories -->
+            {% if subcategories %}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subcategorías</label>
+                    <div class="space-y-2">
+                        <a href="{% url 'courses:list' %}?category={{ current_category }}"
+                           class="block px-3 py-2 rounded text-sm {% if not current_subcategory %}bg-secondary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                            Todas
+                        </a>
+                        {% for subcat in subcategories %}
+                            <a href="{% url 'courses:list' %}?category={{ current_category }}&subcategory={{ subcat.slug }}"
+                               class="block px-3 py-2 rounded text-sm {% if current_subcategory == subcat.slug %}bg-secondary text-white{% else %}hover:bg-gray-100 dark:hover:bg-gray-700{% endif %}">
+                                {{ subcat.name }} ({{ subcat.course_count }})
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Course Type -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo</label>
+                <select name="type"
+                        class="select select-bordered select-sm w-full"
+                        hx-get="{% url 'courses:list' %}"
+                        hx-trigger="change"
+                        hx-target="#course-grid"
+                        hx-include="[name='search'],[name='category'],[name='subcategory']">
+                    <option value="">Todos</option>
+                    <option value="mandatory"
+                            {% if current_type == 'mandatory' %}selected{% endif %}>Obligatorio</option>
+                    <option value="optional"
+                            {% if current_type == 'optional' %}selected{% endif %}>Opcional</option>
+                    <option value="refresher"
+                            {% if current_type == 'refresher' %}selected{% endif %}>Refuerzo</option>
+                </select>
             </div>
         </div>
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay cursos</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            No se encontraron cursos con los filtros seleccionados.
-        </p>
+{% endblock %}
+{% block dashboard_content %}
+    <div id="course-grid"
+         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {% for course in courses %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+                <!-- Thumbnail -->
+                <div class="h-40 bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                    {% if course.thumbnail %}
+                        <img src="{{ course.thumbnail.url }}"
+                             alt="{{ course.title }}"
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <svg class="w-16 h-16 text-white opacity-50"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <!-- Badges -->
+                    <div class="flex gap-2 mb-2">
+                        {% if course.course_type == 'mandatory' %}
+                            <span class="badge badge-error badge-sm">Obligatorio</span>
+                        {% elif course.course_type == 'refresher' %}
+                            <span class="badge badge-warning badge-sm">Refuerzo</span>
+                        {% else %}
+                            <span class="badge badge-info badge-sm">Opcional</span>
+                        {% endif %}
+                    </div>
+                    <!-- Title -->
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{{ course.title }}</h3>
+                    <!-- Meta -->
+                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-3">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ course.total_duration }} min
+                        {% if course.category %}
+                            <span class="mx-2">•</span>
+                            <span>{{ course.category.name }}</span>
+                        {% endif %}
+                    </div>
+                    <!-- Action -->
+                    <div class="flex justify-between items-center">
+                        {% if course.id in user_enrollments %}
+                            <a href="{% url 'courses:detail' course.id %}"
+                               class="btn btn-primary btn-sm">Continuar</a>
+                        {% else %}
+                            <a href="{% url 'courses:detail' course.id %}"
+                               class="btn btn-outline btn-primary btn-sm">Ver Curso</a>
+                        {% endif %}
+                        <span class="text-xs text-gray-400">{{ course.modules.count }} módulos</span>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay cursos</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No se encontraron cursos con los filtros seleccionados.</p>
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endblock %}

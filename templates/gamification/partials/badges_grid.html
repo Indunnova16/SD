@@ -2,7 +2,11 @@
 <div class="stats shadow mb-6 w-full">
     <div class="stat">
         <div class="stat-figure text-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-8 w-8"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
         </div>
@@ -11,7 +15,11 @@
     </div>
     <div class="stat">
         <div class="stat-figure text-secondary">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-8 w-8"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
         </div>
@@ -20,43 +28,33 @@
     </div>
     <div class="stat">
         <div class="stat-figure text-accent">
-            <div class="radial-progress text-accent" style="--value:{{ data.progress_percentage }}; --size:3rem;">
-                {{ data.progress_percentage }}%
-            </div>
+            <div class="radial-progress text-accent"
+                 style="--value:{{ data.progress_percentage }};
+                        --size:3rem">{{ data.progress_percentage }}%</div>
         </div>
         <div class="stat-title">Progreso</div>
         <div class="stat-value text-accent">{{ data.progress_percentage }}%</div>
     </div>
 </div>
-
 <!-- Badge Grid -->
 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
     {% for badge in all_badges %}
-    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer
-                {% if badge.id not in earned_ids %}opacity-50 grayscale{% endif %}"
-         hx-get="{% url 'gamification:badge-detail' badge.id %}"
-         hx-target="#modal-container"
-         hx-swap="innerHTML">
-        <div class="card-body items-center text-center p-4">
-            <div class="w-16 h-16 rounded-full flex items-center justify-center
-                        {% if badge.id in earned_ids %}
-                        bg-{{ badge.rarity_color }} shadow-lg
-                        {% else %}
-                        bg-base-300
-                        {% endif %}">
-                <span class="text-3xl">{{ badge.icon|default:'🏆' }}</span>
+        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer {% if badge.id not in earned_ids %}opacity-50 grayscale{% endif %}"
+             hx-get="{% url 'gamification:badge-detail' badge.id %}"
+             hx-target="#modal-container"
+             hx-swap="innerHTML">
+            <div class="card-body items-center text-center p-4">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center {% if badge.id in earned_ids %} bg-{{ badge.rarity_color }} shadow-lg {% else %} bg-base-300 {% endif %}">
+                    <span class="text-3xl">{{ badge.icon|default:'🏆' }}</span>
+                </div>
+                <h3 class="font-medium text-sm mt-2">{{ badge.name }}</h3>
+                <span class="badge badge-{{ badge.rarity_color }} badge-xs">{{ badge.get_rarity_display }}</span>
             </div>
-            <h3 class="font-medium text-sm mt-2">{{ badge.name }}</h3>
-            <span class="badge badge-{{ badge.rarity_color }} badge-xs">
-                {{ badge.get_rarity_display }}
-            </span>
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-12">
-        <p class="text-base-content/60">No hay insignias disponibles</p>
-    </div>
+        <div class="col-span-full text-center py-12">
+            <p class="text-base-content/60">No hay insignias disponibles</p>
+        </div>
     {% endfor %}
 </div>
-
 <div id="modal-container"></div>

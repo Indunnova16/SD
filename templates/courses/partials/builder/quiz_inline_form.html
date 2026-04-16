@@ -2,69 +2,71 @@
 Inline form for quickly creating a new assessment from the course builder.
 Context: course
 {% endcomment %}
-
 <form hx-post="{% url 'courses:builder_create_quiz' course.id %}"
       hx-target="closest .p-3"
       hx-swap="outerHTML"
       class="mt-2 p-3 border border-base-300 rounded-lg">
     {% csrf_token %}
-
     <h6 class="text-xs font-semibold mb-2">Nueva Evaluacion</h6>
-
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
         <div class="form-control">
             <label class="label py-0">
                 <span class="label-text text-xs">Titulo <span class="text-error">*</span></span>
             </label>
-            <input type="text" name="title" class="input input-bordered input-xs w-full"
-                   placeholder="Titulo de la evaluacion" required>
+            <input type="text"
+                   name="title"
+                   class="input input-bordered input-xs w-full"
+                   placeholder="Titulo de la evaluacion"
+                   required>
         </div>
-
         <div class="form-control">
             <label class="label py-0">
                 <span class="label-text text-xs">Tipo</span>
             </label>
-            <select name="assessment_type" class="select select-bordered select-xs w-full">
+            <select name="assessment_type"
+                    class="select select-bordered select-xs w-full">
                 <option value="quiz">Quiz</option>
                 <option value="exam">Examen</option>
                 <option value="practice">Practica</option>
             </select>
         </div>
-
         <div class="form-control">
             <label class="label py-0">
                 <span class="label-text text-xs">Puntaje minimo (%)</span>
             </label>
-            <input type="number" name="passing_score" value="80"
+            <input type="number"
+                   name="passing_score"
+                   value="80"
                    class="input input-bordered input-xs w-full"
-                   min="0" max="100">
+                   min="0"
+                   max="100">
         </div>
-
         <div class="form-control">
             <label class="label py-0">
                 <span class="label-text text-xs">Tiempo limite (min)</span>
             </label>
-            <input type="number" name="time_limit"
+            <input type="number"
+                   name="time_limit"
                    class="input input-bordered input-xs w-full"
-                   min="1" placeholder="Sin limite">
+                   min="1"
+                   placeholder="Sin limite">
         </div>
-
         <div class="form-control">
             <label class="label py-0">
                 <span class="label-text text-xs">Intentos maximos</span>
             </label>
-            <input type="number" name="max_attempts" value="3"
+            <input type="number"
+                   name="max_attempts"
+                   value="3"
                    class="input input-bordered input-xs w-full"
                    min="0">
         </div>
     </div>
-
-    <p class="text-xs text-gray-400 mt-2">
-        Las preguntas se agregan desde el editor de evaluaciones despues de crear.
-    </p>
-
+    <p class="text-xs text-gray-400 mt-2">Las preguntas se agregan desde el editor de evaluaciones despues de crear.</p>
     <div class="flex gap-2 justify-end mt-3">
-        <button type="button" class="btn btn-ghost btn-xs" @click="showCreateQuiz = false">Cancelar</button>
+        <button type="button"
+                class="btn btn-ghost btn-xs"
+                @click="showCreateQuiz = false">Cancelar</button>
         <button type="submit" class="btn btn-primary btn-xs">Crear Evaluacion</button>
     </div>
 </form>

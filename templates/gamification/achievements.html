@@ -1,33 +1,30 @@
 {% extends "base.html" %}
-
 {% block title %}Logros - Gamificación{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Logros</h1>
-            <p class="text-base-content/70">Desbloquea logros completando objetivos</p>
-        </div>
-        <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
-    </div>
-
-    <div hx-get="{% url 'gamification:achievements-list' %}"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {% for i in "1234" %}
-            <div class="card bg-base-100 shadow animate-pulse">
-                <div class="card-body flex-row gap-4">
-                    <div class="w-16 h-16 bg-base-300 rounded-full"></div>
-                    <div class="flex-1">
-                        <div class="h-5 bg-base-300 rounded w-1/2 mb-2"></div>
-                        <div class="h-4 bg-base-300 rounded w-full"></div>
-                    </div>
-                </div>
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Logros</h1>
+                <p class="text-base-content/70">Desbloquea logros completando objetivos</p>
             </div>
-            {% endfor %}
+            <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
+        </div>
+        <div hx-get="{% url 'gamification:achievements-list' %}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for i in "1234" %}
+                    <div class="card bg-base-100 shadow animate-pulse">
+                        <div class="card-body flex-row gap-4">
+                            <div class="w-16 h-16 bg-base-300 rounded-full"></div>
+                            <div class="flex-1">
+                                <div class="h-5 bg-base-300 rounded w-1/2 mb-2"></div>
+                                <div class="h-4 bg-base-300 rounded w-full"></div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

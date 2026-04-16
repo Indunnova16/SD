@@ -1,134 +1,147 @@
 {% extends "base/base.html" %}
-
 {% block title %}Carga Masiva de Usuarios - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-4xl mx-auto">
-        <!-- Breadcrumb -->
-        <div class="mb-8">
-            <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
-                <ul>
-                    <li><a href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'accounts:user_list' %}">Usuarios</a></li>
-                    <li>Carga Masiva</li>
-                </ul>
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Breadcrumb -->
+            <div class="mb-8">
+                <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
+                    <ul>
+                        <li>
+                            <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:user_list' %}">Usuarios</a>
+                        </li>
+                        <li>Carga Masiva</li>
+                    </ul>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Carga Masiva de Usuarios</h1>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Suba un archivo Excel para crear m&uacute;ltiples usuarios a la vez
+                </p>
             </div>
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Carga Masiva de Usuarios</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Suba un archivo Excel para crear m&uacute;ltiples usuarios a la vez
-            </p>
-        </div>
-
-        <!-- Instructions Card -->
-        <div class="card bg-base-100 shadow mb-6">
-            <div class="card-body">
-                <h2 class="card-title text-lg">Instrucciones</h2>
-                <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li>Descargue la plantilla Excel haciendo clic en el bot&oacute;n de abajo.</li>
-                    <li>Complete los datos de los usuarios en la plantilla. Las columnas <strong>nombre</strong>, <strong>apellido</strong> y <strong>numero_documento</strong> son obligatorias.</li>
-                    <li>Suba el archivo completado usando el formulario.</li>
-                    <li>Las contrase&ntilde;as se generar&aacute;n autom&aacute;ticamente con el formato: <code class="badge badge-neutral badge-sm">documento + 3 primeras letras del nombre</code></li>
-                </ol>
-                <div class="card-actions mt-4">
-                    <a href="{% url 'accounts:download_template' %}" class="btn btn-outline btn-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
-                        Descargar Plantilla
-                    </a>
+            <!-- Instructions Card -->
+            <div class="card bg-base-100 shadow mb-6">
+                <div class="card-body">
+                    <h2 class="card-title text-lg">Instrucciones</h2>
+                    <ol class="list-decimal list-inside space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                        <li>Descargue la plantilla Excel haciendo clic en el bot&oacute;n de abajo.</li>
+                        <li>
+                            Complete los datos de los usuarios en la plantilla. Las columnas <strong>nombre</strong>, <strong>apellido</strong> y <strong>numero_documento</strong> son obligatorias.
+                        </li>
+                        <li>Suba el archivo completado usando el formulario.</li>
+                        <li>
+                            Las contrase&ntilde;as se generar&aacute;n autom&aacute;ticamente con el formato: <code class="badge badge-neutral badge-sm">documento + 3 primeras letras del nombre</code>
+                        </li>
+                    </ol>
+                    <div class="card-actions mt-4">
+                        <a href="{% url 'accounts:download_template' %}"
+                           class="btn btn-outline btn-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4 mr-1"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Descargar Plantilla
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Upload Form -->
-        <div class="card bg-base-100 shadow mb-6">
-            <div class="card-body">
-                <h2 class="card-title text-lg">Subir Archivo</h2>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="form-control w-full mb-4">
-                        <label class="label">
-                            <span class="label-text">{{ form.file.label }}</span>
-                        </label>
-                        {{ form.file }}
-                        {% if form.file.help_text %}
-                        <label class="label">
-                            <span class="label-text-alt text-gray-500">{{ form.file.help_text }}</span>
-                        </label>
+            <!-- Upload Form -->
+            <div class="card bg-base-100 shadow mb-6">
+                <div class="card-body">
+                    <h2 class="card-title text-lg">Subir Archivo</h2>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-control w-full mb-4">
+                            <label class="label">
+                                <span class="label-text">{{ form.file.label }}</span>
+                            </label>
+                            {{ form.file }}
+                            {% if form.file.help_text %}
+                                <label class="label">
+                                    <span class="label-text-alt text-gray-500">{{ form.file.help_text }}</span>
+                                </label>
+                            {% endif %}
+                            {% if form.file.errors %}
+                                {% for error in form.file.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ error }}</span>
+                                    </label>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 mr-1"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            Subir y Procesar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!-- Results -->
+            {% if results %}
+                <div class="card bg-base-100 shadow">
+                    <div class="card-body">
+                        <h2 class="card-title text-lg">Resultados</h2>
+                        {% if results.created %}
+                            <div class="alert alert-success mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Se crearon <strong>{{ results.created|length }}</strong> usuarios exitosamente.</span>
+                            </div>
+                            <div class="overflow-x-auto mb-4">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Documento</th>
+                                            <th>Contrase&ntilde;a</th>
+                                            <th>Perfil</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user in results.created %}
+                                            <tr>
+                                                <td>{{ user.get_full_name }}</td>
+                                                <td>{{ user.document_number }}</td>
+                                                <td>
+                                                    <code>{{ user.document_number }}{{ user.first_name|lower|slice:":3" }}</code>
+                                                </td>
+                                                <td>{{ user.get_job_profile_display }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
                         {% endif %}
-                        {% if form.file.errors %}
-                        {% for error in form.file.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ error }}</span>
-                        </label>
-                        {% endfor %}
+                        {% if results.errors %}
+                            <div class="alert alert-error mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Se encontraron <strong>{{ results.errors|length }}</strong> errores.</span>
+                            </div>
+                            <ul class="list-disc list-inside space-y-1 text-sm text-error">
+                                {% for error in results.errors %}<li>{{ error }}</li>{% endfor %}
+                            </ul>
                         {% endif %}
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        Subir y Procesar
-                    </button>
-                </form>
-            </div>
+                </div>
+            {% endif %}
         </div>
-
-        <!-- Results -->
-        {% if results %}
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h2 class="card-title text-lg">Resultados</h2>
-
-                {% if results.created %}
-                <div class="alert alert-success mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Se crearon <strong>{{ results.created|length }}</strong> usuarios exitosamente.</span>
-                </div>
-
-                <div class="overflow-x-auto mb-4">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Documento</th>
-                                <th>Contrase&ntilde;a</th>
-                                <th>Perfil</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for user in results.created %}
-                            <tr>
-                                <td>{{ user.get_full_name }}</td>
-                                <td>{{ user.document_number }}</td>
-                                <td><code>{{ user.document_number }}{{ user.first_name|lower|slice:":3" }}</code></td>
-                                <td>{{ user.get_job_profile_display }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% endif %}
-
-                {% if results.errors %}
-                <div class="alert alert-error mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Se encontraron <strong>{{ results.errors|length }}</strong> errores.</span>
-                </div>
-                <ul class="list-disc list-inside space-y-1 text-sm text-error">
-                    {% for error in results.errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-        </div>
-        {% endif %}
     </div>
-</div>
 {% endblock %}

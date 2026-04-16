@@ -1,55 +1,45 @@
 <!-- Progress Summary -->
 <div class="flex items-center justify-center mb-8">
     <div class="radial-progress text-primary text-4xl"
-         style="--value:{{ data.progress_percentage }}; --size:10rem; --thickness:0.5rem;">
-        {{ data.progress_percentage }}%
-    </div>
+         style="--value:{{ data.progress_percentage }};
+                --size:10rem;
+                --thickness:0.5rem">{{ data.progress_percentage }}%</div>
     <div class="ml-6">
         <p class="text-3xl font-bold">{{ data.total_unlocked }}/{{ data.total_available }}</p>
         <p class="text-base-content/60">logros desbloqueados</p>
     </div>
 </div>
-
 <!-- Achievements List -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     {% for achievement in all_achievements %}
-    <div class="card bg-base-100 shadow {% if achievement.id not in unlocked_ids %}opacity-60{% endif %}">
-        <div class="card-body flex-row gap-4">
-            <div class="w-16 h-16 rounded-full flex items-center justify-center
-                        {% if achievement.id in unlocked_ids %}
-                        bg-primary text-primary-content
-                        {% else %}
-                        bg-base-300
-                        {% endif %}">
-                <span class="text-3xl">{{ achievement.icon|default:'🏅' }}</span>
-            </div>
-            <div class="flex-1">
-                <div class="flex justify-between items-start">
-                    <h3 class="font-bold">{{ achievement.name }}</h3>
-                    {% if achievement.id in unlocked_ids %}
-                    <span class="badge badge-success">Desbloqueado</span>
-                    {% else %}
-                    <span class="badge badge-ghost">Bloqueado</span>
-                    {% endif %}
+        <div class="card bg-base-100 shadow {% if achievement.id not in unlocked_ids %}opacity-60{% endif %}">
+            <div class="card-body flex-row gap-4">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center {% if achievement.id in unlocked_ids %} bg-primary text-primary-content {% else %} bg-base-300 {% endif %}">
+                    <span class="text-3xl">{{ achievement.icon|default:'🏅' }}</span>
                 </div>
-                <p class="text-sm text-base-content/70 my-1">{{ achievement.description }}</p>
-                <div class="flex gap-2">
-                    <span class="badge badge-outline badge-sm">
-                        {{ achievement.get_achievement_type_display }}
-                    </span>
-                    {% if achievement.points_reward %}
-                    <span class="badge badge-primary badge-sm">+{{ achievement.points_reward }} pts</span>
-                    {% endif %}
-                    {% if achievement.badge %}
-                    <span class="badge badge-secondary badge-sm">+Insignia</span>
-                    {% endif %}
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <h3 class="font-bold">{{ achievement.name }}</h3>
+                        {% if achievement.id in unlocked_ids %}
+                            <span class="badge badge-success">Desbloqueado</span>
+                        {% else %}
+                            <span class="badge badge-ghost">Bloqueado</span>
+                        {% endif %}
+                    </div>
+                    <p class="text-sm text-base-content/70 my-1">{{ achievement.description }}</p>
+                    <div class="flex gap-2">
+                        <span class="badge badge-outline badge-sm">{{ achievement.get_achievement_type_display }}</span>
+                        {% if achievement.points_reward %}
+                            <span class="badge badge-primary badge-sm">+{{ achievement.points_reward }} pts</span>
+                        {% endif %}
+                        {% if achievement.badge %}<span class="badge badge-secondary badge-sm">+Insignia</span>{% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-12">
-        <p class="text-base-content/60">No hay logros disponibles</p>
-    </div>
+        <div class="col-span-full text-center py-12">
+            <p class="text-base-content/60">No hay logros disponibles</p>
+        </div>
     {% endfor %}
 </div>

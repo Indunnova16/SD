@@ -1,107 +1,110 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Charlas Preoperacionales{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Gestiona las charlas de seguridad diarias
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestiona las charlas de seguridad diarias</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Quick Actions -->
-    <div class="flex flex-wrap gap-4">
-        <a href="{% url 'preop_talks:create' %}" class="btn btn-primary">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Nueva Charla
-        </a>
-        <a href="{% url 'preop_talks:templates' %}" class="btn btn-ghost">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
-            </svg>
-            Plantillas
-        </a>
-    </div>
-
-    <!-- Today's Talks -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-center">
-                <h3 class="card-title">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    Charlas de Hoy
-                </h3>
-                <span class="badge badge-primary">{{ today|date:"d/m/Y" }}</span>
+    <div class="space-y-6">
+        <!-- Quick Actions -->
+        <div class="flex flex-wrap gap-4">
+            <a href="{% url 'preop_talks:create' %}" class="btn btn-primary">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nueva Charla
+            </a>
+            <a href="{% url 'preop_talks:templates' %}" class="btn btn-ghost">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z">
+                    </path>
+                </svg>
+                Plantillas
+            </a>
+        </div>
+        <!-- Today's Talks -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-center">
+                    <h3 class="card-title">
+                        <svg class="w-5 h-5 text-primary"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        Charlas de Hoy
+                    </h3>
+                    <span class="badge badge-primary">{{ today|date:"d/m/Y" }}</span>
+                </div>
+                <div hx-get="{% url 'preop_talks:today' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML"
+                     class="mt-4">
+                    <div class="flex justify-center py-8">
+                        <span class="loading loading-spinner loading-md"></span>
+                    </div>
+                </div>
             </div>
-            <div hx-get="{% url 'preop_talks:today' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML"
-                 class="mt-4">
-                <div class="flex justify-center py-8">
-                    <span class="loading loading-spinner loading-md"></span>
+        </div>
+        <!-- Filters -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Historial de Charlas</h3>
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <div class="form-control">
+                        <input type="date"
+                               name="date_from"
+                               class="input input-bordered input-sm"
+                               hx-get="{% url 'preop_talks:list' %}"
+                               hx-target="#talks-table"
+                               hx-include="[name='date_to'],[name='status'],[name='search']">
+                    </div>
+                    <div class="form-control">
+                        <input type="date"
+                               name="date_to"
+                               class="input input-bordered input-sm"
+                               hx-get="{% url 'preop_talks:list' %}"
+                               hx-target="#talks-table"
+                               hx-include="[name='date_from'],[name='status'],[name='search']">
+                    </div>
+                    <select class="select select-bordered select-sm"
+                            name="status"
+                            hx-get="{% url 'preop_talks:list' %}"
+                            hx-target="#talks-table"
+                            hx-include="[name='date_from'],[name='date_to'],[name='search']">
+                        <option value="">Todos los estados</option>
+                        <option value="scheduled">Programada</option>
+                        <option value="in_progress">En progreso</option>
+                        <option value="completed">Completada</option>
+                        <option value="cancelled">Cancelada</option>
+                    </select>
+                    <div class="form-control">
+                        <input type="search"
+                               name="search"
+                               placeholder="Buscar..."
+                               class="input input-bordered input-sm"
+                               hx-get="{% url 'preop_talks:list' %}"
+                               hx-target="#talks-table"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-include="[name='date_from'],[name='date_to'],[name='status']">
+                    </div>
+                </div>
+                <div id="talks-table"
+                     hx-get="{% url 'preop_talks:list' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="flex justify-center py-8">
+                        <span class="loading loading-spinner loading-md"></span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Filters -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h3 class="card-title mb-4">Historial de Charlas</h3>
-
-            <div class="flex flex-wrap gap-4 mb-4">
-                <div class="form-control">
-                    <input type="date"
-                           name="date_from"
-                           class="input input-bordered input-sm"
-                           hx-get="{% url 'preop_talks:list' %}"
-                           hx-target="#talks-table"
-                           hx-include="[name='date_to'],[name='status'],[name='search']">
-                </div>
-                <div class="form-control">
-                    <input type="date"
-                           name="date_to"
-                           class="input input-bordered input-sm"
-                           hx-get="{% url 'preop_talks:list' %}"
-                           hx-target="#talks-table"
-                           hx-include="[name='date_from'],[name='status'],[name='search']">
-                </div>
-                <select class="select select-bordered select-sm"
-                        name="status"
-                        hx-get="{% url 'preop_talks:list' %}"
-                        hx-target="#talks-table"
-                        hx-include="[name='date_from'],[name='date_to'],[name='search']">
-                    <option value="">Todos los estados</option>
-                    <option value="scheduled">Programada</option>
-                    <option value="in_progress">En progreso</option>
-                    <option value="completed">Completada</option>
-                    <option value="cancelled">Cancelada</option>
-                </select>
-                <div class="form-control">
-                    <input type="search"
-                           name="search"
-                           placeholder="Buscar..."
-                           class="input input-bordered input-sm"
-                           hx-get="{% url 'preop_talks:list' %}"
-                           hx-target="#talks-table"
-                           hx-trigger="keyup changed delay:300ms"
-                           hx-include="[name='date_from'],[name='date_to'],[name='status']">
-                </div>
-            </div>
-
-            <div id="talks-table"
-                 hx-get="{% url 'preop_talks:list' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML">
-                <div class="flex justify-center py-8">
-                    <span class="loading loading-spinner loading-md"></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

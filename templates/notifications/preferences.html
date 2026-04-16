@@ -1,190 +1,185 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Preferencias de Notificaciones{% endblock %}
-
 {% block dashboard_content %}
-<div class="max-w-2xl">
-    <form hx-put="{% url 'notifications:preferences' %}"
-          hx-target="this"
-          hx-swap="outerHTML"
-          class="space-y-6">
-        {% csrf_token %}
-
-        <!-- Channels Section -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title text-lg">Canales de Notificación</h3>
-                <p class="text-sm text-gray-500 mb-4">Elige cómo quieres recibir las notificaciones</p>
-
-                <div class="space-y-4">
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="email_enabled"
-                                   class="toggle toggle-primary"
-                                   {% if preferences.email_enabled %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Correo electrónico</span>
-                                <p class="text-xs text-gray-500">Recibir notificaciones en {{ user.email }}</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="push_enabled"
-                                   class="toggle toggle-primary"
-                                   {% if preferences.push_enabled %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Notificaciones push</span>
-                                <p class="text-xs text-gray-500">Recibir alertas en el navegador o app móvil</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="sms_enabled"
-                                   class="toggle toggle-primary"
-                                   {% if preferences.sms_enabled %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">SMS</span>
-                                <p class="text-xs text-gray-500">Solo para notificaciones urgentes</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="in_app_enabled"
-                                   class="toggle toggle-primary"
-                                   {% if preferences.in_app_enabled %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">En la aplicación</span>
-                                <p class="text-xs text-gray-500">Notificaciones dentro del sistema</p>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notification Types Section -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title text-lg">Tipos de Notificación</h3>
-                <p class="text-sm text-gray-500 mb-4">Elige qué notificaciones quieres recibir</p>
-
-                <div class="space-y-4">
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="course_reminders"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.course_reminders %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Recordatorios de cursos</span>
-                                <p class="text-xs text-gray-500">Recordatorios sobre cursos asignados</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="assessment_results"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.assessment_results %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Resultados de evaluaciones</span>
-                                <p class="text-xs text-gray-500">Notificaciones cuando se califican tus evaluaciones</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="certificate_issued"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.certificate_issued %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Certificados emitidos</span>
-                                <p class="text-xs text-gray-500">Cuando se emite un nuevo certificado</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="new_assignments"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.new_assignments %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Nuevas asignaciones</span>
-                                <p class="text-xs text-gray-500">Cuando te asignan nuevos cursos o rutas</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="deadline_reminders"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.deadline_reminders %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Recordatorios de fecha límite</span>
-                                <p class="text-xs text-gray-500">Alertas antes de que venzan tus cursos</p>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            <input type="checkbox" name="lesson_learned_updates"
-                                   class="checkbox checkbox-primary"
-                                   {% if preferences.lesson_learned_updates %}checked{% endif %}>
-                            <div>
-                                <span class="label-text font-medium">Lecciones aprendidas</span>
-                                <p class="text-xs text-gray-500">Nuevas lecciones aprendidas publicadas</p>
-                            </div>
-                        </label>
+    <div class="max-w-2xl">
+        <form hx-put="{% url 'notifications:preferences' %}"
+              hx-target="this"
+              hx-swap="outerHTML"
+              class="space-y-6">
+            {% csrf_token %}
+            <!-- Channels Section -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Canales de Notificación</h3>
+                    <p class="text-sm text-gray-500 mb-4">Elige cómo quieres recibir las notificaciones</p>
+                    <div class="space-y-4">
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="email_enabled"
+                                       class="toggle toggle-primary"
+                                       {% if preferences.email_enabled %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Correo electrónico</span>
+                                    <p class="text-xs text-gray-500">Recibir notificaciones en {{ user.email }}</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="push_enabled"
+                                       class="toggle toggle-primary"
+                                       {% if preferences.push_enabled %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Notificaciones push</span>
+                                    <p class="text-xs text-gray-500">Recibir alertas en el navegador o app móvil</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="sms_enabled"
+                                       class="toggle toggle-primary"
+                                       {% if preferences.sms_enabled %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">SMS</span>
+                                    <p class="text-xs text-gray-500">Solo para notificaciones urgentes</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="in_app_enabled"
+                                       class="toggle toggle-primary"
+                                       {% if preferences.in_app_enabled %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">En la aplicación</span>
+                                    <p class="text-xs text-gray-500">Notificaciones dentro del sistema</p>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Quiet Hours Section -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title text-lg">Horas de Silencio</h3>
-                <p class="text-sm text-gray-500 mb-4">No recibir notificaciones durante este horario</p>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Desde</span>
-                        </label>
-                        <input type="time" name="quiet_hours_start"
-                               class="input input-bordered"
-                               value="{{ preferences.quiet_hours_start|time:'H:i'|default:'' }}">
-                    </div>
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Hasta</span>
-                        </label>
-                        <input type="time" name="quiet_hours_end"
-                               class="input input-bordered"
-                               value="{{ preferences.quiet_hours_end|time:'H:i'|default:'' }}">
+            <!-- Notification Types Section -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Tipos de Notificación</h3>
+                    <p class="text-sm text-gray-500 mb-4">Elige qué notificaciones quieres recibir</p>
+                    <div class="space-y-4">
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="course_reminders"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.course_reminders %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Recordatorios de cursos</span>
+                                    <p class="text-xs text-gray-500">Recordatorios sobre cursos asignados</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="assessment_results"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.assessment_results %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Resultados de evaluaciones</span>
+                                    <p class="text-xs text-gray-500">Notificaciones cuando se califican tus evaluaciones</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="certificate_issued"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.certificate_issued %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Certificados emitidos</span>
+                                    <p class="text-xs text-gray-500">Cuando se emite un nuevo certificado</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="new_assignments"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.new_assignments %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Nuevas asignaciones</span>
+                                    <p class="text-xs text-gray-500">Cuando te asignan nuevos cursos o rutas</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="deadline_reminders"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.deadline_reminders %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Recordatorios de fecha límite</span>
+                                    <p class="text-xs text-gray-500">Alertas antes de que venzan tus cursos</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-4">
+                                <input type="checkbox"
+                                       name="lesson_learned_updates"
+                                       class="checkbox checkbox-primary"
+                                       {% if preferences.lesson_learned_updates %}checked{% endif %}>
+                                <div>
+                                    <span class="label-text font-medium">Lecciones aprendidas</span>
+                                    <p class="text-xs text-gray-500">Nuevas lecciones aprendidas publicadas</p>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">Deja vacío para recibir notificaciones en cualquier momento</p>
             </div>
-        </div>
-
-        <!-- Save Button -->
-        <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary">
-                <span class="loading loading-spinner loading-sm htmx-indicator"></span>
-                Guardar preferencias
-            </button>
-        </div>
-    </form>
-</div>
+            <!-- Quiet Hours Section -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-lg">Horas de Silencio</h3>
+                    <p class="text-sm text-gray-500 mb-4">No recibir notificaciones durante este horario</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Desde</span>
+                            </label>
+                            <input type="time"
+                                   name="quiet_hours_start"
+                                   class="input input-bordered"
+                                   value="{{ preferences.quiet_hours_start|time:'H:i'|default:'' }}">
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Hasta</span>
+                            </label>
+                            <input type="time"
+                                   name="quiet_hours_end"
+                                   class="input input-bordered"
+                                   value="{{ preferences.quiet_hours_end|time:'H:i'|default:'' }}">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Deja vacío para recibir notificaciones en cualquier momento</p>
+                </div>
+            </div>
+            <!-- Save Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="btn btn-primary">
+                    <span class="loading loading-spinner loading-sm htmx-indicator"></span>
+                    Guardar preferencias
+                </button>
+            </div>
+        </form>
+    </div>
 {% endblock %}

@@ -1,18 +1,19 @@
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-
     {% if form.errors %}
-    <div class="alert alert-error mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-            <h3 class="font-bold">Error en el formulario</h3>
-            <div class="text-xs">Por favor, corrija los errores a continuación</div>
+        <div class="alert alert-error mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="stroke-current shrink-0 h-6 w-6"
+                 fill="none"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <h3 class="font-bold">Error en el formulario</h3>
+                <div class="text-xs">Por favor, corrija los errores a continuación</div>
+            </div>
         </div>
-    </div>
     {% endif %}
-
     <div class="space-y-6">
         <!-- Personal Information -->
         <div>
@@ -24,79 +25,72 @@
                     </label>
                     {{ form.email }}
                     {% if form.email.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
+                        </label>
                     {% endif %}
                     <label class="label">
                         <span class="label-text-alt">Requerido para perfiles profesionales y administrativos</span>
                     </label>
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Teléfono</span>
                     </label>
                     {{ form.phone }}
                     {% if form.phone.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.phone.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.phone.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Nombre <span class="text-error">*</span></span>
                     </label>
                     {{ form.first_name }}
                     {% if form.first_name.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Apellido <span class="text-error">*</span></span>
                     </label>
                     {{ form.last_name }}
                     {% if form.last_name.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Tipo de documento <span class="text-error">*</span></span>
                     </label>
                     {{ form.document_type }}
                     {% if form.document_type.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.document_type.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.document_type.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Número de documento <span class="text-error">*</span></span>
                     </label>
                     {{ form.document_number }}
                     {% if form.document_number.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.document_number.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.document_number.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
             </div>
         </div>
-
         <div class="divider"></div>
-
         <!-- Employment Information -->
         <div>
             <h3 class="text-lg font-semibold mb-4">Información Laboral</h3>
@@ -107,140 +101,130 @@
                     </label>
                     {{ form.job_position }}
                     {% if form.job_position.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.job_position.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.job_position.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Perfil ocupacional <span class="text-error">*</span></span>
                     </label>
                     {{ form.job_profile }}
                     {% if form.job_profile.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.job_profile.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.job_profile.errors.0 }}</span>
+                        </label>
                     {% endif %}
                     <label class="label">
                         <span class="label-text-alt">Personal operativo usa cédula. Personal profesional/admin usa email.</span>
                     </label>
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Tipo de vinculación <span class="text-error">*</span></span>
                     </label>
                     {{ form.employment_type }}
                     {% if form.employment_type.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.employment_type.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.employment_type.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Fecha de ingreso <span class="text-error">*</span></span>
                     </label>
                     {{ form.hire_date }}
                     {% if form.hire_date.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.hire_date.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.hire_date.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Estado <span class="text-error">*</span></span>
                     </label>
                     {{ form.status }}
                     {% if form.status.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
-                    </label>
+                        <label class="label">
+                            <span class="label-text-alt text-error">{{ form.status.errors.0 }}</span>
+                        </label>
                     {% endif %}
                 </div>
-
                 {% if form.is_active %}
-                <div class="form-control">
-                    <label class="label cursor-pointer justify-start gap-4">
-                        {{ form.is_active }}
-                        <span class="label-text">Cuenta activa</span>
-                    </label>
-                    {% if form.is_active.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
-                    </label>
-                    {% endif %}
-                </div>
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-4">
+                            {{ form.is_active }}
+                            <span class="label-text">Cuenta activa</span>
+                        </label>
+                        {% if form.is_active.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
                 {% endif %}
-
                 {% if form.is_staff %}
-                <div class="form-control">
-                    <label class="label cursor-pointer justify-start gap-4">
-                        {{ form.is_staff }}
-                        <span class="label-text">Acceso administrativo</span>
-                    </label>
-                    {% if form.is_staff.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.is_staff.errors.0 }}</span>
-                    </label>
-                    {% endif %}
-                </div>
+                    <div class="form-control">
+                        <label class="label cursor-pointer justify-start gap-4">
+                            {{ form.is_staff }}
+                            <span class="label-text">Acceso administrativo</span>
+                        </label>
+                        {% if form.is_staff.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.is_staff.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
         </div>
-
         {% if form.password1 %}
-        <div class="divider"></div>
-
-        <!-- Password (only for create) -->
-        <div>
-            <h3 class="text-lg font-semibold mb-4">Contraseña</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Contraseña <span class="text-error">*</span></span>
-                    </label>
-                    {{ form.password1 }}
-                    {% if form.password1.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.password1.errors.0 }}</span>
-                    </label>
-                    {% endif %}
-                </div>
-
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Confirmar contraseña <span class="text-error">*</span></span>
-                    </label>
-                    {{ form.password2 }}
-                    {% if form.password2.errors %}
-                    <label class="label">
-                        <span class="label-text-alt text-error">{{ form.password2.errors.0 }}</span>
-                    </label>
-                    {% endif %}
+            <div class="divider"></div>
+            <!-- Password (only for create) -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Contraseña</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Contraseña <span class="text-error">*</span></span>
+                        </label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.password1.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Confirmar contraseña <span class="text-error">*</span></span>
+                        </label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.password2.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
-
         <div class="divider"></div>
-
         <!-- Actions -->
         <div class="flex gap-4">
             <button type="submit" class="btn btn-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-5 w-5 mr-2"
+                     viewBox="0 0 20 20"
+                     fill="currentColor">
                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
                 Guardar
             </button>
-            <a href="{% url 'accounts:user_list' %}" class="btn btn-ghost">
-                Cancelar
-            </a>
+            <a href="{% url 'accounts:user_list' %}" class="btn btn-ghost">Cancelar</a>
         </div>
     </div>
 </form>

@@ -1,156 +1,163 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Rutas de Aprendizaje{% endblock %}
 {% block page_description %}
-<div class="flex items-center justify-between">
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Rutas de formación estructuradas según tu perfil ocupacional
-    </p>
-    {% if user.is_staff %}
-    <a href="{% url 'learning_paths:create' %}" class="btn btn-primary btn-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-        </svg>
-        Crear Ruta
-    </a>
-    {% endif %}
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<!-- Filters -->
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-    <div class="flex flex-wrap gap-4 items-center">
-        <div class="flex-1 min-w-[200px]">
-            <input type="text"
-                   name="search"
-                   value="{{ search_query|default:'' }}"
-                   placeholder="Buscar rutas..."
-                   class="input input-bordered w-full input-sm"
-                   hx-get="{% url 'learning_paths:list' %}"
-                   hx-trigger="keyup changed delay:500ms"
-                   hx-target="#path-grid"
-                   hx-include="[name='profile'],[name='mandatory']">
-        </div>
-
-        <select name="profile" class="select select-bordered select-sm"
-                hx-get="{% url 'learning_paths:list' %}"
-                hx-trigger="change"
-                hx-target="#path-grid"
-                hx-include="[name='search'],[name='mandatory']">
-            <option value="">Todos los perfiles</option>
-            <option value="LINIERO" {% if current_profile == 'LINIERO' %}selected{% endif %}>Liniero</option>
-            <option value="JEFE_CUADRILLA" {% if current_profile == 'JEFE_CUADRILLA' %}selected{% endif %}>Jefe de Cuadrilla</option>
-            <option value="INGENIERO_RESIDENTE" {% if current_profile == 'INGENIERO_RESIDENTE' %}selected{% endif %}>Ingeniero Residente</option>
-            <option value="COORDINADOR_HSEQ" {% if current_profile == 'COORDINADOR_HSEQ' %}selected{% endif %}>Coordinador HSEQ</option>
-        </select>
-
-        <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox"
-                   name="mandatory"
-                   value="true"
-                   class="checkbox checkbox-sm"
-                   {% if mandatory_only %}checked{% endif %}
-                   hx-get="{% url 'learning_paths:list' %}"
-                   hx-trigger="change"
-                   hx-target="#path-grid"
-                   hx-include="[name='search'],[name='profile']">
-            <span class="text-sm text-gray-600 dark:text-gray-400">Solo obligatorios</span>
-        </label>
+    <div class="flex items-center justify-between">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Rutas de formación estructuradas según tu perfil ocupacional
+        </p>
+        {% if user.is_staff %}
+            <a href="{% url 'learning_paths:create' %}"
+               class="btn btn-primary btn-sm">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-2"
+                     viewBox="0 0 20 20"
+                     fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Crear Ruta
+            </a>
+        {% endif %}
     </div>
-</div>
-
-<!-- Path Cards -->
-<div id="path-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for item in paths %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
-        <!-- Header with progress -->
-        <div class="relative h-32 bg-gradient-to-r from-secondary to-accent flex items-center justify-center">
-            {% if item.path.thumbnail %}
-            <img src="{{ item.path.thumbnail.url }}" class="w-full h-full object-cover">
-            {% else %}
-            <svg class="w-16 h-16 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-            </svg>
-            {% endif %}
-
-            <!-- Progress overlay -->
-            {% if item.progress is not None %}
-            <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 px-3 py-1">
-                <div class="flex items-center gap-2">
-                    <div class="flex-1 h-1.5 bg-gray-600 rounded-full">
-                        <div class="h-1.5 bg-success rounded-full" style="width: {{ item.progress }}%"></div>
+{% endblock %}
+{% block dashboard_content %}
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <div class="flex flex-wrap gap-4 items-center">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text"
+                       name="search"
+                       value="{{ search_query|default:'' }}"
+                       placeholder="Buscar rutas..."
+                       class="input input-bordered w-full input-sm"
+                       hx-get="{% url 'learning_paths:list' %}"
+                       hx-trigger="keyup changed delay:500ms"
+                       hx-target="#path-grid"
+                       hx-include="[name='profile'],[name='mandatory']">
+            </div>
+            <select name="profile"
+                    class="select select-bordered select-sm"
+                    hx-get="{% url 'learning_paths:list' %}"
+                    hx-trigger="change"
+                    hx-target="#path-grid"
+                    hx-include="[name='search'],[name='mandatory']">
+                <option value="">Todos los perfiles</option>
+                <option value="LINIERO"
+                        {% if current_profile == 'LINIERO' %}selected{% endif %}>Liniero</option>
+                <option value="JEFE_CUADRILLA"
+                        {% if current_profile == 'JEFE_CUADRILLA' %}selected{% endif %}>Jefe de Cuadrilla</option>
+                <option value="INGENIERO_RESIDENTE"
+                        {% if current_profile == 'INGENIERO_RESIDENTE' %}selected{% endif %}>
+                    Ingeniero Residente
+                </option>
+                <option value="COORDINADOR_HSEQ"
+                        {% if current_profile == 'COORDINADOR_HSEQ' %}selected{% endif %}>Coordinador HSEQ</option>
+            </select>
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox"
+                       name="mandatory"
+                       value="true"
+                       class="checkbox checkbox-sm"
+                       {% if mandatory_only %}checked{% endif %}
+                       hx-get="{% url 'learning_paths:list' %}"
+                       hx-trigger="change"
+                       hx-target="#path-grid"
+                       hx-include="[name='search'],[name='profile']">
+                <span class="text-sm text-gray-600 dark:text-gray-400">Solo obligatorios</span>
+            </label>
+        </div>
+    </div>
+    <!-- Path Cards -->
+    <div id="path-grid"
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in paths %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+                <!-- Header with progress -->
+                <div class="relative h-32 bg-gradient-to-r from-secondary to-accent flex items-center justify-center">
+                    {% if item.path.thumbnail %}
+                        <img src="{{ item.path.thumbnail.url }}"
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <svg class="w-16 h-16 text-white opacity-50"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    {% endif %}
+                    <!-- Progress overlay -->
+                    {% if item.progress is not None %}
+                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 px-3 py-1">
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-gray-600 rounded-full">
+                                    <div class="h-1.5 bg-success rounded-full"
+                                         style="width: {{ item.progress }}%"></div>
+                                </div>
+                                <span class="text-xs text-white">{{ item.progress|floatformat:0 }}%</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <!-- Mandatory badge -->
+                    {% if item.path.is_mandatory %}
+                        <div class="absolute top-2 right-2">
+                            <span class="badge badge-error badge-sm">Obligatorio</span>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <!-- Title -->
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">{{ item.path.name }}</h3>
+                    <!-- Description -->
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">{{ item.path.description }}</p>
+                    <!-- Meta -->
+                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        {{ item.path.total_courses }} cursos
+                        <span class="mx-2">•</span>
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {{ item.path.estimated_duration }} días
                     </div>
-                    <span class="text-xs text-white">{{ item.progress|floatformat:0 }}%</span>
+                    <!-- Profiles -->
+                    <div class="flex flex-wrap gap-1 mb-4">
+                        {% for profile in item.path.target_profiles %}
+                            <span class="badge badge-ghost badge-sm">{{ profile }}</span>
+                        {% endfor %}
+                    </div>
+                    <!-- Action -->
+                    <a href="{% url 'learning_paths:detail' item.path.id %}"
+                       class="btn btn-primary btn-sm w-full">
+                        {% if item.assignment %}
+                            {% if item.assignment.status == 'completed' %}
+                                Ver Ruta
+                            {% else %}
+                                Continuar
+                            {% endif %}
+                        {% else %}
+                            Ver Ruta
+                        {% endif %}
+                    </a>
                 </div>
             </div>
-            {% endif %}
-
-            <!-- Mandatory badge -->
-            {% if item.path.is_mandatory %}
-            <div class="absolute top-2 right-2">
-                <span class="badge badge-error badge-sm">Obligatorio</span>
-            </div>
-            {% endif %}
-        </div>
-
-        <div class="p-4">
-            <!-- Title -->
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                {{ item.path.name }}
-            </h3>
-
-            <!-- Description -->
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
-                {{ item.path.description }}
-            </p>
-
-            <!-- Meta -->
-            <div class="flex items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
-                {{ item.path.total_courses }} cursos
-
-                <span class="mx-2">•</span>
-
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                {{ item.path.estimated_duration }} días
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay rutas</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No se encontraron rutas de aprendizaje.</p>
             </div>
-
-            <!-- Profiles -->
-            <div class="flex flex-wrap gap-1 mb-4">
-                {% for profile in item.path.target_profiles %}
-                <span class="badge badge-ghost badge-sm">{{ profile }}</span>
-                {% endfor %}
-            </div>
-
-            <!-- Action -->
-            <a href="{% url 'learning_paths:detail' item.path.id %}" class="btn btn-primary btn-sm w-full">
-                {% if item.assignment %}
-                    {% if item.assignment.status == 'completed' %}
-                    Ver Ruta
-                    {% else %}
-                    Continuar
-                    {% endif %}
-                {% else %}
-                Ver Ruta
-                {% endif %}
-            </a>
-        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay rutas</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            No se encontraron rutas de aprendizaje.
-        </p>
-    </div>
-    {% endfor %}
-</div>
 {% endblock %}

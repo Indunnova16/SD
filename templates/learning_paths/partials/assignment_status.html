@@ -2,47 +2,48 @@
     <!-- Enrolled -->
     <div class="text-center">
         <div class="mb-3">
-            <div class="radial-progress text-primary" style="--value:{{ assignment.progress }}; --size:5rem; --thickness:6px;">
+            <div class="radial-progress text-primary"
+                 style="--value:{{ assignment.progress }};
+                        --size:5rem;
+                        --thickness:6px">
                 <span class="text-lg font-bold">{{ assignment.progress|floatformat:0 }}%</span>
             </div>
         </div>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {% if assignment.status == 'completed' %}
-            <span class="text-success font-medium">Ruta completada</span>
+                <span class="text-success font-medium">Ruta completada</span>
             {% elif assignment.status == 'in_progress' %}
-            En progreso
+                En progreso
             {% else %}
-            Inscrito
+                Inscrito
             {% endif %}
         </p>
-
         {% if assignment.due_date %}
-        <div class="text-xs text-warning flex items-center justify-center gap-1 mb-4">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Fecha límite: {{ assignment.due_date|date:"d M Y" }}
-        </div>
+            <div class="text-xs text-warning flex items-center justify-center gap-1 mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Fecha límite: {{ assignment.due_date|date:"d M Y" }}
+            </div>
         {% endif %}
     </div>
 {% else %}
     <!-- Not Enrolled -->
     <div class="text-center">
         <div class="mb-4">
-            <svg class="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+            <svg class="mx-auto w-12 h-12 text-gray-300 dark:text-gray-600"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
             </svg>
         </div>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Inscríbete para iniciar esta ruta de aprendizaje
-        </p>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Inscríbete para iniciar esta ruta de aprendizaje</p>
         <form hx-post="{% url 'learning_paths:join' path.id %}"
               hx-target="#assignment-status"
               hx-swap="innerHTML">
             {% csrf_token %}
-            <button type="submit" class="btn btn-primary w-full">
-                Iniciar Ruta
-            </button>
+            <button type="submit" class="btn btn-primary w-full">Iniciar Ruta</button>
         </form>
     </div>
 {% endif %}

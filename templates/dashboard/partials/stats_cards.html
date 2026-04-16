@@ -7,32 +7,37 @@
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.active_users }}</p>
             </div>
             <div class="p-3 bg-primary-100 dark:bg-primary-900 rounded-full">
-                <svg class="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m0 0V9a4 4 0 01-4-4m4 4a4 4 0 01-4 4"></path>
+                <svg class="w-6 h-6 text-primary-600 dark:text-primary-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m0 0V9a4 4 0 01-4-4m4 4a4 4 0 01-4 4">
+                    </path>
                 </svg>
             </div>
         </div>
         <div class="mt-2 flex items-center text-sm">
             {% if stats.users_change >= 0 %}
-            <span class="text-green-600 dark:text-green-400">
-                <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z"></path>
-                </svg>
-                +{{ stats.users_change }}%
-            </span>
+                <span class="text-green-600 dark:text-green-400">
+                    <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z">
+                        </path>
+                    </svg>
+                    +{{ stats.users_change }}%
+                </span>
             {% else %}
-            <span class="text-red-600 dark:text-red-400">
-                <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z"></path>
-                </svg>
-                {{ stats.users_change }}%
-            </span>
+                <span class="text-red-600 dark:text-red-400">
+                    <svg class="w-4 h-4 inline" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z">
+                        </path>
+                    </svg>
+                    {{ stats.users_change }}%
+                </span>
             {% endif %}
             <span class="ml-2 text-gray-500 dark:text-gray-400">vs mes anterior</span>
         </div>
     </div>
 </div>
-
 <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
     <div class="card-body">
         <div class="flex items-center justify-between">
@@ -40,16 +45,19 @@
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Cumplimiento</p>
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.compliance_rate|floatformat:1 }}%</p>
             </div>
-            <div class="radial-progress text-primary-600" style="--value:{{ stats.compliance_rate }}; --size:3.5rem;">
+            <div class="radial-progress text-primary-600"
+                 style="--value:{{ stats.compliance_rate }};
+                        --size:3.5rem">
                 <span class="text-xs font-bold">{{ stats.compliance_rate|floatformat:0 }}%</span>
             </div>
         </div>
         <div class="mt-2">
-            <progress class="progress progress-primary w-full" value="{{ stats.compliance_rate }}" max="100"></progress>
+            <progress class="progress progress-primary w-full"
+                      value="{{ stats.compliance_rate }}"
+                      max="100"></progress>
         </div>
     </div>
 </div>
-
 <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
     <div class="card-body">
         <div class="flex items-center justify-between">
@@ -58,17 +66,18 @@
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.courses_completed }}</p>
             </div>
             <div class="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                <svg class="w-6 h-6 text-green-600 dark:text-green-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
                 </svg>
             </div>
         </div>
-        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            {{ stats.courses_in_progress }} en progreso
-        </p>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ stats.courses_in_progress }} en progreso</p>
     </div>
 </div>
-
 <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
     <div class="card-body">
         <div class="flex items-center justify-between">
@@ -77,8 +86,12 @@
                 <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ stats.valid_certificates }}</p>
             </div>
             <div class="p-3 bg-yellow-100 dark:bg-yellow-900 rounded-full">
-                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                    </path>
                 </svg>
             </div>
         </div>

@@ -1,102 +1,105 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Parametrizacion{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Administracion central de cursos, categorias y perfiles ocupacionales
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Administracion central de cursos, categorias y perfiles ocupacionales
+    </p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div x-data="{ activeTab: '{{ active_tab }}' }" class="space-y-6">
-    <!-- Stats Row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
-             @click="activeTab = 'categorias'">
-            <div class="card-body py-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Categorias</p>
-                <p class="text-2xl font-bold">{{ total_categories }}</p>
-                <p class="text-sm">
-                    <span class="text-success">{{ active_categories }} activas</span> /
-                    <span class="text-warning">{{ inactive_categories }} inactivas</span>
-                </p>
+    <div x-data="{ activeTab: '{{ active_tab }}' }" class="space-y-6">
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                 @click="activeTab = 'categorias'">
+                <div class="card-body py-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Categorias</p>
+                    <p class="text-2xl font-bold">{{ total_categories }}</p>
+                    <p class="text-sm">
+                        <span class="text-success">{{ active_categories }} activas</span> /
+                        <span class="text-warning">{{ inactive_categories }} inactivas</span>
+                    </p>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                 @click="activeTab = 'cursos'">
+                <div class="card-body py-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Cursos</p>
+                    <p class="text-2xl font-bold">{{ total_courses }}</p>
+                    <p class="text-sm text-gray-500">{{ published_courses }} publicados</p>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                 @click="activeTab = 'cursos'">
+                <div class="card-body py-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Borradores</p>
+                    <p class="text-2xl font-bold text-warning">{{ draft_courses }}</p>
+                    <p class="text-sm text-gray-500">{{ archived_courses }} archivados</p>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                 @click="activeTab = 'cursos'">
+                <div class="card-body py-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Sin Categoria</p>
+                    <p class="text-2xl font-bold text-error">{{ uncategorized_courses }}</p>
+                    <p class="text-sm text-gray-500">cursos sin clasificar</p>
+                </div>
+            </div>
+            <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
+                 @click="activeTab = 'perfiles'">
+                <div class="card-body py-4">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Perfiles</p>
+                    <p class="text-2xl font-bold">{{ total_profiles }}</p>
+                    <p class="text-sm text-gray-500">{{ active_profiles }} activos</p>
+                </div>
             </div>
         </div>
-        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
-             @click="activeTab = 'cursos'">
-            <div class="card-body py-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Cursos</p>
-                <p class="text-2xl font-bold">{{ total_courses }}</p>
-                <p class="text-sm text-gray-500">{{ published_courses }} publicados</p>
-            </div>
+        <!-- Tabs -->
+        <div role="tablist" class="tabs tabs-boxed bg-base-200 p-1">
+            <button role="tab"
+                    class="tab transition-all"
+                    :class="{ 'tab-active': activeTab === 'cursos' }"
+                    @click="activeTab = 'cursos'">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Cursos
+            </button>
+            <button role="tab"
+                    class="tab transition-all"
+                    :class="{ 'tab-active': activeTab === 'categorias' }"
+                    @click="activeTab = 'categorias'">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                Categorias
+            </button>
+            <button role="tab"
+                    class="tab transition-all"
+                    :class="{ 'tab-active': activeTab === 'perfiles' }"
+                    @click="activeTab = 'perfiles'">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 mr-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Perfiles Ocupacionales
+            </button>
         </div>
-        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
-             @click="activeTab = 'cursos'">
-            <div class="card-body py-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Borradores</p>
-                <p class="text-2xl font-bold text-warning">{{ draft_courses }}</p>
-                <p class="text-sm text-gray-500">{{ archived_courses }} archivados</p>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
-             @click="activeTab = 'cursos'">
-            <div class="card-body py-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Sin Categoria</p>
-                <p class="text-2xl font-bold text-error">{{ uncategorized_courses }}</p>
-                <p class="text-sm text-gray-500">cursos sin clasificar</p>
-            </div>
-        </div>
-        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow cursor-pointer"
-             @click="activeTab = 'perfiles'">
-            <div class="card-body py-4">
-                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Perfiles</p>
-                <p class="text-2xl font-bold">{{ total_profiles }}</p>
-                <p class="text-sm text-gray-500">{{ active_profiles }} activos</p>
-            </div>
-        </div>
+        <!-- Tab Content: Cursos -->
+        <div x-show="activeTab === 'cursos'" x-cloak>{% include "courses/partials/tab_cursos.html" %}</div>
+        <!-- Tab Content: Categorias -->
+        <div x-show="activeTab === 'categorias'" x-cloak>{% include "courses/partials/tab_categorias.html" %}</div>
+        <!-- Tab Content: Perfiles -->
+        <div x-show="activeTab === 'perfiles'" x-cloak>{% include "courses/partials/tab_perfiles.html" %}</div>
     </div>
-
-    <!-- Tabs -->
-    <div role="tablist" class="tabs tabs-boxed bg-base-200 p-1">
-        <button role="tab" class="tab transition-all"
-                :class="{ 'tab-active': activeTab === 'cursos' }"
-                @click="activeTab = 'cursos'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            Cursos
-        </button>
-        <button role="tab" class="tab transition-all"
-                :class="{ 'tab-active': activeTab === 'categorias' }"
-                @click="activeTab = 'categorias'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            Categorias
-        </button>
-        <button role="tab" class="tab transition-all"
-                :class="{ 'tab-active': activeTab === 'perfiles' }"
-                @click="activeTab = 'perfiles'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            Perfiles Ocupacionales
-        </button>
-    </div>
-
-    <!-- Tab Content: Cursos -->
-    <div x-show="activeTab === 'cursos'" x-cloak>
-        {% include "courses/partials/tab_cursos.html" %}
-    </div>
-
-    <!-- Tab Content: Categorias -->
-    <div x-show="activeTab === 'categorias'" x-cloak>
-        {% include "courses/partials/tab_categorias.html" %}
-    </div>
-
-    <!-- Tab Content: Perfiles -->
-    <div x-show="activeTab === 'perfiles'" x-cloak>
-        {% include "courses/partials/tab_perfiles.html" %}
-    </div>
-</div>
 {% endblock %}

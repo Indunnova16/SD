@@ -1,116 +1,116 @@
 {% extends "base/base.html" %}
-
 {% block title %}Historial de Aprendizaje - {{ user_obj.get_full_name }} - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
-                <ul>
-                    <li><a href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-                    <li><a href="{% url 'accounts:user_list' %}">Usuarios</a></li>
-                    <li><a href="{% url 'accounts:user_detail' user_obj.pk %}">{{ user_obj.get_full_name }}</a></li>
-                    <li>Historial de Aprendizaje</li>
-                </ul>
-            </div>
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Historial de Aprendizaje</h1>
-                    <p class="text-gray-500 mt-1">{{ user_obj.get_full_name }} &mdash; {{ user_obj.get_job_profile_display|default:"Sin perfil" }}</p>
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-5xl mx-auto">
+            <!-- Header -->
+            <div class="mb-8">
+                <div class="flex items-center gap-2 text-sm breadcrumbs mb-4">
+                    <ul>
+                        <li>
+                            <a href="{% url 'accounts:dashboard' %}">Dashboard</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:user_list' %}">Usuarios</a>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:user_detail' user_obj.pk %}">{{ user_obj.get_full_name }}</a>
+                        </li>
+                        <li>Historial de Aprendizaje</li>
+                    </ul>
                 </div>
-                <a href="{% url 'accounts:user_detail' user_obj.pk %}" class="btn btn-ghost btn-sm">
-                    Volver al perfil
-                </a>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Historial de Aprendizaje</h1>
+                        <p class="text-gray-500 mt-1">
+                            {{ user_obj.get_full_name }} &mdash; {{ user_obj.get_job_profile_display|default:"Sin perfil" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'accounts:user_detail' user_obj.pk %}"
+                       class="btn btn-ghost btn-sm">Volver al perfil</a>
+                </div>
             </div>
+            <!-- Stats -->
+            <div class="stats shadow w-full mb-6">
+                <div class="stat">
+                    <div class="stat-title">Cursos actuales</div>
+                    <div class="stat-value text-primary">{{ enrollments.count }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Completados</div>
+                    <div class="stat-value text-success">{{ completed_count }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">En progreso</div>
+                    <div class="stat-value text-info">{{ in_progress_count }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Pendientes</div>
+                    <div class="stat-value text-warning">{{ pending_count }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-title">Completaciones anteriores</div>
+                    <div class="stat-value text-secondary">{{ past_completions_count }}</div>
+                </div>
+            </div>
+            <!-- Current Enrollments -->
+            <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Cursos Actuales</h2>
+            <!-- Filter -->
+            <div class="flex gap-2 mb-4">
+                <a href="{% url 'accounts:user_learning_history' user_obj.pk %}"
+                   class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-ghost{% endif %}">Todos</a>
+                {% for value, label in status_choices %}
+                    <a href="{% url 'accounts:user_learning_history' user_obj.pk %}?status={{ value }}"
+                       class="btn btn-sm {% if current_status == value %}btn-primary{% else %}btn-ghost{% endif %}">
+                        {{ label }}
+                    </a>
+                {% endfor %}
+            </div>
+            {% include "accounts/partials/learning_history_table.html" %}
+            <!-- Past Completion Records -->
+            {% if completion_records %}
+                <div class="divider mt-8"></div>
+                <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Historial de Completaciones Anteriores</h2>
+                <p class="text-gray-500 text-sm mb-4">
+                    Cursos completados en periodos anteriores (antes de reinicio por reactivaci&oacute;n)
+                </p>
+                <div class="overflow-x-auto">
+                    <table class="table table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>Curso</th>
+                                <th>Categor&iacute;a</th>
+                                <th>Progreso alcanzado</th>
+                                <th>Fecha completado</th>
+                                <th>Motivo reinicio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in completion_records %}
+                                <tr>
+                                    <td>
+                                        <div class="font-bold text-sm">{{ record.course.title }}</div>
+                                        <div class="text-xs opacity-50">{{ record.course.code }}</div>
+                                    </td>
+                                    <td class="text-sm">{{ record.course.category.name|default:"-" }}</td>
+                                    <td>
+                                        <div class="flex items-center gap-2">
+                                            <progress class="progress progress-success w-20"
+                                                      value="{{ record.progress|floatformat:0 }}"
+                                                      max="100"></progress>
+                                            <span class="text-xs">{{ record.progress|floatformat:0 }}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-sm">{{ record.completed_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge badge-ghost badge-sm">{{ record.reset_reason }}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
         </div>
-
-        <!-- Stats -->
-        <div class="stats shadow w-full mb-6">
-            <div class="stat">
-                <div class="stat-title">Cursos actuales</div>
-                <div class="stat-value text-primary">{{ enrollments.count }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-title">Completados</div>
-                <div class="stat-value text-success">{{ completed_count }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-title">En progreso</div>
-                <div class="stat-value text-info">{{ in_progress_count }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-title">Pendientes</div>
-                <div class="stat-value text-warning">{{ pending_count }}</div>
-            </div>
-            <div class="stat">
-                <div class="stat-title">Completaciones anteriores</div>
-                <div class="stat-value text-secondary">{{ past_completions_count }}</div>
-            </div>
-        </div>
-
-        <!-- Current Enrollments -->
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Cursos Actuales</h2>
-
-        <!-- Filter -->
-        <div class="flex gap-2 mb-4">
-            <a href="{% url 'accounts:user_learning_history' user_obj.pk %}"
-               class="btn btn-sm {% if not current_status %}btn-primary{% else %}btn-ghost{% endif %}">
-                Todos
-            </a>
-            {% for value, label in status_choices %}
-            <a href="{% url 'accounts:user_learning_history' user_obj.pk %}?status={{ value }}"
-               class="btn btn-sm {% if current_status == value %}btn-primary{% else %}btn-ghost{% endif %}">
-                {{ label }}
-            </a>
-            {% endfor %}
-        </div>
-
-        {% include "accounts/partials/learning_history_table.html" %}
-
-        <!-- Past Completion Records -->
-        {% if completion_records %}
-        <div class="divider mt-8"></div>
-        <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Historial de Completaciones Anteriores</h2>
-        <p class="text-gray-500 text-sm mb-4">Cursos completados en periodos anteriores (antes de reinicio por reactivaci&oacute;n)</p>
-
-        <div class="overflow-x-auto">
-            <table class="table table-zebra w-full">
-                <thead>
-                    <tr>
-                        <th>Curso</th>
-                        <th>Categor&iacute;a</th>
-                        <th>Progreso alcanzado</th>
-                        <th>Fecha completado</th>
-                        <th>Motivo reinicio</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in completion_records %}
-                    <tr>
-                        <td>
-                            <div class="font-bold text-sm">{{ record.course.title }}</div>
-                            <div class="text-xs opacity-50">{{ record.course.code }}</div>
-                        </td>
-                        <td class="text-sm">{{ record.course.category.name|default:"-" }}</td>
-                        <td>
-                            <div class="flex items-center gap-2">
-                                <progress class="progress progress-success w-20"
-                                    value="{{ record.progress|floatformat:0 }}" max="100"></progress>
-                                <span class="text-xs">{{ record.progress|floatformat:0 }}%</span>
-                            </div>
-                        </td>
-                        <td class="text-sm">{{ record.completed_at|date:"d/m/Y H:i" }}</td>
-                        <td>
-                            <span class="badge badge-ghost badge-sm">{{ record.reset_reason }}</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% endif %}
     </div>
-</div>
 {% endblock %}

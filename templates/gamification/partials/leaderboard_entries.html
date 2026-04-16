@@ -1,85 +1,86 @@
 {% if leaderboard %}
-<div class="card bg-base-100 shadow">
-    <div class="card-body">
-        <h3 class="card-title">{{ leaderboard.name }}</h3>
-        <div class="overflow-x-auto">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Posición</th>
-                        <th>Usuario</th>
-                        <th>Puntos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in entries %}
-                    <tr class="hover {% if entry.user == request.user %}bg-primary/10{% endif %}">
-                        <td>
-                            {% if entry.rank == 1 %}
-                            <span class="text-xl">🥇</span>
-                            {% elif entry.rank == 2 %}
-                            <span class="text-xl">🥈</span>
-                            {% elif entry.rank == 3 %}
-                            <span class="text-xl">🥉</span>
-                            {% else %}
-                            <span class="font-medium text-base-content/70">{{ entry.rank }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="flex items-center gap-3">
-                                <div class="avatar placeholder">
-                                    <div class="bg-neutral text-neutral-content rounded-full w-8">
-                                        <span class="text-xs">{{ entry.user.first_name.0|default:"?" }}{{ entry.user.last_name.0|default:"" }}</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <span class="font-medium {% if entry.user == request.user %}text-primary{% endif %}">
-                                        {{ entry.user.get_full_name|default:entry.user.email }}
-                                    </span>
-                                    {% if entry.user == request.user %}
-                                    <span class="badge badge-primary badge-xs ml-1">Tú</span>
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="card-title">{{ leaderboard.name }}</h3>
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Usuario</th>
+                            <th>Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                            <tr class="hover {% if entry.user == request.user %}bg-primary/10{% endif %}">
+                                <td>
+                                    {% if entry.rank == 1 %}
+                                        <span class="text-xl">🥇</span>
+                                    {% elif entry.rank == 2 %}
+                                        <span class="text-xl">🥈</span>
+                                    {% elif entry.rank == 3 %}
+                                        <span class="text-xl">🥉</span>
+                                    {% else %}
+                                        <span class="font-medium text-base-content/70">{{ entry.rank }}</span>
                                     {% endif %}
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="font-bold">{{ entry.points }}</span>
-                            {% if entry.rank_change %}
-                            {% if entry.rank_change > 0 %}
-                            <span class="text-success text-xs ml-1">▲{{ entry.rank_change }}</span>
-                            {% elif entry.rank_change < 0 %}
-                            <span class="text-error text-xs ml-1">▼{{ entry.rank_change|cut:"-" }}</span>
-                            {% endif %}
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="3" class="text-center py-8">
-                            <p class="text-base-content/60">No hay entradas en esta tabla</p>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        {% if user_rank %}
-        <div class="mt-4 p-3 bg-primary/10 rounded-lg flex items-center justify-between">
-            <span class="font-medium">Tu posición</span>
-            <div>
-                <span class="badge badge-primary">#{{ user_rank.rank }}</span>
-                <span class="ml-2 font-bold">{{ user_rank.points }} puntos</span>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="avatar placeholder">
+                                            <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                                <span class="text-xs">{{ entry.user.first_name.0|default:"?" }}{{ entry.user.last_name.0|default:"" }}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="font-medium {% if entry.user == request.user %}text-primary{% endif %}">
+                                                {{ entry.user.get_full_name|default:entry.user.email }}
+                                            </span>
+                                            {% if entry.user == request.user %}<span class="badge badge-primary badge-xs ml-1">Tú</span>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="font-bold">{{ entry.points }}</span>
+                                    {% if entry.rank_change %}
+                                        {% if entry.rank_change > 0 %}
+                                            <span class="text-success text-xs ml-1">▲{{ entry.rank_change }}</span>
+                                        {% elif entry.rank_change < 0 %}
+                                            <span class="text-error text-xs ml-1">▼{{ entry.rank_change|cut:"-" }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-8">
+                                    <p class="text-base-content/60">No hay entradas en esta tabla</p>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% if user_rank %}
+                <div class="mt-4 p-3 bg-primary/10 rounded-lg flex items-center justify-between">
+                    <span class="font-medium">Tu posición</span>
+                    <div>
+                        <span class="badge badge-primary">#{{ user_rank.rank }}</span>
+                        <span class="ml-2 font-bold">{{ user_rank.points }} puntos</span>
+                    </div>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
-</div>
 {% else %}
-<div class="text-center py-12">
-    <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-    </svg>
-    <p class="mt-4 text-base-content/60">Tabla de posiciones no encontrada</p>
-</div>
+    <div class="text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+            </path>
+        </svg>
+        <p class="mt-4 text-base-content/60">Tabla de posiciones no encontrada</p>
+    </div>
 {% endif %}

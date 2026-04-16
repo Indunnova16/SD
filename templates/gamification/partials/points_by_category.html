@@ -1,17 +1,15 @@
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     {% for cat in categories %}
-    <div class="stats shadow">
-        <div class="stat">
-            <div class="stat-figure text-{{ cat.category__color|default:'primary' }}">
-                <span class="text-3xl">{{ cat.category__icon|default:'⭐' }}</span>
+        <div class="stats shadow">
+            <div class="stat">
+                <div class="stat-figure text-{{ cat.category__color|default:'primary' }}">
+                    <span class="text-3xl">{{ cat.category__icon|default:'⭐' }}</span>
+                </div>
+                <div class="stat-title">{{ cat.category__name }}</div>
+                <div class="stat-value text-{{ cat.category__color|default:'primary' }}">{{ cat.total }}</div>
             </div>
-            <div class="stat-title">{{ cat.category__name }}</div>
-            <div class="stat-value text-{{ cat.category__color|default:'primary' }}">{{ cat.total }}</div>
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-4 text-base-content/60">
-        No hay puntos por categoría
-    </div>
+        <div class="col-span-full text-center py-4 text-base-content/60">No hay puntos por categoría</div>
     {% endfor %}
 </div>

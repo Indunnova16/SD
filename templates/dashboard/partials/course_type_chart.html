@@ -1,4 +1,7 @@
-<div id="course-type-render" style="width:100%;height:100%;min-height:220px;"></div>
+<div id="course-type-render"
+     style="width:100%;
+            height:100%;
+            min-height:220px"></div>
 {{ type_data|json_script:"type-data-json" }}
 {{ enrollment_data|json_script:"enrollment-type-json" }}
 <script>
@@ -30,8 +33,8 @@
                     var total = ed.total || 0;
                     var completed = ed.completed || 0;
                     var rate = total > 0 ? Math.round(completed / total * 100) : 0;
-                    return params.name + ': ' + params.value + ' cursos<br/>' +
-                           'Inscripciones: ' + total + '<br/>' +
+                    return params.name + ': ' + params.value + ' cursos<br />' +
+                           'Inscripciones: ' + total + '<br />' +
                            'Completados: ' + completed + ' (' + rate + '%)';
                 }
             },

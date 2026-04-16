@@ -111,11 +111,10 @@ class CourseAdmin(admin.ModelAdmin):
         ),
     ]
 
+    @admin.display(description=_("Duración total"))
     def get_total_duration(self, obj):
         """Display total duration calculated from lessons."""
         return f"{obj.total_duration} min"
-
-    get_total_duration.short_description = _("Duración total")
 
     def save_model(self, request, obj, form, change):
         if not change:
@@ -133,10 +132,9 @@ class ModuleAdmin(admin.ModelAdmin):
     ordering = ["course", "order"]
     inlines = [LessonInline]
 
+    @admin.display(description=_("Lecciones"))
     def lesson_count(self, obj):
         return obj.lessons.count()
-
-    lesson_count.short_description = _("Lecciones")
 
 
 @admin.register(Lesson)
@@ -215,6 +213,7 @@ class MediaAssetAdmin(admin.ModelAdmin):
     readonly_fields = ["filename", "mime_type", "size", "created_at", "updated_at"]
     date_hierarchy = "created_at"
 
+    @admin.display(description=_("Tamaño"))
     def size_display(self, obj):
         """Display file size in human readable format."""
         size = obj.size
@@ -223,8 +222,6 @@ class MediaAssetAdmin(admin.ModelAdmin):
                 return f"{size:.1f} {unit}"
             size /= 1024
         return f"{size:.1f} TB"
-
-    size_display.short_description = _("Tamaño")
 
 
 @admin.register(Enrollment)
@@ -246,6 +243,7 @@ class EnrollmentAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     raw_id_fields = ["user", "course", "assigned_by"]
 
+    @admin.display(description=_("Progreso"))
     def progress_display(self, obj):
         """Display progress as a colored bar."""
         color = "green" if obj.progress >= 100 else "blue" if obj.progress >= 50 else "orange"
@@ -257,8 +255,6 @@ class EnrollmentAdmin(admin.ModelAdmin):
             color,
             obj.progress,
         )
-
-    progress_display.short_description = _("Progreso")
 
 
 @admin.register(LessonProgress)
@@ -278,13 +274,12 @@ class LessonProgressAdmin(admin.ModelAdmin):
     readonly_fields = ["created_at", "updated_at"]
     raw_id_fields = ["enrollment", "lesson"]
 
+    @admin.display(description=_("Tiempo"))
     def time_spent_display(self, obj):
         """Display time spent in human readable format."""
         minutes = obj.time_spent // 60
         seconds = obj.time_spent % 60
         return f"{minutes}m {seconds}s"
-
-    time_spent_display.short_description = _("Tiempo")
 
 
 @admin.register(LessonEvidence)

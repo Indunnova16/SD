@@ -1,142 +1,165 @@
 {% extends "base/dashboard.html" %}
 {% load static %}
-
 {% block page_title %}Constructor de Curso{% endblock %}
 {% block page_description %}
-<p class="text-gray-500 dark:text-gray-400 mt-1">{{ course.code }} - {{ course.title }}</p>
+    <p class="text-gray-500 dark:text-gray-400 mt-1">{{ course.code }} - {{ course.title }}</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div x-data="courseBuilder()" x-init="initSortable()">
-
-    <!-- Breadcrumb -->
-    <div class="text-sm breadcrumbs mb-6">
-        <ul>
-            <li><a href="{% url 'courses:parametrizacion' %}">Parametrizacion</a></li>
-            <li><a href="{% url 'courses:course_admin_list' %}">Cursos</a></li>
-            <li class="font-semibold">Constructor</li>
-        </ul>
-    </div>
-
-    <!-- Course Info Card -->
-    <div id="course-info-card" class="card bg-base-100 shadow mb-6">
-        <div class="card-body">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="card-title text-lg">{{ course.title }}</h2>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <span class="badge badge-outline">{{ course.code }}</span>
-                        <span class="badge badge-primary">{{ course.get_course_type_display }}</span>
-                        <span class="badge {% if course.status == 'published' %}badge-success{% elif course.status == 'draft' %}badge-warning{% else %}badge-ghost{% endif %}">
-                            {{ course.get_status_display }}
-                        </span>
-                        {% if course.category %}
-                        <span class="badge badge-ghost">{{ course.category.name }}</span>
-                        {% endif %}
+    <div x-data="courseBuilder()" x-init="initSortable()">
+        <!-- Breadcrumb -->
+        <div class="text-sm breadcrumbs mb-6">
+            <ul>
+                <li>
+                    <a href="{% url 'courses:parametrizacion' %}">Parametrizacion</a>
+                </li>
+                <li>
+                    <a href="{% url 'courses:course_admin_list' %}">Cursos</a>
+                </li>
+                <li class="font-semibold">Constructor</li>
+            </ul>
+        </div>
+        <!-- Course Info Card -->
+        <div id="course-info-card" class="card bg-base-100 shadow mb-6">
+            <div class="card-body">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="card-title text-lg">{{ course.title }}</h2>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="badge badge-outline">{{ course.code }}</span>
+                            <span class="badge badge-primary">{{ course.get_course_type_display }}</span>
+                            <span class="badge {% if course.status == 'published' %}badge-success{% elif course.status == 'draft' %}badge-warning{% else %}badge-ghost{% endif %}">
+                                {{ course.get_status_display }}
+                            </span>
+                            {% if course.category %}<span class="badge badge-ghost">{{ course.category.name }}</span>{% endif %}
+                        </div>
+                        {% if course.description %}<p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ course.description }}</p>{% endif %}
                     </div>
-                    {% if course.description %}
-                    <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ course.description }}</p>
-                    {% endif %}
+                    <a href="{% url 'courses:course_full_edit' course.id %}"
+                       class="btn btn-ghost btn-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-4 w-4"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Editar info
+                    </a>
                 </div>
-                <a href="{% url 'courses:course_full_edit' course.id %}" class="btn btn-ghost btn-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </div>
+        </div>
+        <!-- Modules Section -->
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold">Modulos del Curso</h3>
+            <button class="btn btn-primary btn-sm" @click="showAddModule = true">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Agregar Modulo
+            </button>
+        </div>
+        <!-- Add Module Form (hidden by default) -->
+        <div x-show="showAddModule"
+             x-cloak
+             x-transition
+             class="card bg-base-200 shadow mb-4">
+            <div class="card-body">
+                <h4 class="font-semibold mb-3">Nuevo Modulo</h4>
+                <form hx-post="{% url 'courses:builder_add_module' course.id %}"
+                      hx-target="#module-list"
+                      hx-swap="beforeend"
+                      hx-encoding="multipart/form-data"
+                      @htmx:after-request="if(event.detail.successful) { showAddModule = false; $refs.moduleTitle.value = ''; $refs.moduleDesc.value = ''; $refs.moduleCover.value = ''; }">
+                    {% csrf_token %}
+                    <div class="form-control mb-3">
+                        <input type="text"
+                               name="title"
+                               x-ref="moduleTitle"
+                               class="input input-bordered w-full"
+                               placeholder="Nombre del modulo"
+                               required>
+                    </div>
+                    <div class="form-control mb-3">
+                        <textarea name="description"
+                                  x-ref="moduleDesc"
+                                  class="textarea textarea-bordered w-full"
+                                  rows="2"
+                                  placeholder="Descripcion del modulo (opcional)"></textarea>
+                    </div>
+                    <div class="form-control mb-3">
+                        <label class="label py-1">
+                            <span class="label-text text-sm">Imagen de portada del modulo (opcional)</span>
+                        </label>
+                        <input type="file"
+                               name="cover_image"
+                               x-ref="moduleCover"
+                               class="file-input file-input-bordered file-input-sm w-full"
+                               accept="image/*">
+                    </div>
+                    <div class="flex gap-2 justify-end">
+                        <button type="button"
+                                class="btn btn-ghost btn-sm"
+                                @click="showAddModule = false">Cancelar</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Agregar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Module List (sortable) -->
+        <div id="module-list" class="space-y-4">
+            {% for module in modules %}
+                {% include "courses/partials/builder/module_card.html" with module=module course=course lesson_form=lesson_form available_assessments=available_assessments %}
+            {% empty %}
+                <div id="empty-modules" class="card bg-base-100 shadow">
+                    <div class="card-body text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-12 w-12 mx-auto text-gray-400 mb-4"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <p class="text-gray-500">Este curso no tiene modulos aun.</p>
+                        <p class="text-gray-400 text-sm">Haz clic en "Agregar Modulo" para empezar a construir el curso.</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <!-- Action Bar -->
+        <div class="flex items-center justify-between mt-8 pt-4 border-t border-base-300">
+            <a href="{% url 'courses:course_admin_list' %}" class="btn btn-ghost">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Volver a Cursos
+            </a>
+            <div class="flex gap-2">
+                <a href="{% url 'courses:detail' course.id %}"
+                   class="btn btn-ghost btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-4 w-4"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    Editar info
+                    Vista Previa
                 </a>
             </div>
         </div>
     </div>
-
-    <!-- Modules Section -->
-    <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold">Modulos del Curso</h3>
-        <button class="btn btn-primary btn-sm"
-                @click="showAddModule = true">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Agregar Modulo
-        </button>
-    </div>
-
-    <!-- Add Module Form (hidden by default) -->
-    <div x-show="showAddModule" x-cloak x-transition class="card bg-base-200 shadow mb-4">
-        <div class="card-body">
-            <h4 class="font-semibold mb-3">Nuevo Modulo</h4>
-            <form hx-post="{% url 'courses:builder_add_module' course.id %}"
-                  hx-target="#module-list"
-                  hx-swap="beforeend"
-                  hx-encoding="multipart/form-data"
-                  @htmx:after-request="if(event.detail.successful) { showAddModule = false; $refs.moduleTitle.value = ''; $refs.moduleDesc.value = ''; $refs.moduleCover.value = ''; }">
-                {% csrf_token %}
-                <div class="form-control mb-3">
-                    <input type="text" name="title" x-ref="moduleTitle"
-                           class="input input-bordered w-full"
-                           placeholder="Nombre del modulo" required>
-                </div>
-                <div class="form-control mb-3">
-                    <textarea name="description" x-ref="moduleDesc"
-                              class="textarea textarea-bordered w-full" rows="2"
-                              placeholder="Descripcion del modulo (opcional)"></textarea>
-                </div>
-                <div class="form-control mb-3">
-                    <label class="label py-1">
-                        <span class="label-text text-sm">Imagen de portada del modulo (opcional)</span>
-                    </label>
-                    <input type="file" name="cover_image" x-ref="moduleCover"
-                           class="file-input file-input-bordered file-input-sm w-full"
-                           accept="image/*">
-                </div>
-                <div class="flex gap-2 justify-end">
-                    <button type="button" class="btn btn-ghost btn-sm"
-                            @click="showAddModule = false">Cancelar</button>
-                    <button type="submit" class="btn btn-primary btn-sm">Agregar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Module List (sortable) -->
-    <div id="module-list" class="space-y-4">
-        {% for module in modules %}
-            {% include "courses/partials/builder/module_card.html" with module=module course=course lesson_form=lesson_form available_assessments=available_assessments %}
-        {% empty %}
-            <div id="empty-modules" class="card bg-base-100 shadow">
-                <div class="card-body text-center py-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <p class="text-gray-500">Este curso no tiene modulos aun.</p>
-                    <p class="text-gray-400 text-sm">Haz clic en "Agregar Modulo" para empezar a construir el curso.</p>
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-
-    <!-- Action Bar -->
-    <div class="flex items-center justify-between mt-8 pt-4 border-t border-base-300">
-        <a href="{% url 'courses:course_admin_list' %}" class="btn btn-ghost">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Volver a Cursos
-        </a>
-        <div class="flex gap-2">
-            <a href="{% url 'courses:detail' course.id %}" class="btn btn-ghost btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                Vista Previa
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- SortableJS -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script>
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script>
 document.addEventListener('alpine:init', () => {
     Alpine.data('courseBuilder', () => ({
         showAddModule: false,
@@ -208,5 +231,5 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
-</script>
+    </script>
 {% endblock %}

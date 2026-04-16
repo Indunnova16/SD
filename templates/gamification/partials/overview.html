@@ -6,34 +6,31 @@
                 <h3 class="card-title">Actividad Reciente</h3>
                 <a href="{% url 'gamification:points' %}" class="btn btn-ghost btn-sm">Ver todo</a>
             </div>
-
             <div class="space-y-3">
                 {% for tx in recent_transactions %}
-                <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <div class="avatar placeholder">
-                            <div class="bg-{{ tx.category.color|default:'neutral' }} text-{{ tx.category.color|default:'neutral' }}-content rounded-full w-10">
-                                <span class="text-xl">{{ tx.category.icon|default:'⭐' }}</span>
+                    <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="avatar placeholder">
+                                <div class="bg-{{ tx.category.color|default:'neutral' }} text-{{ tx.category.color|default:'neutral' }}-content rounded-full w-10">
+                                    <span class="text-xl">{{ tx.category.icon|default:'⭐' }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">{{ tx.description|truncatechars:40 }}</p>
+                                <p class="text-xs text-base-content/60">{{ tx.created_at|timesince }} atrás</p>
                             </div>
                         </div>
-                        <div>
-                            <p class="font-medium text-sm">{{ tx.description|truncatechars:40 }}</p>
-                            <p class="text-xs text-base-content/60">{{ tx.created_at|timesince }} atrás</p>
-                        </div>
+                        <span class="badge {% if tx.points > 0 %}badge-success{% else %}badge-error{% endif %}">
+                            {% if tx.points > 0 %}+{% endif %}
+                            {{ tx.points }}
+                        </span>
                     </div>
-                    <span class="badge {% if tx.points > 0 %}badge-success{% else %}badge-error{% endif %}">
-                        {% if tx.points > 0 %}+{% endif %}{{ tx.points }}
-                    </span>
-                </div>
                 {% empty %}
-                <p class="text-center text-base-content/60 py-8">
-                    No hay actividad reciente. ¡Empieza a ganar puntos!
-                </p>
+                    <p class="text-center text-base-content/60 py-8">No hay actividad reciente. ¡Empieza a ganar puntos!</p>
                 {% endfor %}
             </div>
         </div>
     </div>
-
     <!-- Badges Preview -->
     <div class="card bg-base-100 shadow">
         <div class="card-body">
@@ -41,19 +38,17 @@
                 <h3 class="card-title">Mis Insignias</h3>
                 <a href="{% url 'gamification:badges' %}" class="btn btn-ghost btn-sm">Ver todas</a>
             </div>
-
             {% if featured_badges %}
-            <div class="flex gap-4 justify-center mb-4">
-                {% for ub in featured_badges %}
-                <div class="tooltip" data-tip="{{ ub.badge.name }}">
-                    <div class="w-16 h-16 rounded-full bg-{{ ub.badge.rarity_color }} flex items-center justify-center shadow-lg">
-                        <span class="text-3xl">{{ ub.badge.icon|default:'🏆' }}</span>
-                    </div>
+                <div class="flex gap-4 justify-center mb-4">
+                    {% for ub in featured_badges %}
+                        <div class="tooltip" data-tip="{{ ub.badge.name }}">
+                            <div class="w-16 h-16 rounded-full bg-{{ ub.badge.rarity_color }} flex items-center justify-center shadow-lg">
+                                <span class="text-3xl">{{ ub.badge.icon|default:'🏆' }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
             {% endif %}
-
             <div class="stats stats-vertical lg:stats-horizontal shadow w-full">
                 <div class="stat place-items-center">
                     <div class="stat-title">Obtenidas</div>
@@ -70,68 +65,60 @@
             </div>
         </div>
     </div>
-
     <!-- Active Challenges -->
     <div class="card bg-base-100 shadow">
         <div class="card-body">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="card-title">Desafíos Activos</h3>
-                <a href="{% url 'gamification:challenges' %}" class="btn btn-ghost btn-sm">Ver todos</a>
+                <a href="{% url 'gamification:challenges' %}"
+                   class="btn btn-ghost btn-sm">Ver todos</a>
             </div>
-
             <div class="space-y-3">
                 {% for c in challenges.active|slice:":3" %}
-                <div class="p-3 bg-base-200 rounded-lg">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="font-medium">{{ c.challenge.name }}</p>
-                            <p class="text-xs text-base-content/60">
-                                Termina {{ c.challenge.end_date|date:"d M" }}
-                            </p>
+                    <div class="p-3 bg-base-200 rounded-lg">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-medium">{{ c.challenge.name }}</p>
+                                <p class="text-xs text-base-content/60">Termina {{ c.challenge.end_date|date:"d M" }}</p>
+                            </div>
+                            <span class="badge badge-primary">+{{ c.challenge.points_reward }} pts</span>
                         </div>
-                        <span class="badge badge-primary">+{{ c.challenge.points_reward }} pts</span>
+                        <progress class="progress progress-success w-full"
+                                  value="{{ c.progress_percentage }}"
+                                  max="100"></progress>
+                        <p class="text-xs text-right mt-1">{{ c.progress_percentage }}%</p>
                     </div>
-                    <progress class="progress progress-success w-full"
-                              value="{{ c.progress_percentage }}" max="100"></progress>
-                    <p class="text-xs text-right mt-1">{{ c.progress_percentage }}%</p>
-                </div>
                 {% empty %}
-                <p class="text-center text-base-content/60 py-4">
-                    No tienes desafíos activos
-                </p>
+                    <p class="text-center text-base-content/60 py-4">No tienes desafíos activos</p>
                 {% endfor %}
             </div>
         </div>
     </div>
-
     <!-- Achievements Progress -->
     <div class="card bg-base-100 shadow">
         <div class="card-body">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="card-title">Logros</h3>
-                <a href="{% url 'gamification:achievements' %}" class="btn btn-ghost btn-sm">Ver todos</a>
+                <a href="{% url 'gamification:achievements' %}"
+                   class="btn btn-ghost btn-sm">Ver todos</a>
             </div>
-
             <div class="radial-progress text-primary mx-auto mb-4"
-                 style="--value:{{ achievements.progress_percentage|default:0 }}; --size:8rem;">
-                {{ achievements.progress_percentage|default:0 }}%
-            </div>
-
+                 style="--value:{{ achievements.progress_percentage|default:0 }};
+                        --size:8rem">{{ achievements.progress_percentage|default:0 }}%</div>
             <div class="text-center">
                 <p class="font-medium">{{ achievements.total_unlocked|default:0 }} de {{ achievements.total_available|default:0 }}</p>
                 <p class="text-sm text-base-content/60">logros desbloqueados</p>
             </div>
-
             {% if achievements.unlocked %}
-            <div class="divider">Últimos logros</div>
-            <div class="space-y-2">
-                {% for ua in achievements.unlocked|slice:":3" %}
-                <div class="flex items-center gap-2">
-                    <span class="text-xl">{{ ua.achievement.icon|default:'🏅' }}</span>
-                    <span class="text-sm">{{ ua.achievement.name }}</span>
+                <div class="divider">Últimos logros</div>
+                <div class="space-y-2">
+                    {% for ua in achievements.unlocked|slice:":3" %}
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">{{ ua.achievement.icon|default:'🏅' }}</span>
+                            <span class="text-sm">{{ ua.achievement.name }}</span>
+                        </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
             {% endif %}
         </div>
     </div>

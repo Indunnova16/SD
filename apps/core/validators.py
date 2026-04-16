@@ -212,7 +212,7 @@ class JSONSchemaValidator:
                 )
 
         elif expected_type == "number" or expected_type == "integer":
-            if not isinstance(value, (int, float)):
+            if not isinstance(value, int | float):
                 raise ValidationError(
                     _("Se esperaba un número."),
                     code="invalid_type",

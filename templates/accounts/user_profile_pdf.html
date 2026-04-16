@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>Ficha de Usuario - {{ user_obj.get_full_name }}</title>
-    <style>
+    <head>
+        <meta charset="utf-8">
+        <title>Ficha de Usuario - {{ user_obj.get_full_name }}</title>
+        <style>
         @page {
             size: letter;
             margin: 1.5cm;
@@ -152,192 +152,186 @@
             padding: 20px;
             font-style: italic;
         }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <div class="header">
-        <h1>SD LMS - Ficha de Usuario</h1>
-        <p>Sistema de Desarrollo y Aprendizaje</p>
-    </div>
-
-    <!-- Personal Info -->
-    <div class="section-title">Informaci&oacute;n Personal</div>
-    <table class="info-table">
-        <tr>
-            <td>
-                <div class="label">Nombre completo</div>
-                <div class="value">{{ user_obj.get_full_name|default:"Sin nombre" }}</div>
-            </td>
-            <td>
-                <div class="label">Correo electr&oacute;nico</div>
-                <div class="value">{{ user_obj.email|default:"No registrado" }}</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="label">Tipo de documento</div>
-                <div class="value">{{ user_obj.get_document_type_display }}</div>
-            </td>
-            <td>
-                <div class="label">N&uacute;mero de documento</div>
-                <div class="value">{{ user_obj.document_number }}</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="label">Tel&eacute;fono</div>
-                <div class="value">{{ user_obj.phone|default:"No registrado" }}</div>
-            </td>
-            <td>
-                <div class="label">Estado de cuenta</div>
-                <div class="value">
-                    {% if user_obj.is_active %}
-                    <span class="badge badge-active">Activo</span>
-                    {% else %}
-                    <span class="badge badge-inactive">Inactivo</span>
-                    {% endif %}
-                </div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Work Info -->
-    <div class="section-title">Informaci&oacute;n Laboral</div>
-    <table class="info-table">
-        <tr>
-            <td>
-                <div class="label">Cargo</div>
-                <div class="value">{{ user_obj.job_position|default:"No registrado" }}</div>
-            </td>
-            <td>
-                <div class="label">Perfil ocupacional</div>
-                <div class="value">{{ user_obj.get_job_profile_display|default:"No asignado" }}</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="label">Tipo de vinculaci&oacute;n</div>
-                <div class="value">{{ user_obj.get_employment_type_display|default:"No asignado" }}</div>
-            </td>
-            <td>
-                <div class="label">Fecha de ingreso</div>
-                <div class="value">{{ user_obj.hire_date|date:"d/m/Y"|default:"No registrado" }}</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="label">Pa&iacute;s</div>
-                <div class="value">{{ user_obj.get_country_display|default:"No registrado" }}</div>
-            </td>
-            <td>
-                <div class="label">Estado laboral</div>
-                <div class="value">{{ user_obj.get_status_display }}</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Course Stats -->
-    <div class="section-title">Resumen de Cursos</div>
-    <table class="stats-table">
-        <tr>
-            <td>
-                <div class="stat-number">{{ total_enrollments }}</div>
-                <div class="stat-label">Total inscritos</div>
-            </td>
-            <td>
-                <div class="stat-number">{{ completed_count }}</div>
-                <div class="stat-label">Completados</div>
-            </td>
-            <td>
-                <div class="stat-number">{{ in_progress_count }}</div>
-                <div class="stat-label">En progreso</div>
-            </td>
-            <td>
-                <div class="stat-number">{{ pending_count }}</div>
-                <div class="stat-label">Pendientes</div>
-            </td>
-        </tr>
-    </table>
-
-    <!-- Current Enrollments -->
-    <div class="section-title">Cursos Inscritos</div>
-    {% if enrollments %}
-    <table class="courses-table">
-        <thead>
+        </style>
+    </head>
+    <body>
+        <!-- Header -->
+        <div class="header">
+            <h1>SD LMS - Ficha de Usuario</h1>
+            <p>Sistema de Desarrollo y Aprendizaje</p>
+        </div>
+        <!-- Personal Info -->
+        <div class="section-title">Informaci&oacute;n Personal</div>
+        <table class="info-table">
             <tr>
-                <th>Curso</th>
-                <th>Categor&iacute;a</th>
-                <th>Estado</th>
-                <th>Progreso</th>
-                <th>Inscripci&oacute;n</th>
-                <th>Completado</th>
+                <td>
+                    <div class="label">Nombre completo</div>
+                    <div class="value">{{ user_obj.get_full_name|default:"Sin nombre" }}</div>
+                </td>
+                <td>
+                    <div class="label">Correo electr&oacute;nico</div>
+                    <div class="value">{{ user_obj.email|default:"No registrado" }}</div>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
             <tr>
                 <td>
-                    <strong>{{ enrollment.course.title }}</strong><br>
-                    <span style="color:#999;font-size:8pt;">{{ enrollment.course.code }}</span>
-                </td>
-                <td>{{ enrollment.course.category.name|default:"-" }}</td>
-                <td>
-                    <span class="badge badge-{{ enrollment.status }}">
-                        {{ enrollment.get_status_display }}
-                    </span>
+                    <div class="label">Tipo de documento</div>
+                    <div class="value">{{ user_obj.get_document_type_display }}</div>
                 </td>
                 <td>
-                    <div class="progress-bar">
-                        <div class="progress-fill {% if enrollment.progress == 100 %}complete{% endif %}"
-                             style="width: {{ enrollment.progress|floatformat:0 }}%;"></div>
+                    <div class="label">N&uacute;mero de documento</div>
+                    <div class="value">{{ user_obj.document_number }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">Tel&eacute;fono</div>
+                    <div class="value">{{ user_obj.phone|default:"No registrado" }}</div>
+                </td>
+                <td>
+                    <div class="label">Estado de cuenta</div>
+                    <div class="value">
+                        {% if user_obj.is_active %}
+                            <span class="badge badge-active">Activo</span>
+                        {% else %}
+                            <span class="badge badge-inactive">Inactivo</span>
+                        {% endif %}
                     </div>
-                    {{ enrollment.progress|floatformat:0 }}%
                 </td>
-                <td>{{ enrollment.created_at|date:"d/m/Y" }}</td>
-                <td>{{ enrollment.completed_at|date:"d/m/Y"|default:"-" }}</td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p class="no-courses">Este usuario no tiene cursos asignados.</p>
-    {% endif %}
-
-    <!-- Past Completions -->
-    {% if completion_records %}
-    <div class="section-title">Historial de Completaciones Anteriores</div>
-    <table class="courses-table">
-        <thead>
-            <tr>
-                <th>Curso</th>
-                <th>Categor&iacute;a</th>
-                <th>Progreso alcanzado</th>
-                <th>Fecha completado</th>
-                <th>Motivo reinicio</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in completion_records %}
+        </table>
+        <!-- Work Info -->
+        <div class="section-title">Informaci&oacute;n Laboral</div>
+        <table class="info-table">
             <tr>
                 <td>
-                    <strong>{{ record.course.title }}</strong><br>
-                    <span style="color:#999;font-size:8pt;">{{ record.course.code }}</span>
+                    <div class="label">Cargo</div>
+                    <div class="value">{{ user_obj.job_position|default:"No registrado" }}</div>
                 </td>
-                <td>{{ record.course.category.name|default:"-" }}</td>
-                <td>{{ record.progress|floatformat:0 }}%</td>
-                <td>{{ record.completed_at|date:"d/m/Y" }}</td>
-                <td>{{ record.reset_reason|default:"-" }}</td>
+                <td>
+                    <div class="label">Perfil ocupacional</div>
+                    <div class="value">{{ user_obj.get_job_profile_display|default:"No asignado" }}</div>
+                </td>
             </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
-
-    <!-- Footer -->
-    <div class="footer">
-        Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}
-        &mdash; SD LMS
-    </div>
-</body>
+            <tr>
+                <td>
+                    <div class="label">Tipo de vinculaci&oacute;n</div>
+                    <div class="value">{{ user_obj.get_employment_type_display|default:"No asignado" }}</div>
+                </td>
+                <td>
+                    <div class="label">Fecha de ingreso</div>
+                    <div class="value">{{ user_obj.hire_date|date:"d/m/Y"|default:"No registrado" }}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">Pa&iacute;s</div>
+                    <div class="value">{{ user_obj.get_country_display|default:"No registrado" }}</div>
+                </td>
+                <td>
+                    <div class="label">Estado laboral</div>
+                    <div class="value">{{ user_obj.get_status_display }}</div>
+                </td>
+            </tr>
+        </table>
+        <!-- Course Stats -->
+        <div class="section-title">Resumen de Cursos</div>
+        <table class="stats-table">
+            <tr>
+                <td>
+                    <div class="stat-number">{{ total_enrollments }}</div>
+                    <div class="stat-label">Total inscritos</div>
+                </td>
+                <td>
+                    <div class="stat-number">{{ completed_count }}</div>
+                    <div class="stat-label">Completados</div>
+                </td>
+                <td>
+                    <div class="stat-number">{{ in_progress_count }}</div>
+                    <div class="stat-label">En progreso</div>
+                </td>
+                <td>
+                    <div class="stat-number">{{ pending_count }}</div>
+                    <div class="stat-label">Pendientes</div>
+                </td>
+            </tr>
+        </table>
+        <!-- Current Enrollments -->
+        <div class="section-title">Cursos Inscritos</div>
+        {% if enrollments %}
+            <table class="courses-table">
+                <thead>
+                    <tr>
+                        <th>Curso</th>
+                        <th>Categor&iacute;a</th>
+                        <th>Estado</th>
+                        <th>Progreso</th>
+                        <th>Inscripci&oacute;n</th>
+                        <th>Completado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                        <tr>
+                            <td>
+                                <strong>{{ enrollment.course.title }}</strong>
+                                <br>
+                                <span style="color:#999;font-size:8pt;">{{ enrollment.course.code }}</span>
+                            </td>
+                            <td>{{ enrollment.course.category.name|default:"-" }}</td>
+                            <td>
+                                <span class="badge badge-{{ enrollment.status }}">{{ enrollment.get_status_display }}</span>
+                            </td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill {% if enrollment.progress == 100 %}complete{% endif %}"
+                                         style="width: {{ enrollment.progress|floatformat:0 }}%"></div>
+                                </div>
+                                {{ enrollment.progress|floatformat:0 }}%
+                            </td>
+                            <td>{{ enrollment.created_at|date:"d/m/Y" }}</td>
+                            <td>{{ enrollment.completed_at|date:"d/m/Y"|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="no-courses">Este usuario no tiene cursos asignados.</p>
+        {% endif %}
+        <!-- Past Completions -->
+        {% if completion_records %}
+            <div class="section-title">Historial de Completaciones Anteriores</div>
+            <table class="courses-table">
+                <thead>
+                    <tr>
+                        <th>Curso</th>
+                        <th>Categor&iacute;a</th>
+                        <th>Progreso alcanzado</th>
+                        <th>Fecha completado</th>
+                        <th>Motivo reinicio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in completion_records %}
+                        <tr>
+                            <td>
+                                <strong>{{ record.course.title }}</strong>
+                                <br>
+                                <span style="color:#999;font-size:8pt;">{{ record.course.code }}</span>
+                            </td>
+                            <td>{{ record.course.category.name|default:"-" }}</td>
+                            <td>{{ record.progress|floatformat:0 }}%</td>
+                            <td>{{ record.completed_at|date:"d/m/Y" }}</td>
+                            <td>{{ record.reset_reason|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+        <!-- Footer -->
+        <div class="footer">
+            Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}
+            &mdash; SD LMS
+        </div>
+    </body>
 </html>

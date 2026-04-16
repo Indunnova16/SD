@@ -1,52 +1,55 @@
 {% if certificates %}
-<div class="overflow-x-auto">
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Usuario</th>
-                <th>Curso</th>
-                <th>Vence</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cert in certificates %}
-            <tr class="hover">
-                <td>
-                    <div class="flex items-center gap-2">
-                        <div class="avatar placeholder">
-                            <div class="bg-neutral text-neutral-content rounded-full w-8">
-                                <span class="text-xs">{{ cert.user.first_name.0 }}{{ cert.user.last_name.0 }}</span>
+    <div class="overflow-x-auto">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Curso</th>
+                    <th>Vence</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cert in certificates %}
+                    <tr class="hover">
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                        <span class="text-xs">{{ cert.user.first_name.0 }}{{ cert.user.last_name.0 }}</span>
+                                    </div>
+                                </div>
+                                <span>{{ cert.user.get_full_name }}</span>
                             </div>
-                        </div>
-                        <span>{{ cert.user.get_full_name }}</span>
-                    </div>
-                </td>
-                <td>{{ cert.course.title|truncatechars:30 }}</td>
-                <td>
-                    {% if cert.days_until_expiry <= 7 %}
-                    <span class="badge badge-error badge-sm">{{ cert.days_until_expiry }} días</span>
-                    {% elif cert.days_until_expiry <= 15 %}
-                    <span class="badge badge-warning badge-sm">{{ cert.days_until_expiry }} días</span>
-                    {% else %}
-                    <span class="badge badge-info badge-sm">{{ cert.days_until_expiry }} días</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'certifications:detail' cert.id %}" class="btn btn-ghost btn-xs">
-                        Ver
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                        </td>
+                        <td>{{ cert.course.title|truncatechars:30 }}</td>
+                        <td>
+                            {% if cert.days_until_expiry <= 7 %}
+                                <span class="badge badge-error badge-sm">{{ cert.days_until_expiry }} días</span>
+                            {% elif cert.days_until_expiry <= 15 %}
+                                <span class="badge badge-warning badge-sm">{{ cert.days_until_expiry }} días</span>
+                            {% else %}
+                                <span class="badge badge-info badge-sm">{{ cert.days_until_expiry }} días</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'certifications:detail' cert.id %}"
+                               class="btn btn-ghost btn-xs">Ver</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-<div class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-    <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-    </svg>
-    <p>No hay certificaciones por vencer próximamente</p>
-</div>
+    <div class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+        <svg class="w-12 h-12 mb-2"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+            </path>
+        </svg>
+        <p>No hay certificaciones por vencer próximamente</p>
+    </div>
 {% endif %}

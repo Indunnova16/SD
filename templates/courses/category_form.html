@@ -1,215 +1,228 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}{{ action }} Categoría{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    {% if action == "Crear" %}
-    Complete el formulario para crear una nueva categoría
-    {% else %}
-    Modifique los datos de la categoría
-    {% endif %}
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        {% if action == "Crear" %}
+            Complete el formulario para crear una nueva categoría
+        {% else %}
+            Modifique los datos de la categoría
+        {% endif %}
+    </p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="max-w-3xl mx-auto">
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <form method="post" x-data="iconPicker('{{ form.icon.value|default_if_none:'' }}')">
-                {% csrf_token %}
-
-                {% if form.errors %}
-                <div class="alert alert-error mb-6">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                        <h3 class="font-bold">Error en el formulario</h3>
-                        <div class="text-xs">Por favor, corrija los errores a continuación</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                <div class="space-y-4">
-                    <!-- Name -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Nombre <span class="text-error">*</span></span>
-                        </label>
-                        {{ form.name }}
-                        {% if form.name.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Description -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Descripción</span>
-                        </label>
-                        {{ form.description }}
-                        {% if form.description.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
-                        </label>
-                        {% endif %}
-                    </div>
-
-                    <!-- Subcategories -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Subcategorías asignadas</span>
-                        </label>
-                        {{ form.subcategories_text }}
-                        {% if form.subcategories_text.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.subcategories_text.errors.0 }}</span>
-                        </label>
-                        {% endif %}
-                        <label class="label">
-                            <span class="label-text-alt">Ingrese una subcategoría por línea. Se crean automáticamente al guardar.</span>
-                        </label>
-                    </div>
-
-                    <!-- Icon Picker -->
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text">Ícono de la categoría</span>
-                        </label>
-                        {{ form.icon }}
-                        {% if form.icon.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.icon.errors.0 }}</span>
-                        </label>
-                        {% endif %}
-
-                        <!-- Selected icon preview -->
-                        <div x-show="selected" class="flex items-center gap-3 mb-3 p-3 bg-primary/10 rounded-lg border border-primary/30">
-                            <div class="w-10 h-10 flex items-center justify-center bg-primary text-primary-content rounded-lg">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" x-bind:d="getIconPath(selected)" />
+    <div class="max-w-3xl mx-auto">
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <form method="post"
+                      x-data="iconPicker('{{ form.icon.value|default_if_none:'' }}')">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-error mb-6">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="stroke-current shrink-0 h-6 w-6"
+                                 fill="none"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div>
+                                <h3 class="font-bold">Error en el formulario</h3>
+                                <div class="text-xs">Por favor, corrija los errores a continuación</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="space-y-4">
+                        <!-- Name -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Nombre <span class="text-error">*</span></span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.name.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                        <!-- Description -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Descripción</span>
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                        <!-- Subcategories -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Subcategorías asignadas</span>
+                            </label>
+                            {{ form.subcategories_text }}
+                            {% if form.subcategories_text.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.subcategories_text.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                            <label class="label">
+                                <span class="label-text-alt">Ingrese una subcategoría por línea. Se crean automáticamente al guardar.</span>
+                            </label>
+                        </div>
+                        <!-- Icon Picker -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text">Ícono de la categoría</span>
+                            </label>
+                            {{ form.icon }}
+                            {% if form.icon.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.icon.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                            <!-- Selected icon preview -->
+                            <div x-show="selected"
+                                 class="flex items-center gap-3 mb-3 p-3 bg-primary/10 rounded-lg border border-primary/30">
+                                <div class="w-10 h-10 flex items-center justify-center bg-primary text-primary-content rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-6 w-6"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" x-bind:d="getIconPath(selected)" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold" x-text="getIconLabel(selected)"></p>
+                                    <p class="text-xs opacity-60">Ícono seleccionado</p>
+                                </div>
+                                <button type="button"
+                                        @click="selectIcon('')"
+                                        class="btn btn-ghost btn-xs btn-circle ml-auto">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         viewBox="0 0 20 20"
+                                         fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <!-- Search -->
+                            <div class="relative mb-2">
+                                <input type="text"
+                                       x-model="search"
+                                       placeholder="Buscar ícono..."
+                                       class="input input-bordered input-sm w-full pl-9" />
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor"
+                                     stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
                             </div>
-                            <div>
-                                <p class="text-sm font-semibold" x-text="getIconLabel(selected)"></p>
-                                <p class="text-xs opacity-60">Ícono seleccionado</p>
-                            </div>
-                            <button type="button" @click="selectIcon('')" class="btn btn-ghost btn-xs btn-circle ml-auto">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                            </button>
-                        </div>
-
-                        <!-- Search -->
-                        <div class="relative mb-2">
-                            <input type="text" x-model="search" placeholder="Buscar ícono..." class="input input-bordered input-sm w-full pl-9" />
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-
-                        <!-- Category filter tabs -->
-                        <div class="flex flex-wrap gap-1 mb-3">
-                            <template x-for="cat in categories" :key="cat.id">
-                                <button type="button"
-                                    @click="activeCategory = cat.id"
-                                    :class="activeCategory === cat.id ? 'btn-primary' : 'btn-ghost'"
-                                    class="btn btn-xs"
-                                    x-text="cat.label">
-                                </button>
-                            </template>
-                        </div>
-
-                        <!-- Icons grid -->
-                        <div class="border rounded-lg p-3 bg-base-200/50 max-h-72 overflow-y-auto">
-                            <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1">
-                                <template x-for="icon in filteredIcons" :key="icon.name">
+                            <!-- Category filter tabs -->
+                            <div class="flex flex-wrap gap-1 mb-3">
+                                <template x-for="cat in categories" :key="cat.id">
                                     <button type="button"
-                                        @click="selectIcon(icon.name)"
-                                        :class="selected === icon.name ? 'bg-primary text-primary-content ring-2 ring-primary ring-offset-2' : 'bg-base-100 hover:bg-base-300'"
-                                        class="w-full aspect-square flex items-center justify-center rounded-lg transition-all cursor-pointer"
-                                        :title="icon.label">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" x-bind:d="icon.path" />
-                                        </svg>
-                                    </button>
+                                            @click="activeCategory = cat.id"
+                                            :class="activeCategory === cat.id ? 'btn-primary' : 'btn-ghost'"
+                                            class="btn btn-xs"
+                                            x-text="cat.label"></button>
                                 </template>
                             </div>
-                            <p x-show="filteredIcons.length === 0" class="text-center text-sm opacity-50 py-4">
-                                No se encontraron íconos
-                            </p>
+                            <!-- Icons grid -->
+                            <div class="border rounded-lg p-3 bg-base-200/50 max-h-72 overflow-y-auto">
+                                <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1">
+                                    <template x-for="icon in filteredIcons" :key="icon.name">
+                                        <button type="button"
+                                                @click="selectIcon(icon.name)"
+                                                :class="selected === icon.name ? 'bg-primary text-primary-content ring-2 ring-primary ring-offset-2' : 'bg-base-100 hover:bg-base-300'"
+                                                class="w-full aspect-square flex items-center justify-center rounded-lg transition-all cursor-pointer"
+                                                :title="icon.label">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor"
+                                                 stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" x-bind:d="icon.path" />
+                                            </svg>
+                                        </button>
+                                    </template>
+                                </div>
+                                <p x-show="filteredIcons.length === 0"
+                                   class="text-center text-sm opacity-50 py-4">No se encontraron íconos</p>
+                            </div>
+                            <label class="label">
+                                <span class="label-text-alt"
+                                      x-text="filteredIcons.length + ' íconos disponibles'"></span>
+                            </label>
                         </div>
-                        <label class="label">
-                            <span class="label-text-alt" x-text="filteredIcons.length + ' íconos disponibles'"></span>
-                        </label>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Color -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Color -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Color</span>
+                                </label>
+                                {{ form.color }}
+                                {% if form.color.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.color.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                            </div>
+                            <!-- Order -->
+                            <div class="form-control">
+                                <label class="label">
+                                    <span class="label-text">Orden</span>
+                                </label>
+                                {{ form.order }}
+                                {% if form.order.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.order.errors.0 }}</span>
+                                    </label>
+                                {% endif %}
+                                <label class="label">
+                                    <span class="label-text-alt">Las categorías se ordenan de menor a mayor</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Active -->
                         <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Color</span>
+                            <label class="label cursor-pointer justify-start gap-4">
+                                {{ form.is_active }}
+                                <span class="label-text">Categoría activa</span>
                             </label>
-                            {{ form.color }}
-                            {% if form.color.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.color.errors.0 }}</span>
-                            </label>
+                            {% if form.is_active.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
+                                </label>
                             {% endif %}
                         </div>
-
-                        <!-- Order -->
-                        <div class="form-control">
-                            <label class="label">
-                                <span class="label-text">Orden</span>
-                            </label>
-                            {{ form.order }}
-                            {% if form.order.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.order.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                            <label class="label">
-                                <span class="label-text-alt">Las categorías se ordenan de menor a mayor</span>
-                            </label>
-                        </div>
                     </div>
-
-                    <!-- Active -->
-                    <div class="form-control">
-                        <label class="label cursor-pointer justify-start gap-4">
-                            {{ form.is_active }}
-                            <span class="label-text">Categoría activa</span>
-                        </label>
-                        {% if form.is_active.errors %}
-                        <label class="label">
-                            <span class="label-text-alt text-error">{{ form.is_active.errors.0 }}</span>
-                        </label>
-                        {% endif %}
+                    <div class="divider"></div>
+                    <!-- Actions -->
+                    <div class="flex gap-4">
+                        <button type="submit" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-5 w-5 mr-2"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            {{ action }} Categoría
+                        </button>
+                        <a href="{% url 'courses:category_list' %}" class="btn btn-ghost">Cancelar</a>
                     </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <!-- Actions -->
-                <div class="flex gap-4">
-                    <button type="submit" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                        {{ action }} Categoría
-                    </button>
-                    <a href="{% url 'courses:category_list' %}" class="btn btn-ghost">
-                        Cancelar
-                    </a>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-
-<script nonce="{{ request.csp_nonce }}">
+    <script nonce="{{ request.csp_nonce }}">
 function iconPicker(initialValue) {
     return {
         selected: initialValue || '',
@@ -363,5 +376,5 @@ function iconPicker(initialValue) {
         }
     };
 }
-</script>
+    </script>
 {% endblock %}

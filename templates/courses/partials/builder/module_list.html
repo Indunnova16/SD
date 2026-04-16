@@ -2,13 +2,16 @@
 Full module list partial - used for refreshing the entire list after reorder.
 Context: modules, course, lesson_form, available_assessments
 {% endcomment %}
-
 {% for module in modules %}
     {% include "courses/partials/builder/module_card.html" with module=module course=course lesson_form=lesson_form available_assessments=available_assessments %}
 {% empty %}
     <div id="empty-modules" class="card bg-base-100 shadow">
         <div class="card-body text-center py-12">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-12 w-12 mx-auto text-gray-400 mb-4"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
             <p class="text-gray-500">Este curso no tiene modulos aun.</p>

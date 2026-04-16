@@ -1,100 +1,88 @@
 {% extends "base/base.html" %}
 {% load widget_tweaks %}
-
 {% block title %}Editar Perfil - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto">
-        <div class="card bg-base-100 shadow-lg">
-            <div class="card-body">
-                <h2 class="card-title text-2xl mb-6">Editar Perfil</h2>
-
-                <form method="post"
-                      enctype="multipart/form-data"
-                      hx-post="{% url 'accounts:profile_edit' %}"
-                      hx-target="#profile-form-container"
-                      hx-swap="innerHTML">
-                    {% csrf_token %}
-
-                    <div id="profile-form-container">
-                        <!-- Photo -->
-                        <div class="form-control mb-6">
-                            <label class="label">
-                                <span class="label-text font-medium">Foto de perfil</span>
-                            </label>
-                            <div class="flex items-center gap-4">
-                                <div class="avatar placeholder">
-                                    <div class="bg-primary text-primary-content rounded-full w-16">
-                                        {% if user.photo %}
-                                        <img src="{{ user.photo.url }}" alt="{{ user.get_full_name }}">
-                                        {% else %}
-                                        <span class="text-2xl">{{ user.first_name.0|default:"#"|upper }}</span>
-                                        {% endif %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title text-2xl mb-6">Editar Perfil</h2>
+                    <form method="post"
+                          enctype="multipart/form-data"
+                          hx-post="{% url 'accounts:profile_edit' %}"
+                          hx-target="#profile-form-container"
+                          hx-swap="innerHTML">
+                        {% csrf_token %}
+                        <div id="profile-form-container">
+                            <!-- Photo -->
+                            <div class="form-control mb-6">
+                                <label class="label">
+                                    <span class="label-text font-medium">Foto de perfil</span>
+                                </label>
+                                <div class="flex items-center gap-4">
+                                    <div class="avatar placeholder">
+                                        <div class="bg-primary text-primary-content rounded-full w-16">
+                                            {% if user.photo %}
+                                                <img src="{{ user.photo.url }}" alt="{{ user.get_full_name }}">
+                                            {% else %}
+                                                <span class="text-2xl">{{ user.first_name.0|default:"#"|upper }}</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
+                                    {{ form.photo }}
                                 </div>
-                                {{ form.photo }}
-                            </div>
-                            {% if form.photo.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.photo.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                        </div>
-
-                        <!-- Name fields -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div class="form-control">
-                                <label class="label" for="id_first_name">
-                                    <span class="label-text font-medium">Nombre</span>
-                                </label>
-                                {{ form.first_name }}
-                                {% if form.first_name.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
-                                </label>
+                                {% if form.photo.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.photo.errors.0 }}</span>
+                                    </label>
                                 {% endif %}
                             </div>
-
-                            <div class="form-control">
-                                <label class="label" for="id_last_name">
-                                    <span class="label-text font-medium">Apellido</span>
+                            <!-- Name fields -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div class="form-control">
+                                    <label class="label" for="id_first_name">
+                                        <span class="label-text font-medium">Nombre</span>
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.first_name.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control">
+                                    <label class="label" for="id_last_name">
+                                        <span class="label-text font-medium">Apellido</span>
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Phone -->
+                            <div class="form-control mb-6">
+                                <label class="label" for="id_phone">
+                                    <span class="label-text font-medium">Teléfono</span>
                                 </label>
-                                {{ form.last_name }}
-                                {% if form.last_name.errors %}
-                                <label class="label">
-                                    <span class="label-text-alt text-error">{{ form.last_name.errors.0 }}</span>
-                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <label class="label">
+                                        <span class="label-text-alt text-error">{{ form.phone.errors.0 }}</span>
+                                    </label>
                                 {% endif %}
                             </div>
+                            <!-- Actions -->
+                            <div class="flex gap-4">
+                                <button type="submit" class="btn btn-primary flex-1">Guardar Cambios</button>
+                                <a href="{% url 'accounts:profile' %}" class="btn btn-ghost">Cancelar</a>
+                            </div>
                         </div>
-
-                        <!-- Phone -->
-                        <div class="form-control mb-6">
-                            <label class="label" for="id_phone">
-                                <span class="label-text font-medium">Teléfono</span>
-                            </label>
-                            {{ form.phone }}
-                            {% if form.phone.errors %}
-                            <label class="label">
-                                <span class="label-text-alt text-error">{{ form.phone.errors.0 }}</span>
-                            </label>
-                            {% endif %}
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="flex gap-4">
-                            <button type="submit" class="btn btn-primary flex-1">
-                                Guardar Cambios
-                            </button>
-                            <a href="{% url 'accounts:profile' %}" class="btn btn-ghost">
-                                Cancelar
-                            </a>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

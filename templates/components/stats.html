@@ -1,20 +1,17 @@
 {# Stats Component #}
 {# Usage: {% include "components/stats.html" with stats=stats_list %} #}
 {% load sanitize_tags %}
-
 <div class="stats shadow bg-white dark:bg-gray-800 w-full {{ extra_classes }}">
     {% for stat in stats %}
-    <div class="stat">
-        {% if stat.icon %}
-        <div class="stat-figure text-{{ stat.color|default:'primary' }}-500">
-            {{ stat.icon|sanitize_svg }}
+        <div class="stat">
+            {% if stat.icon %}
+                <div class="stat-figure text-{{ stat.color|default:'primary' }}-500">{{ stat.icon|sanitize_svg }}</div>
+            {% endif %}
+            <div class="stat-title text-gray-500 dark:text-gray-400">{{ stat.title }}</div>
+            <div class="stat-value text-{{ stat.color|default:'primary' }}-500">{{ stat.value }}</div>
+            {% if stat.description %}
+                <div class="stat-desc text-gray-500 dark:text-gray-400">{{ stat.description }}</div>
+            {% endif %}
         </div>
-        {% endif %}
-        <div class="stat-title text-gray-500 dark:text-gray-400">{{ stat.title }}</div>
-        <div class="stat-value text-{{ stat.color|default:'primary' }}-500">{{ stat.value }}</div>
-        {% if stat.description %}
-        <div class="stat-desc text-gray-500 dark:text-gray-400">{{ stat.description }}</div>
-        {% endif %}
-    </div>
     {% endfor %}
 </div>

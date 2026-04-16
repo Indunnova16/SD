@@ -1,24 +1,21 @@
 {% extends "base/base.html" %}
-
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Page Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-            {% block page_title %}Dashboard{% endblock %}
-        </h1>
-        {% block page_description %}{% endblock %}
-    </div>
-
-    <!-- Dashboard Content -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- Sidebar (optional) -->
-        {% block sidebar %}{% endblock %}
-
-        <!-- Main Content Area -->
-        <div class="{% block main_classes %}lg:col-span-4{% endblock %}">
-            {% block dashboard_content %}{% endblock %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                {% block page_title %}Dashboard{% endblock %}
+            </h1>
+            {% block page_description %}{% endblock %}
+        </div>
+        <!-- Dashboard Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Sidebar (optional) -->
+            {% block sidebar %}{% endblock %}
+            <!-- Main Content Area -->
+            <div class="{% block main_classes %}lg:col-span-4{% endblock %}">
+                {% block dashboard_content %}{% endblock %}
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

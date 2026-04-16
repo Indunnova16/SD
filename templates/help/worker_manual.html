@@ -1,209 +1,246 @@
 {% extends "base.html" %}
-
 {% block title %}Manual del Trabajador - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6 max-w-4xl">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold">Manual del Trabajador</h1>
-        <p class="text-base-content/70 mt-1">Guía para usar la plataforma de capacitación SD LMS</p>
-    </div>
-
-    <div class="space-y-4">
-
-        <!-- 1. Cómo Iniciar Sesión -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" checked />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                    </svg>
-                    Cómo Iniciar Sesión
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <ol class="list-decimal list-inside space-y-2 text-base-content/80">
-                        <li>Ingrese a la plataforma desde el enlace proporcionado por su empresa</li>
-                        <li>En el campo de usuario, escriba su <strong>número de cédula</strong></li>
-                        <li>En el campo de contraseña, ingrese: <code class="badge badge-ghost">su cédula + las 3 primeras letras de su nombre en minúscula</code></li>
-                        <li>Ejemplo: Si su cédula es <strong>1234567890</strong> y su nombre es <strong>Carlos</strong>, su contraseña es: <code class="badge badge-primary badge-sm">1234567890car</code></li>
-                        <li>Clic en <strong>"Iniciar Sesión"</strong></li>
-                    </ol>
-                    <div class="alert alert-warning">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold">Manual del Trabajador</h1>
+            <p class="text-base-content/70 mt-1">Guía para usar la plataforma de capacitación SD LMS</p>
+        </div>
+        <div class="space-y-4">
+            <!-- 1. Cómo Iniciar Sesión -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" checked />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1">
+                            </path>
                         </svg>
-                        <span>Si olvidó su contraseña, contacte a su administrador para que la restablezca.</span>
+                        Cómo Iniciar Sesión
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <ol class="list-decimal list-inside space-y-2 text-base-content/80">
+                            <li>Ingrese a la plataforma desde el enlace proporcionado por su empresa</li>
+                            <li>
+                                En el campo de usuario, escriba su <strong>número de cédula</strong>
+                            </li>
+                            <li>
+                                En el campo de contraseña, ingrese: <code class="badge badge-ghost">su cédula + las 3 primeras letras de su nombre en minúscula</code>
+                            </li>
+                            <li>
+                                Ejemplo: Si su cédula es <strong>1234567890</strong> y su nombre es <strong>Carlos</strong>, su contraseña es: <code class="badge badge-primary badge-sm">1234567890car</code>
+                            </li>
+                            <li>
+                                Clic en <strong>"Iniciar Sesión"</strong>
+                            </li>
+                        </ol>
+                        <div class="alert alert-warning">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg>
+                            <span>Si olvidó su contraseña, contacte a su administrador para que la restablezca.</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 2. Mis Cursos -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
-                    Mis Cursos
+            <!-- 2. Mis Cursos -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-success"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+                            </path>
+                        </svg>
+                        Mis Cursos
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="font-semibold mb-2">Ver mis cursos asignados</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>
+                                    Ir a <strong>Aprendizaje > Mis Cursos</strong>
+                                </li>
+                                <li>Verá los cursos que le han sido asignados</li>
+                                <li>
+                                    Los cursos marcados como <span class="badge badge-error badge-sm">Obligatorio</span> deben completarse antes de la fecha límite
+                                </li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Tomar un curso</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>Clic en el curso que desea realizar</li>
+                                <li>Lea las lecciones en orden (video, PDF, texto, etc.)</li>
+                                <li>Su progreso se guarda automáticamente</li>
+                                <li>
+                                    Cuando complete todas las lecciones, el curso aparecerá como <span class="badge badge-success badge-sm">Completado</span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Seguimiento de progreso</h4>
+                            <p class="text-base-content/80">
+                                En su Dashboard puede ver el porcentaje de avance de cada curso y cuáles le faltan por completar.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <div>
-                        <h4 class="font-semibold mb-2">Ver mis cursos asignados</h4>
+            <!-- 3. Evaluaciones -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-warning"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                            </path>
+                        </svg>
+                        Evaluaciones
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
                         <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir a <strong>Aprendizaje > Mis Cursos</strong></li>
-                            <li>Verá los cursos que le han sido asignados</li>
-                            <li>Los cursos marcados como <span class="badge badge-error badge-sm">Obligatorio</span> deben completarse antes de la fecha límite</li>
+                            <li>Al finalizar un curso, se le presentará una evaluación</li>
+                            <li>Las evaluaciones pueden ser de selección múltiple, verdadero/falso o respuesta corta</li>
+                            <li>Debe obtener el puntaje mínimo para aprobar (generalmente 70%)</li>
+                            <li>Si no aprueba, puede intentar de nuevo según el número de intentos permitidos</li>
+                            <li>Al aprobar, recibirá su certificado automáticamente</li>
+                        </ol>
+                        <div class="alert alert-info">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span>Tome su tiempo para responder. No cierre la ventana durante la evaluación.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 4. Certificados -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-info"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                            </path>
+                        </svg>
+                        Certificados
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                            <li>
+                                Ir a <strong>Certificados</strong> en el menú principal
+                            </li>
+                            <li>Verá todos los certificados que ha obtenido</li>
+                            <li>Puede descargar cada certificado en PDF</li>
+                            <li>Los certificados tienen un código QR para verificación</li>
+                            <li>Algunos certificados tienen fecha de vencimiento - se le notificará cuando estén por vencer</li>
                         </ol>
                     </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Tomar un curso</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Clic en el curso que desea realizar</li>
-                            <li>Lea las lecciones en orden (video, PDF, texto, etc.)</li>
-                            <li>Su progreso se guarda automáticamente</li>
-                            <li>Cuando complete todas las lecciones, el curso aparecerá como <span class="badge badge-success badge-sm">Completado</span></li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Seguimiento de progreso</h4>
-                        <p class="text-base-content/80">En su Dashboard puede ver el porcentaje de avance de cada curso y cuáles le faltan por completar.</p>
-                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 3. Evaluaciones -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                    </svg>
-                    Evaluaciones
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                        <li>Al finalizar un curso, se le presentará una evaluación</li>
-                        <li>Las evaluaciones pueden ser de selección múltiple, verdadero/falso o respuesta corta</li>
-                        <li>Debe obtener el puntaje mínimo para aprobar (generalmente 70%)</li>
-                        <li>Si no aprueba, puede intentar de nuevo según el número de intentos permitidos</li>
-                        <li>Al aprobar, recibirá su certificado automáticamente</li>
-                    </ol>
-                    <div class="alert alert-info">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <!-- 5. Gamificación -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-secondary"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                            </path>
                         </svg>
-                        <span>Tome su tiempo para responder. No cierre la ventana durante la evaluación.</span>
+                        Gamificación (Puntos, Insignias y Desafíos)
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">La plataforma le premia por aprender. Así funciona:</p>
+                        <div>
+                            <h4 class="font-semibold mb-2">Puntos</h4>
+                            <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                                <li>Gane puntos por completar lecciones, módulos y cursos</li>
+                                <li>Puntos extra por aprobar evaluaciones con buen puntaje</li>
+                                <li>Los puntos se pueden canjear por recompensas en la tienda</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Insignias</h4>
+                            <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                                <li>Obtenga insignias por logros especiales</li>
+                                <li>Las insignias tienen niveles de rareza: Común, Poco Común, Rara, Épica y Legendaria</li>
+                                <li>Marque sus insignias favoritas como "Destacadas" para mostrarlas en su perfil</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Desafíos</h4>
+                            <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                                <li>Participe en desafíos temporales para ganar puntos extra</li>
+                                <li>Compita con sus compañeros en las tablas de posiciones</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 4. Certificados -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-                    </svg>
-                    Certificados
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                        <li>Ir a <strong>Certificados</strong> en el menú principal</li>
-                        <li>Verá todos los certificados que ha obtenido</li>
-                        <li>Puede descargar cada certificado en PDF</li>
-                        <li>Los certificados tienen un código QR para verificación</li>
-                        <li>Algunos certificados tienen fecha de vencimiento - se le notificará cuando estén por vencer</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. Gamificación -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                    </svg>
-                    Gamificación (Puntos, Insignias y Desafíos)
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">La plataforma le premia por aprender. Así funciona:</p>
-                    <div>
-                        <h4 class="font-semibold mb-2">Puntos</h4>
-                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                            <li>Gane puntos por completar lecciones, módulos y cursos</li>
-                            <li>Puntos extra por aprobar evaluaciones con buen puntaje</li>
-                            <li>Los puntos se pueden canjear por recompensas en la tienda</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Insignias</h4>
-                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                            <li>Obtenga insignias por logros especiales</li>
-                            <li>Las insignias tienen niveles de rareza: Común, Poco Común, Rara, Épica y Legendaria</li>
-                            <li>Marque sus insignias favoritas como "Destacadas" para mostrarlas en su perfil</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Desafíos</h4>
-                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                            <li>Participe en desafíos temporales para ganar puntos extra</li>
-                            <li>Compita con sus compañeros en las tablas de posiciones</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. Soporte -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    Soporte Técnico
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">Si tiene algún problema para ingresar o usar la plataforma:</p>
-                    <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                        <li>Use el botón de <strong>WhatsApp</strong> en la esquina inferior derecha de la pantalla</li>
-                        <li>Describa el problema que tiene</li>
-                        <li>El equipo de soporte le responderá lo antes posible</li>
-                    </ul>
-                    <div class="alert">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <!-- 6. Soporte -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-accent"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
                         </svg>
-                        <span>Problemas comunes: Si no puede iniciar sesión, verifique que está usando su número de cédula (sin puntos ni espacios) y la contraseña correcta.</span>
+                        Soporte Técnico
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">Si tiene algún problema para ingresar o usar la plataforma:</p>
+                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                            <li>
+                                Use el botón de <strong>WhatsApp</strong> en la esquina inferior derecha de la pantalla
+                            </li>
+                            <li>Describa el problema que tiene</li>
+                            <li>El equipo de soporte le responderá lo antes posible</li>
+                        </ul>
+                        <div class="alert">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span>Problemas comunes: Si no puede iniciar sesión, verifique que está usando su número de cédula (sin puntos ni espacios) y la contraseña correcta.</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-</div>
 {% endblock %}

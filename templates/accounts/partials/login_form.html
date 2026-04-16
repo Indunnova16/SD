@@ -1,62 +1,55 @@
 {% load widget_tweaks %}
-
-<h2 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">
-    Iniciar Sesión
-</h2>
-
+<h2 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-6">Iniciar Sesión</h2>
 {% if error %}
-<div class="alert alert-error mb-4">
-    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span>{{ error }}</span>
-</div>
+    <div class="alert alert-error mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="stroke-current shrink-0 h-6 w-6"
+             fill="none"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>{{ error }}</span>
+    </div>
 {% endif %}
-
 <form method="post"
       hx-post="{% url 'accounts:login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}"
       hx-target="#login-form-container"
       hx-swap="innerHTML"
       hx-indicator="#login-indicator">
-
     {% csrf_token %}
-
     <div class="form-control mb-4">
         <label class="label" for="id_email">
             <span class="label-text font-medium">Correo electrónico</span>
         </label>
         {{ form.email }}
         {% if form.email.errors %}
-        <label class="label">
-            <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
-        </label>
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
+            </label>
         {% endif %}
     </div>
-
     <div class="form-control mb-4">
         <label class="label" for="id_password">
             <span class="label-text font-medium">Contraseña</span>
         </label>
         {{ form.password }}
         {% if form.password.errors %}
-        <label class="label">
-            <span class="label-text-alt text-error">{{ form.password.errors.0 }}</span>
-        </label>
+            <label class="label">
+                <span class="label-text-alt text-error">{{ form.password.errors.0 }}</span>
+            </label>
         {% endif %}
     </div>
-
     <div class="flex items-center justify-between mb-6">
         <label class="label cursor-pointer gap-2">
             {{ form.remember_me }}
             <span class="label-text">Recordarme</span>
         </label>
-        <a href="{% url 'accounts:password_reset' %}" class="link link-primary text-sm">
-            ¿Olvidó su contraseña?
-        </a>
+        <a href="{% url 'accounts:password_reset' %}"
+           class="link link-primary text-sm">¿Olvidó su contraseña?</a>
     </div>
-
     <button type="submit" class="btn btn-primary w-full">
-        <span id="login-indicator" class="loading loading-spinner loading-sm htmx-indicator"></span>
+        <span id="login-indicator"
+              class="loading loading-spinner loading-sm htmx-indicator"></span>
         Iniciar Sesión
     </button>
 </form>

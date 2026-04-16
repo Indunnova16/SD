@@ -1,14 +1,20 @@
 <div id="course-status-{{ course.id }}" x-data="{ editing: false }">
     <div x-show="!editing" class="flex items-center gap-1">
         {% if course.status == 'published' %}
-        <span class="badge badge-success badge-sm">Publicado</span>
+            <span class="badge badge-success badge-sm">Publicado</span>
         {% elif course.status == 'draft' %}
-        <span class="badge badge-ghost badge-sm">Borrador</span>
+            <span class="badge badge-ghost badge-sm">Borrador</span>
         {% else %}
-        <span class="badge badge-neutral badge-sm">Archivado</span>
+            <span class="badge badge-neutral badge-sm">Archivado</span>
         {% endif %}
-        <button @click="editing = true" class="btn btn-ghost btn-xs" title="Cambiar estado">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button @click="editing = true"
+                class="btn btn-ghost btn-xs"
+                title="Cambiar estado">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-3 w-3"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
         </button>
@@ -18,11 +24,14 @@
               hx-target="#course-status-{{ course.id }}"
               hx-swap="outerHTML">
             {% csrf_token %}
-            <select name="status" class="select select-bordered select-xs"
+            <select name="status"
+                    class="select select-bordered select-xs"
                     @change="$el.form.requestSubmit(); editing = false">
                 <option value="draft" {% if course.status == 'draft' %}selected{% endif %}>Borrador</option>
-                <option value="published" {% if course.status == 'published' %}selected{% endif %}>Publicado</option>
-                <option value="archived" {% if course.status == 'archived' %}selected{% endif %}>Archivado</option>
+                <option value="published"
+                        {% if course.status == 'published' %}selected{% endif %}>Publicado</option>
+                <option value="archived"
+                        {% if course.status == 'archived' %}selected{% endif %}>Archivado</option>
             </select>
         </form>
     </div>

@@ -1,193 +1,175 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}{{ assessment.title }}{% endblock %}
 {% block page_description %}
-<div class="flex items-center gap-2 mt-1">
-    <span class="badge {% if assessment.assessment_type == 'exam' %}badge-error{% elif assessment.assessment_type == 'quiz' %}badge-primary{% else %}badge-ghost{% endif %}">
-        {{ assessment.get_assessment_type_display }}
-    </span>
-    {% if assessment.course %}
-    <span class="badge badge-ghost">{{ assessment.course.title }}</span>
-    {% endif %}
-</div>
+    <div class="flex items-center gap-2 mt-1">
+        <span class="badge {% if assessment.assessment_type == 'exam' %}badge-error{% elif assessment.assessment_type == 'quiz' %}badge-primary{% else %}badge-ghost{% endif %}">
+            {{ assessment.get_assessment_type_display }}
+        </span>
+        {% if assessment.course %}<span class="badge badge-ghost">{{ assessment.course.title }}</span>{% endif %}
+    </div>
 {% endblock %}
-
 {% block main_classes %}lg:col-span-3{% endblock %}
-
 {% block sidebar %}
-<div class="lg:col-span-1">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
-        <!-- Assessment Actions -->
-        <div class="text-center mb-4">
-            {% if in_progress %}
-            <a href="{% url 'assessments:take' in_progress.id %}" class="btn btn-warning btn-block mb-2">
-                Continuar Intento
-            </a>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Tienes un intento en progreso
-            </p>
-            {% elif can_start %}
-            <form method="post" action="{% url 'assessments:start' assessment.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary btn-block">
-                    Iniciar Evaluación
-                </button>
-            </form>
-            {% else %}
-            <button class="btn btn-disabled btn-block" disabled>
-                Sin Intentos Disponibles
-            </button>
-            <p class="text-sm text-error mt-2">
-                Has alcanzado el máximo de {{ assessment.max_attempts }} intentos.
-            </p>
+    <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sticky top-4">
+            <!-- Assessment Actions -->
+            <div class="text-center mb-4">
+                {% if in_progress %}
+                    <a href="{% url 'assessments:take' in_progress.id %}"
+                       class="btn btn-warning btn-block mb-2">Continuar Intento</a>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Tienes un intento en progreso</p>
+                {% elif can_start %}
+                    <form method="post" action="{% url 'assessments:start' assessment.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary btn-block">Iniciar Evaluación</button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-disabled btn-block" disabled>Sin Intentos Disponibles</button>
+                    <p class="text-sm text-error mt-2">Has alcanzado el máximo de {{ assessment.max_attempts }} intentos.</p>
+                {% endif %}
+            </div>
+            <!-- Assessment Stats -->
+            <div class="border-t dark:border-gray-700 pt-4">
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Preguntas</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_questions }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Puntos totales</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_points }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Para aprobar</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
+                    </div>
+                    {% if assessment.time_limit %}
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 dark:text-gray-400">Tiempo límite</span>
+                            <span class="font-medium text-gray-900 dark:text-white">{{ assessment.time_limit }} min</span>
+                        </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 dark:text-gray-400">Intentos permitidos</span>
+                        <span class="font-medium text-gray-900 dark:text-white">
+                            {% if assessment.max_attempts == 0 %}
+                                Ilimitados
+                            {% else %}
+                                {{ assessment.max_attempts }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <!-- Best Score -->
+            {% if best_attempt %}
+                <div class="border-t dark:border-gray-700 mt-4 pt-4">
+                    <h4 class="font-medium text-gray-900 dark:text-white mb-2">Tu mejor resultado</h4>
+                    <div class="flex items-center gap-3">
+                        <div class="radial-progress {% if best_attempt.passed %}text-success{% else %}text-error{% endif %}"
+                             style="--value:{{ best_attempt.score }};
+                                    --size:3rem;
+                                    --thickness:4px">
+                            <span class="text-xs font-bold">{{ best_attempt.score|floatformat:0 }}%</span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium {% if best_attempt.passed %}text-success{% else %}text-error{% endif %}">
+                                {% if best_attempt.passed %}
+                                    Aprobado
+                                {% else %}
+                                    No aprobado
+                                {% endif %}
+                            </p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ best_attempt.started_at|date:"d M Y" }}</p>
+                        </div>
+                    </div>
+                </div>
             {% endif %}
         </div>
-
-        <!-- Assessment Stats -->
-        <div class="border-t dark:border-gray-700 pt-4">
-            <div class="space-y-3 text-sm">
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Preguntas</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_questions }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Puntos totales</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_points }}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Para aprobar</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
-                </div>
+    </div>
+{% endblock %}
+{% block dashboard_content %}
+    <div class="space-y-6">
+        <!-- Description -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Descripción</h2>
+            <p class="text-gray-600 dark:text-gray-300">{{ assessment.description|default:"Sin descripción disponible." }}</p>
+        </div>
+        <!-- Instructions -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Instrucciones</h2>
+            <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-300">
+                <li>Lee cada pregunta cuidadosamente antes de responder.</li>
                 {% if assessment.time_limit %}
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Tiempo límite</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.time_limit }} min</span>
-                </div>
+                    <li>Tienes {{ assessment.time_limit }} minutos para completar la evaluación.</li>
                 {% endif %}
-                <div class="flex justify-between">
-                    <span class="text-gray-500 dark:text-gray-400">Intentos permitidos</span>
-                    <span class="font-medium text-gray-900 dark:text-white">
-                        {% if assessment.max_attempts == 0 %}Ilimitados{% else %}{{ assessment.max_attempts }}{% endif %}
-                    </span>
+                <li>Necesitas {{ assessment.passing_score }}% para aprobar.</li>
+                {% if assessment.shuffle_questions %}<li>Las preguntas se presentarán en orden aleatorio.</li>{% endif %}
+                {% if assessment.shuffle_answers %}<li>Las respuestas se mostrarán en orden aleatorio.</li>{% endif %}
+                {% if assessment.show_correct_answers %}<li>Podrás ver las respuestas correctas al finalizar.</li>{% endif %}
+            </ul>
+        </div>
+        <!-- Previous Attempts -->
+        {% if user_attempts %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tus Intentos</h2>
+                <div class="overflow-x-auto">
+                    <table class="table w-full">
+                        <thead>
+                            <tr>
+                                <th>Intento</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Puntaje</th>
+                                <th>Resultado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attempt in user_attempts %}
+                                <tr>
+                                    <td>{{ attempt.attempt_number }}</td>
+                                    <td>{{ attempt.started_at|date:"d M Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge {% if attempt.status == 'in_progress' %}badge-warning {% elif attempt.status == 'graded' %}badge-success {% else %}badge-ghost{% endif %}">
+                                            {{ attempt.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if attempt.score is not None %}
+                                            {{ attempt.score|floatformat:0 }}%
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.passed is not None %}
+                                            <span class="{% if attempt.passed %}text-success{% else %}text-error{% endif %}">
+                                                {% if attempt.passed %}
+                                                    Aprobado
+                                                {% else %}
+                                                    No aprobado
+                                                {% endif %}
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if attempt.status == 'in_progress' %}
+                                            <a href="{% url 'assessments:take' attempt.id %}"
+                                               class="btn btn-ghost btn-xs">Continuar</a>
+                                        {% elif attempt.status == 'graded' %}
+                                            <a href="{% url 'assessments:result' attempt.id %}"
+                                               class="btn btn-ghost btn-xs">Ver Resultado</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </div>
-
-        <!-- Best Score -->
-        {% if best_attempt %}
-        <div class="border-t dark:border-gray-700 mt-4 pt-4">
-            <h4 class="font-medium text-gray-900 dark:text-white mb-2">Tu mejor resultado</h4>
-            <div class="flex items-center gap-3">
-                <div class="radial-progress {% if best_attempt.passed %}text-success{% else %}text-error{% endif %}"
-                     style="--value:{{ best_attempt.score }}; --size:3rem; --thickness:4px;">
-                    <span class="text-xs font-bold">{{ best_attempt.score|floatformat:0 }}%</span>
-                </div>
-                <div>
-                    <p class="text-sm font-medium {% if best_attempt.passed %}text-success{% else %}text-error{% endif %}">
-                        {% if best_attempt.passed %}Aprobado{% else %}No aprobado{% endif %}
-                    </p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                        {{ best_attempt.started_at|date:"d M Y" }}
-                    </p>
-                </div>
-            </div>
-        </div>
         {% endif %}
     </div>
-</div>
-{% endblock %}
-
-{% block dashboard_content %}
-<div class="space-y-6">
-    <!-- Description -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Descripción</h2>
-        <p class="text-gray-600 dark:text-gray-300">{{ assessment.description|default:"Sin descripción disponible." }}</p>
-    </div>
-
-    <!-- Instructions -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Instrucciones</h2>
-        <ul class="list-disc list-inside space-y-2 text-gray-600 dark:text-gray-300">
-            <li>Lee cada pregunta cuidadosamente antes de responder.</li>
-            {% if assessment.time_limit %}
-            <li>Tienes {{ assessment.time_limit }} minutos para completar la evaluación.</li>
-            {% endif %}
-            <li>Necesitas {{ assessment.passing_score }}% para aprobar.</li>
-            {% if assessment.shuffle_questions %}
-            <li>Las preguntas se presentarán en orden aleatorio.</li>
-            {% endif %}
-            {% if assessment.shuffle_answers %}
-            <li>Las respuestas se mostrarán en orden aleatorio.</li>
-            {% endif %}
-            {% if assessment.show_correct_answers %}
-            <li>Podrás ver las respuestas correctas al finalizar.</li>
-            {% endif %}
-        </ul>
-    </div>
-
-    <!-- Previous Attempts -->
-    {% if user_attempts %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tus Intentos</h2>
-        <div class="overflow-x-auto">
-            <table class="table w-full">
-                <thead>
-                    <tr>
-                        <th>Intento</th>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                        <th>Puntaje</th>
-                        <th>Resultado</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for attempt in user_attempts %}
-                    <tr>
-                        <td>{{ attempt.attempt_number }}</td>
-                        <td>{{ attempt.started_at|date:"d M Y H:i" }}</td>
-                        <td>
-                            <span class="badge
-                                {% if attempt.status == 'in_progress' %}badge-warning
-                                {% elif attempt.status == 'graded' %}badge-success
-                                {% else %}badge-ghost{% endif %}">
-                                {{ attempt.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if attempt.score is not None %}
-                            {{ attempt.score|floatformat:0 }}%
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if attempt.passed is not None %}
-                            <span class="{% if attempt.passed %}text-success{% else %}text-error{% endif %}">
-                                {% if attempt.passed %}Aprobado{% else %}No aprobado{% endif %}
-                            </span>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if attempt.status == 'in_progress' %}
-                            <a href="{% url 'assessments:take' attempt.id %}" class="btn btn-ghost btn-xs">
-                                Continuar
-                            </a>
-                            {% elif attempt.status == 'graded' %}
-                            <a href="{% url 'assessments:result' attempt.id %}" class="btn btn-ghost btn-xs">
-                                Ver Resultado
-                            </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endif %}
-</div>
 {% endblock %}

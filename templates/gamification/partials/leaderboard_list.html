@@ -1,82 +1,73 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {% for lb in leaderboards %}
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <div class="flex justify-between items-center mb-4">
-                <div>
-                    <h3 class="card-title">{{ lb.leaderboard.name }}</h3>
-                    <span class="badge badge-outline">{{ lb.leaderboard.get_period_display }}</span>
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="card-title">{{ lb.leaderboard.name }}</h3>
+                        <span class="badge badge-outline">{{ lb.leaderboard.get_period_display }}</span>
+                    </div>
+                    <a href="#"
+                       hx-get="{% url 'gamification:leaderboard-detail' lb.leaderboard.slug %}"
+                       hx-target="#leaderboard-modal"
+                       hx-swap="innerHTML"
+                       class="btn btn-ghost btn-sm">Ver completo</a>
                 </div>
-                <a href="#"
-                   hx-get="{% url 'gamification:leaderboard-detail' lb.leaderboard.slug %}"
-                   hx-target="#leaderboard-modal"
-                   hx-swap="innerHTML"
-                   class="btn btn-ghost btn-sm">Ver completo</a>
+                <!-- Podium -->
+                <div class="flex justify-center items-end gap-2 mb-4">
+                    {% if lb.top_3|length >= 2 %}
+                        <!-- 2nd Place -->
+                        <div class="text-center">
+                            <div class="avatar placeholder mb-2">
+                                <div class="bg-gray-400 text-gray-800 rounded-full w-12 h-12">
+                                    <span class="text-lg">{{ lb.top_3.1.user.first_name|slice:":1" }}{{ lb.top_3.1.user.last_name|slice:":1" }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-gray-400 text-gray-800 px-4 py-6 rounded-t-lg">
+                                <span class="text-2xl font-bold">2</span>
+                            </div>
+                            <p class="text-xs mt-1 truncate w-20">{{ lb.top_3.1.user.first_name }}</p>
+                            <p class="text-xs font-bold">{{ lb.top_3.1.points }} pts</p>
+                        </div>
+                    {% endif %}
+                    {% if lb.top_3 %}
+                        <!-- 1st Place -->
+                        <div class="text-center">
+                            <div class="avatar placeholder mb-2">
+                                <div class="bg-yellow-400 text-yellow-800 rounded-full w-16 h-16 ring ring-yellow-500">
+                                    <span class="text-2xl">{{ lb.top_3.0.user.first_name|slice:":1" }}{{ lb.top_3.0.user.last_name|slice:":1" }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-yellow-400 text-yellow-800 px-6 py-8 rounded-t-lg">
+                                <span class="text-3xl font-bold">1</span>
+                            </div>
+                            <p class="text-sm mt-1 truncate w-24">{{ lb.top_3.0.user.first_name }}</p>
+                            <p class="text-sm font-bold">{{ lb.top_3.0.points }} pts</p>
+                        </div>
+                    {% endif %}
+                    {% if lb.top_3|length >= 3 %}
+                        <!-- 3rd Place -->
+                        <div class="text-center">
+                            <div class="avatar placeholder mb-2">
+                                <div class="bg-orange-400 text-orange-800 rounded-full w-10 h-10">
+                                    <span>{{ lb.top_3.2.user.first_name|slice:":1" }}{{ lb.top_3.2.user.last_name|slice:":1" }}</span>
+                                </div>
+                            </div>
+                            <div class="bg-orange-400 text-orange-800 px-3 py-4 rounded-t-lg">
+                                <span class="text-xl font-bold">3</span>
+                            </div>
+                            <p class="text-xs mt-1 truncate w-16">{{ lb.top_3.2.user.first_name }}</p>
+                            <p class="text-xs font-bold">{{ lb.top_3.2.points }} pts</p>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if not lb.top_3 %}<p class="text-center text-base-content/60 py-8">No hay entradas en este ranking</p>{% endif %}
             </div>
-
-            <!-- Podium -->
-            <div class="flex justify-center items-end gap-2 mb-4">
-                {% if lb.top_3|length >= 2 %}
-                <!-- 2nd Place -->
-                <div class="text-center">
-                    <div class="avatar placeholder mb-2">
-                        <div class="bg-gray-400 text-gray-800 rounded-full w-12 h-12">
-                            <span class="text-lg">{{ lb.top_3.1.user.first_name|slice:":1" }}{{ lb.top_3.1.user.last_name|slice:":1" }}</span>
-                        </div>
-                    </div>
-                    <div class="bg-gray-400 text-gray-800 px-4 py-6 rounded-t-lg">
-                        <span class="text-2xl font-bold">2</span>
-                    </div>
-                    <p class="text-xs mt-1 truncate w-20">{{ lb.top_3.1.user.first_name }}</p>
-                    <p class="text-xs font-bold">{{ lb.top_3.1.points }} pts</p>
-                </div>
-                {% endif %}
-
-                {% if lb.top_3 %}
-                <!-- 1st Place -->
-                <div class="text-center">
-                    <div class="avatar placeholder mb-2">
-                        <div class="bg-yellow-400 text-yellow-800 rounded-full w-16 h-16 ring ring-yellow-500">
-                            <span class="text-2xl">{{ lb.top_3.0.user.first_name|slice:":1" }}{{ lb.top_3.0.user.last_name|slice:":1" }}</span>
-                        </div>
-                    </div>
-                    <div class="bg-yellow-400 text-yellow-800 px-6 py-8 rounded-t-lg">
-                        <span class="text-3xl font-bold">1</span>
-                    </div>
-                    <p class="text-sm mt-1 truncate w-24">{{ lb.top_3.0.user.first_name }}</p>
-                    <p class="text-sm font-bold">{{ lb.top_3.0.points }} pts</p>
-                </div>
-                {% endif %}
-
-                {% if lb.top_3|length >= 3 %}
-                <!-- 3rd Place -->
-                <div class="text-center">
-                    <div class="avatar placeholder mb-2">
-                        <div class="bg-orange-400 text-orange-800 rounded-full w-10 h-10">
-                            <span>{{ lb.top_3.2.user.first_name|slice:":1" }}{{ lb.top_3.2.user.last_name|slice:":1" }}</span>
-                        </div>
-                    </div>
-                    <div class="bg-orange-400 text-orange-800 px-3 py-4 rounded-t-lg">
-                        <span class="text-xl font-bold">3</span>
-                    </div>
-                    <p class="text-xs mt-1 truncate w-16">{{ lb.top_3.2.user.first_name }}</p>
-                    <p class="text-xs font-bold">{{ lb.top_3.2.points }} pts</p>
-                </div>
-                {% endif %}
-            </div>
-
-            {% if not lb.top_3 %}
-            <p class="text-center text-base-content/60 py-8">
-                No hay entradas en este ranking
-            </p>
-            {% endif %}
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-12">
-        <p class="text-base-content/60">No hay rankings disponibles</p>
-    </div>
+        <div class="col-span-full text-center py-12">
+            <p class="text-base-content/60">No hay rankings disponibles</p>
+        </div>
     {% endfor %}
 </div>
-
 <div id="leaderboard-modal"></div>

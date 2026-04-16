@@ -1,47 +1,39 @@
 {% extends "base.html" %}
-
 {% block title %}Historial de Puntos - Gamificación{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Historial de Puntos</h1>
-            <p class="text-base-content/70">Tu actividad y movimientos de puntos</p>
+    <div class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold">Historial de Puntos</h1>
+                <p class="text-base-content/70">Tu actividad y movimientos de puntos</p>
+            </div>
+            <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
         </div>
-        <a href="{% url 'gamification:dashboard' %}" class="btn btn-ghost">Volver</a>
-    </div>
-
-    <!-- Points by Category -->
-    <div class="card bg-base-100 shadow mb-6">
-        <div class="card-body">
-            <h3 class="card-title mb-4">Puntos por Categoría</h3>
-            <div hx-get="{% url 'gamification:points-by-category' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML">
-                <div class="flex gap-4">
-                    {% for i in "1234" %}
-                    <div class="h-16 bg-base-300 rounded flex-1 animate-pulse"></div>
-                    {% endfor %}
+        <!-- Points by Category -->
+        <div class="card bg-base-100 shadow mb-6">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Puntos por Categoría</h3>
+                <div hx-get="{% url 'gamification:points-by-category' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="flex gap-4">
+                        {% for i in "1234" %}<div class="h-16 bg-base-300 rounded flex-1 animate-pulse"></div>{% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Transactions List -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title mb-4">Historial de Transacciones</h3>
+                <div hx-get="{% url 'gamification:transactions' %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="space-y-3">
+                        {% for i in "12345" %}<div class="h-16 bg-base-300 rounded animate-pulse"></div>{% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Transactions List -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h3 class="card-title mb-4">Historial de Transacciones</h3>
-            <div hx-get="{% url 'gamification:transactions' %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML">
-                <div class="space-y-3">
-                    {% for i in "12345" %}
-                    <div class="h-16 bg-base-300 rounded animate-pulse"></div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

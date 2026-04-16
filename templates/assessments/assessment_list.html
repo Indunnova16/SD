@@ -1,87 +1,70 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Evaluaciones{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Realiza evaluaciones para validar tu conocimiento
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Realiza evaluaciones para validar tu conocimiento</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<!-- Filter Tabs -->
-<div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
-    <a href="{% url 'assessments:list' %}"
-       class="tab {% if not current_type %}tab-active{% endif %}">
-        Todas
-    </a>
-    {% for value, label in assessment_types %}
-    <a href="{% url 'assessments:list' %}?type={{ value }}"
-       class="tab {% if current_type == value %}tab-active{% endif %}">
-        {{ label }}
-    </a>
-    {% endfor %}
-</div>
-
-<!-- Assessment Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for assessment in assessments %}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
-        <div class="p-5">
-            <!-- Type Badge -->
-            <div class="flex items-center justify-between mb-3">
-                <span class="badge {% if assessment.assessment_type == 'exam' %}badge-error{% elif assessment.assessment_type == 'quiz' %}badge-primary{% else %}badge-ghost{% endif %}">
-                    {{ assessment.get_assessment_type_display }}
-                </span>
-                {% if assessment.time_limit %}
-                <span class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    {{ assessment.time_limit }} min
-                </span>
-                {% endif %}
-            </div>
-
-            <!-- Title -->
-            <h3 class="font-semibold text-lg text-gray-900 dark:text-white mb-2">
-                {{ assessment.title }}
-            </h3>
-
-            <!-- Description -->
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                {{ assessment.description|default:"Sin descripción" }}
-            </p>
-
-            <!-- Stats -->
-            <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
-                <span>{{ assessment.total_questions }} preguntas</span>
-                <span>{{ assessment.passing_score }}% para aprobar</span>
-            </div>
-
-            <!-- Course Link -->
-            {% if assessment.course %}
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                <span class="font-medium">Curso:</span> {{ assessment.course.title }}
-            </div>
-            {% endif %}
-
-            <!-- Action Button -->
-            <a href="{% url 'assessments:detail' assessment.id %}"
-               class="btn btn-primary btn-block">
-                Ver Detalles
-            </a>
-        </div>
+    <!-- Filter Tabs -->
+    <div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
+        <a href="{% url 'assessments:list' %}"
+           class="tab {% if not current_type %}tab-active{% endif %}">Todas</a>
+        {% for value, label in assessment_types %}
+            <a href="{% url 'assessments:list' %}?type={{ value }}"
+               class="tab {% if current_type == value %}tab-active{% endif %}">{{ label }}</a>
+        {% endfor %}
     </div>
-    {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-        </svg>
-        <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay evaluaciones disponibles</h3>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Las evaluaciones aparecerán aquí cuando estén publicadas.
-        </p>
+    <!-- Assessment Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for assessment in assessments %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="p-5">
+                    <!-- Type Badge -->
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="badge {% if assessment.assessment_type == 'exam' %}badge-error{% elif assessment.assessment_type == 'quiz' %}badge-primary{% else %}badge-ghost{% endif %}">
+                            {{ assessment.get_assessment_type_display }}
+                        </span>
+                        {% if assessment.time_limit %}
+                            <span class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {{ assessment.time_limit }} min
+                            </span>
+                        {% endif %}
+                    </div>
+                    <!-- Title -->
+                    <h3 class="font-semibold text-lg text-gray-900 dark:text-white mb-2">{{ assessment.title }}</h3>
+                    <!-- Description -->
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                        {{ assessment.description|default:"Sin descripción" }}
+                    </p>
+                    <!-- Stats -->
+                    <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <span>{{ assessment.total_questions }} preguntas</span>
+                        <span>{{ assessment.passing_score }}% para aprobar</span>
+                    </div>
+                    <!-- Course Link -->
+                    {% if assessment.course %}
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            <span class="font-medium">Curso:</span> {{ assessment.course.title }}
+                        </div>
+                    {% endif %}
+                    <!-- Action Button -->
+                    <a href="{% url 'assessments:detail' assessment.id %}"
+                       class="btn btn-primary btn-block">Ver Detalles</a>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-span-full text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No hay evaluaciones disponibles</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Las evaluaciones aparecerán aquí cuando estén publicadas.</p>
+            </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
 {% endblock %}

@@ -12,68 +12,85 @@
         </thead>
         <tbody>
             {% for course in courses %}
-            <tr class="hover">
-                <td class="font-mono text-sm">{{ course.code }}</td>
-                <td>
-                    <div class="font-semibold">{{ course.title|truncatewords:8 }}</div>
-                    <div class="text-xs text-gray-500">v{{ course.version }}</div>
-                </td>
-                <td>
-                    {% if course.category %}
-                    <span class="badge badge-ghost badge-sm" style="border-left: 3px solid {{ course.category.color }}">
-                        {{ course.category.name }}
-                    </span>
-                    {% else %}
-                    <span class="badge badge-warning badge-sm">Sin Categoria</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if course.course_type == 'mandatory' %}
-                    <span class="badge badge-error badge-sm">Obligatorio</span>
-                    {% elif course.course_type == 'refresher' %}
-                    <span class="badge badge-warning badge-sm">Refuerzo</span>
-                    {% else %}
-                    <span class="badge badge-info badge-sm">Opcional</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% include "courses/partials/course_status_cell.html" with course=course %}
-                </td>
-                <td>
-                    <div class="flex justify-end gap-1">
-                        <a href="{% url 'courses:course_full_edit' course.id %}"
-                           class="btn btn-ghost btn-xs tooltip" data-tip="Editar Información">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                        </a>
-                        <a href="{% url 'courses:course_builder' course.id %}"
-                           class="btn btn-ghost btn-xs tooltip" data-tip="Editar Contenido">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                        </a>
-                        <a href="{% url 'courses:detail' course.id %}"
-                           class="btn btn-ghost btn-xs tooltip" data-tip="Ver Curso">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </a>
-                    </div>
-                </td>
-            </tr>
+                <tr class="hover">
+                    <td class="font-mono text-sm">{{ course.code }}</td>
+                    <td>
+                        <div class="font-semibold">{{ course.title|truncatewords:8 }}</div>
+                        <div class="text-xs text-gray-500">v{{ course.version }}</div>
+                    </td>
+                    <td>
+                        {% if course.category %}
+                            <span class="badge badge-ghost badge-sm"
+                                  style="border-left: 3px solid {{ course.category.color }}">
+                                {{ course.category.name }}
+                            </span>
+                        {% else %}
+                            <span class="badge badge-warning badge-sm">Sin Categoria</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if course.course_type == 'mandatory' %}
+                            <span class="badge badge-error badge-sm">Obligatorio</span>
+                        {% elif course.course_type == 'refresher' %}
+                            <span class="badge badge-warning badge-sm">Refuerzo</span>
+                        {% else %}
+                            <span class="badge badge-info badge-sm">Opcional</span>
+                        {% endif %}
+                    </td>
+                    <td>{% include "courses/partials/course_status_cell.html" with course=course %}</td>
+                    <td>
+                        <div class="flex justify-end gap-1">
+                            <a href="{% url 'courses:course_full_edit' course.id %}"
+                               class="btn btn-ghost btn-xs tooltip"
+                               data-tip="Editar Información">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                </svg>
+                            </a>
+                            <a href="{% url 'courses:course_builder' course.id %}"
+                               class="btn btn-ghost btn-xs tooltip"
+                               data-tip="Editar Contenido">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                            </a>
+                            <a href="{% url 'courses:detail' course.id %}"
+                               class="btn btn-ghost btn-xs tooltip"
+                               data-tip="Ver Curso">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-4 w-4"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
             {% empty %}
-            <tr>
-                <td colspan="6" class="text-center py-8">
-                    <div class="text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <p class="mb-2">No se encontraron cursos con los filtros seleccionados</p>
-                    </div>
-                </td>
-            </tr>
+                <tr>
+                    <td colspan="6" class="text-center py-8">
+                        <div class="text-gray-500">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-12 w-12 mx-auto mb-4 text-gray-300"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <p class="mb-2">No se encontraron cursos con los filtros seleccionados</p>
+                        </div>
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

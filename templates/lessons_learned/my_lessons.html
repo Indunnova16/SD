@@ -1,91 +1,93 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Mis Lecciones{% endblock %}
 {% block page_description %}
-<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-    Lecciones que has creado
-</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Lecciones que has creado</p>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-6">
-    <div class="flex justify-end">
-        <a href="{% url 'lessons_learned:create' %}" class="btn btn-primary btn-sm">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Nueva Lección
-        </a>
+    <div class="space-y-6">
+        <div class="flex justify-end">
+            <a href="{% url 'lessons_learned:create' %}"
+               class="btn btn-primary btn-sm">
+                <svg class="w-4 h-4 mr-1"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nueva Lección
+            </a>
+        </div>
+        {% if lessons %}
+            <div class="overflow-x-auto">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>Severidad</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lesson in lessons %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'lessons_learned:detail' lesson.id %}"
+                                       class="link link-hover font-medium">{{ lesson.title|truncatechars:60 }}</a>
+                                </td>
+                                <td>{{ lesson.get_lesson_type_display }}</td>
+                                <td>
+                                    {% if lesson.severity == 'critical' %}
+                                        <span class="badge badge-error badge-sm">Crítica</span>
+                                    {% elif lesson.severity == 'high' %}
+                                        <span class="badge badge-warning badge-sm">Alta</span>
+                                    {% elif lesson.severity == 'medium' %}
+                                        <span class="badge badge-info badge-sm">Media</span>
+                                    {% else %}
+                                        <span class="badge badge-ghost badge-sm">Baja</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if lesson.status == 'draft' %}
+                                        <span class="badge badge-ghost badge-sm">Borrador</span>
+                                    {% elif lesson.status == 'pending_review' %}
+                                        <span class="badge badge-warning badge-sm">Pendiente</span>
+                                    {% elif lesson.status == 'approved' %}
+                                        <span class="badge badge-success badge-sm">Aprobada</span>
+                                    {% elif lesson.status == 'rejected' %}
+                                        <span class="badge badge-error badge-sm">Rechazada</span>
+                                    {% else %}
+                                        <span class="badge badge-ghost badge-sm">Archivada</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-sm text-gray-500">{{ lesson.created_at|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if lesson.status == 'draft' or lesson.status == 'rejected' %}
+                                        <a href="{% url 'lessons_learned:edit' lesson.id %}"
+                                           class="btn btn-ghost btn-xs">Editar</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <svg class="w-16 h-16 mx-auto text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                    </path>
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No has creado lecciones aún</h3>
+                <p class="mt-2 text-sm text-gray-500">Comparte tu experiencia con el equipo</p>
+                <a href="{% url 'lessons_learned:create' %}"
+                   class="btn btn-primary mt-4">Crear mi primera lección</a>
+            </div>
+        {% endif %}
     </div>
-
-    {% if lessons %}
-    <div class="overflow-x-auto">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Severidad</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for lesson in lessons %}
-                <tr>
-                    <td>
-                        <a href="{% url 'lessons_learned:detail' lesson.id %}" class="link link-hover font-medium">
-                            {{ lesson.title|truncatechars:60 }}
-                        </a>
-                    </td>
-                    <td>{{ lesson.get_lesson_type_display }}</td>
-                    <td>
-                        {% if lesson.severity == 'critical' %}
-                        <span class="badge badge-error badge-sm">Crítica</span>
-                        {% elif lesson.severity == 'high' %}
-                        <span class="badge badge-warning badge-sm">Alta</span>
-                        {% elif lesson.severity == 'medium' %}
-                        <span class="badge badge-info badge-sm">Media</span>
-                        {% else %}
-                        <span class="badge badge-ghost badge-sm">Baja</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if lesson.status == 'draft' %}
-                        <span class="badge badge-ghost badge-sm">Borrador</span>
-                        {% elif lesson.status == 'pending_review' %}
-                        <span class="badge badge-warning badge-sm">Pendiente</span>
-                        {% elif lesson.status == 'approved' %}
-                        <span class="badge badge-success badge-sm">Aprobada</span>
-                        {% elif lesson.status == 'rejected' %}
-                        <span class="badge badge-error badge-sm">Rechazada</span>
-                        {% else %}
-                        <span class="badge badge-ghost badge-sm">Archivada</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-sm text-gray-500">{{ lesson.created_at|date:"d/m/Y" }}</td>
-                    <td>
-                        {% if lesson.status == 'draft' or lesson.status == 'rejected' %}
-                        <a href="{% url 'lessons_learned:edit' lesson.id %}" class="btn btn-ghost btn-xs">Editar</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="text-center py-16">
-        <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-        </svg>
-        <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No has creado lecciones aún</h3>
-        <p class="mt-2 text-sm text-gray-500">Comparte tu experiencia con el equipo</p>
-        <a href="{% url 'lessons_learned:create' %}" class="btn btn-primary mt-4">
-            Crear mi primera lección
-        </a>
-    </div>
-    {% endif %}
-</div>
 {% endblock %}

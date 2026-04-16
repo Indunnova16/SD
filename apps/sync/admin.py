@@ -82,6 +82,7 @@ class OfflinePackageAdmin(admin.ModelAdmin):
     ]
     autocomplete_fields = ["course"]
 
+    @admin.display(description=_("Tamaño"))
     def file_size_display(self, obj):
         """Display file size in human readable format."""
         if not obj.file_size:
@@ -92,8 +93,6 @@ class OfflinePackageAdmin(admin.ModelAdmin):
                 return f"{size:.1f} {unit}"
             size /= 1024
         return f"{size:.1f} TB"
-
-    file_size_display.short_description = _("Tamaño")
 
 
 @admin.register(PackageDownload)

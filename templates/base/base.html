@@ -1,29 +1,34 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es" class="h-full" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="{ 'dark': darkMode }" :data-theme="darkMode ? 'dark' : 'light'">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}SD LMS - Sistema de Gestión de Aprendizaje{% endblock %}">
-    <meta name="csrf-token" content="{{ csrf_token }}">
-
-    <title>{% block title %}SD LMS{% endblock %}</title>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
-
-    <!-- Theme initialization (prevents flash of wrong theme) -->
-    <script nonce="{{ request.csp_nonce }}">
+<html lang="es"
+      class="h-full"
+      x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }"
+      :class="{ 'dark': darkMode }"
+      :data-theme="darkMode ? 'dark' : 'light'">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="{% block meta_description %}SD LMS - Sistema de Gestión de Aprendizaje{% endblock %}">
+        <meta name="csrf-token" content="{{ csrf_token }}">
+        <title>
+            {% block title %}SD LMS{% endblock %}
+        </title>
+        <!-- Favicon -->
+        <link rel="icon"
+              type="image/svg+xml"
+              href="{% static 'images/favicon.svg' %}">
+        <!-- Theme initialization (prevents flash of wrong theme) -->
+        <script nonce="{{ request.csp_nonce }}">
         (function() {
             var d = localStorage.getItem('darkMode') === 'true';
             if (d) document.documentElement.classList.add('dark');
             document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
         })();
-    </script>
-
-    <!-- Tailwind CSS (via CDN for development, replace with build for production) -->
-    <script src="https://cdn.tailwindcss.com" nonce="{{ request.csp_nonce }}"></script>
-    <script nonce="{{ request.csp_nonce }}">
+        </script>
+        <!-- Tailwind CSS (via CDN for development, replace with build for production) -->
+        <script src="https://cdn.tailwindcss.com" nonce="{{ request.csp_nonce }}"></script>
+        <script nonce="{{ request.csp_nonce }}">
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -59,23 +64,26 @@
                 },
             },
         }
-    </script>
-
-    <!-- DaisyUI -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css" rel="stylesheet" type="text/css" />
-
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" nonce="{{ request.csp_nonce }}"></script>
-
-    <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js" crossorigin="anonymous" nonce="{{ request.csp_nonce }}"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/loading-states.js" nonce="{{ request.csp_nonce }}"></script>
-
-    <!-- HTMX Configuration -->
-    <meta name="htmx-config" content='{"defaultSwapStyle":"innerHTML","historyCacheSize":10}'>
-
-    <!-- Custom Styles -->
-    <style nonce="{{ request.csp_nonce }}">
+        </script>
+        <!-- DaisyUI -->
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css"
+              rel="stylesheet"
+              type="text/css" />
+        <!-- Alpine.js -->
+        <script defer
+                src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+                nonce="{{ request.csp_nonce }}"></script>
+        <!-- HTMX -->
+        <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"
+                crossorigin="anonymous"
+                nonce="{{ request.csp_nonce }}"></script>
+        <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/loading-states.js"
+                nonce="{{ request.csp_nonce }}"></script>
+        <!-- HTMX Configuration -->
+        <meta name="htmx-config"
+              content='{"defaultSwapStyle":"innerHTML","historyCacheSize":10}'>
+        <!-- Custom Styles -->
+        <style nonce="{{ request.csp_nonce }}">
         [x-cloak] { display: none !important; }
 
         /* HTMX loading indicator */
@@ -145,87 +153,87 @@
             --wac: 0% 0 0;
             --erc: 0% 0 0;
         }
-    </style>
-
-    {% block extra_css %}{% endblock %}
-</head>
-
-<body class="min-h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-      hx-ext="loading-states"
-      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
-    {% block body %}
-    <div class="min-h-screen flex flex-col">
-        <!-- Navigation -->
-        {% include "partials/navbar.html" %}
-
-        <!-- Flash Messages -->
-        {% include "partials/messages.html" %}
-
-        <!-- Main Content -->
-        <main class="flex-1">
-            {% block content %}{% endblock %}
-        </main>
-
-        <!-- Footer -->
-        {% include "partials/footer.html" %}
-    </div>
-    {% endblock %}
-
-    <!-- WhatsApp Support Button (solo administrativos) -->
-    {% if user.is_staff %}
-    <div x-data="{ showTooltip: false }" class="fixed bottom-6 right-6 z-40">
-        <div x-show="showTooltip"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 translate-y-2"
-             x-transition:enter-end="opacity-1 translate-y-0"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-1 translate-y-0"
-             x-transition:leave-end="opacity-0 translate-y-2"
-             class="absolute bottom-14 right-0 bg-base-100 text-base-content text-sm rounded-lg shadow-lg px-3 py-2 whitespace-nowrap border border-base-300">
-            Soporte técnico
-        </div>
-        <a href="https://wa.me/573126142749?text=Hola%2C%20necesito%20reportar%20un%20problema%20con%20la%20plataforma%20SD%20LMS"
-           target="_blank"
-           rel="noopener noreferrer"
-           @mouseenter="showTooltip = true"
-           @mouseleave="showTooltip = false"
-           class="btn btn-circle btn-sm shadow-lg hover:scale-110 transition-transform duration-200"
-           style="background-color: #25D366; border-color: #25D366; color: white;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-            </svg>
-        </a>
-    </div>
-    {% endif %}
-
-    <!-- Inactivity warning modal -->
-    {% if user.is_authenticated %}
-    <dialog id="inactivity-modal" class="modal">
-        <div class="modal-box">
-            <h3 class="font-bold text-lg text-warning">Sesión a punto de expirar</h3>
-            <p class="py-4">Su sesión se cerrará en menos de 1 minuto por inactividad. Mueva el mouse o presione una tecla para continuar.</p>
-            <div class="modal-action">
-                <form method="dialog">
-                    <button class="btn btn-primary">Continuar trabajando</button>
-                </form>
+        </style>
+        {% block extra_css %}{% endblock %}
+    </head>
+    <body class="min-h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+          hx-ext="loading-states"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+        {% block body %}
+            <div class="min-h-screen flex flex-col">
+                <!-- Navigation -->
+                {% include "partials/navbar.html" %}
+                <!-- Flash Messages -->
+                {% include "partials/messages.html" %}
+                <!-- Main Content -->
+                <main class="flex-1">
+                    {% block content %}{% endblock %}
+                </main>
+                <!-- Footer -->
+                {% include "partials/footer.html" %}
             </div>
+        {% endblock %}
+        <!-- WhatsApp Support Button (solo administrativos) -->
+        {% if user.is_staff %}
+            <div x-data="{ showTooltip: false }" class="fixed bottom-6 right-6 z-40">
+                <div x-show="showTooltip"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-2"
+                     x-transition:enter-end="opacity-1 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-1 translate-y-0"
+                     x-transition:leave-end="opacity-0 translate-y-2"
+                     class="absolute bottom-14 right-0 bg-base-100 text-base-content text-sm rounded-lg shadow-lg px-3 py-2 whitespace-nowrap border border-base-300">
+                    Soporte técnico
+                </div>
+                <a href="https://wa.me/573126142749?text=Hola%2C%20necesito%20reportar%20un%20problema%20con%20la%20plataforma%20SD%20LMS"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   @mouseenter="showTooltip = true"
+                   @mouseleave="showTooltip = false"
+                   class="btn btn-circle btn-sm shadow-lg hover:scale-110 transition-transform duration-200"
+                   style="background-color: #25D366;
+                          border-color: #25D366;
+                          color: white">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="20"
+                         height="20"
+                         viewBox="0 0 24 24"
+                         fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                </a>
+            </div>
+        {% endif %}
+        <!-- Inactivity warning modal -->
+        {% if user.is_authenticated %}
+            <dialog id="inactivity-modal" class="modal">
+                <div class="modal-box">
+                    <h3 class="font-bold text-lg text-warning">Sesión a punto de expirar</h3>
+                    <p class="py-4">
+                        Su sesión se cerrará en menos de 1 minuto por inactividad. Mueva el mouse o presione una tecla para continuar.
+                    </p>
+                    <div class="modal-action">
+                        <form method="dialog">
+                            <button class="btn btn-primary">Continuar trabajando</button>
+                        </form>
+                    </div>
+                </div>
+                <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
+        {% endif %}
+        <!-- Loading Overlay -->
+        <div id="loading-overlay"
+             class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+             x-data
+             @htmx:before-request.window="$el.classList.remove('hidden')"
+             @htmx:after-request.window="$el.classList.add('hidden')">
+            <div class="loading loading-spinner loading-lg text-primary-500"></div>
         </div>
-        <form method="dialog" class="modal-backdrop"><button>close</button></form>
-    </dialog>
-    {% endif %}
-
-    <!-- Loading Overlay -->
-    <div id="loading-overlay"
-         class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
-         x-data
-         @htmx:before-request.window="$el.classList.remove('hidden')"
-         @htmx:after-request.window="$el.classList.add('hidden')">
-        <div class="loading loading-spinner loading-lg text-primary-500"></div>
-    </div>
-
-    <!-- Scripts -->
-    <script nonce="{{ request.csp_nonce }}">
+        <!-- Scripts -->
+        <script nonce="{{ request.csp_nonce }}">
         // HTMX event handling
         document.body.addEventListener('htmx:responseError', function(evt) {
             console.error('HTMX Error:', evt.detail.error);
@@ -245,11 +253,10 @@
         document.body.addEventListener('htmx:configRequest', function(evt) {
             evt.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').content;
         });
-    </script>
-
-    <!-- Client-side inactivity timeout (10 min) -->
-    {% if user.is_authenticated %}
-    <script nonce="{{ request.csp_nonce }}">
+        </script>
+        <!-- Client-side inactivity timeout (10 min) -->
+        {% if user.is_authenticated %}
+            <script nonce="{{ request.csp_nonce }}">
     (function() {
         var TIMEOUT = 10 * 60 * 1000; // 10 minutes in ms
         var WARNING = 60 * 1000; // warn 1 minute before
@@ -279,9 +286,9 @@
 
         resetTimer();
     })();
-    </script>
-    {% endif %}
-
-    {% block extra_js %}{% endblock %}
-</body>
+            </script>
+        {% endif %}
+        {% block extra_js %}
+        {% endblock %}
+    </body>
 </html>

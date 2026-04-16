@@ -1,63 +1,68 @@
 <!-- Available Points -->
 <div class="alert mb-6">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="h-6 w-6"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
     <span>Tienes <strong>{{ available_points }}</strong> puntos disponibles para canjear</span>
 </div>
-
 <!-- Rewards Grid -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     {% for item in rewards %}
-    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
-        {% if item.reward.image %}
-        <figure class="h-40">
-            <img src="{{ item.reward.image.url }}" alt="{{ item.reward.name }}"
-                 class="w-full h-full object-cover">
-        </figure>
-        {% else %}
-        <figure class="h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-            </svg>
-        </figure>
-        {% endif %}
-        <div class="card-body">
-            <h3 class="card-title">{{ item.reward.name }}</h3>
-            <span class="badge badge-outline">{{ item.reward.get_reward_type_display }}</span>
-            <p class="text-sm text-base-content/70">{{ item.reward.description|truncatechars:80 }}</p>
-
-            <div class="flex justify-between items-center mt-4">
-                <span class="text-lg font-bold text-primary">{{ item.reward.points_cost }} pts</span>
-                {% if item.reward.quantity_available %}
-                <span class="text-xs text-base-content/60">
-                    {{ item.reward.quantity_available|add:"-"|add:item.reward.quantity_redeemed }} disponibles
-                </span>
+        <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow">
+            {% if item.reward.image %}
+                <figure class="h-40">
+                    <img src="{{ item.reward.image.url }}"
+                         alt="{{ item.reward.name }}"
+                         class="w-full h-full object-cover">
+                </figure>
+            {% else %}
+                <figure class="h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-16 w-16 text-white/50"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                    </svg>
+                </figure>
+            {% endif %}
+            <div class="card-body">
+                <h3 class="card-title">{{ item.reward.name }}</h3>
+                <span class="badge badge-outline">{{ item.reward.get_reward_type_display }}</span>
+                <p class="text-sm text-base-content/70">{{ item.reward.description|truncatechars:80 }}</p>
+                <div class="flex justify-between items-center mt-4">
+                    <span class="text-lg font-bold text-primary">{{ item.reward.points_cost }} pts</span>
+                    {% if item.reward.quantity_available %}
+                        <span class="text-xs text-base-content/60">
+                            {{ item.reward.quantity_available|add:"-"|add:item.reward.quantity_redeemed }} disponibles
+                        </span>
+                    {% endif %}
+                </div>
+                {% if item.can_afford %}
+                    <button class="btn btn-primary w-full mt-2"
+                            hx-get="{% url 'gamification:reward-detail' item.reward.id %}"
+                            hx-target="#modal-container"
+                            hx-swap="innerHTML">Canjear</button>
+                {% else %}
+                    <button class="btn btn-disabled w-full mt-2">Puntos insuficientes</button>
                 {% endif %}
             </div>
-
-            {% if item.can_afford %}
-            <button class="btn btn-primary w-full mt-2"
-                    hx-get="{% url 'gamification:reward-detail' item.reward.id %}"
-                    hx-target="#modal-container"
-                    hx-swap="innerHTML">
-                Canjear
-            </button>
-            {% else %}
-            <button class="btn btn-disabled w-full mt-2">
-                Puntos insuficientes
-            </button>
-            {% endif %}
         </div>
-    </div>
     {% empty %}
-    <div class="col-span-full text-center py-12">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-        </svg>
-        <p class="text-base-content/60">No hay recompensas disponibles</p>
-    </div>
+        <div class="col-span-full text-center py-12">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-16 w-16 mx-auto text-base-content/30 mb-4"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+            </svg>
+            <p class="text-base-content/60">No hay recompensas disponibles</p>
+        </div>
     {% endfor %}
 </div>
-
 <div id="modal-container"></div>

@@ -1,47 +1,52 @@
 {% if assignments %}
-<div class="overflow-x-auto">
-    <table class="table table-sm">
-        <thead>
-            <tr>
-                <th>Usuario</th>
-                <th>Ruta</th>
-                <th>Vencido hace</th>
-                <th>Progreso</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assignment in assignments %}
-            <tr class="hover">
-                <td>
-                    <div class="flex items-center gap-2">
-                        <div class="avatar placeholder">
-                            <div class="bg-error text-error-content rounded-full w-8">
-                                <span class="text-xs">{{ assignment.user.first_name.0 }}{{ assignment.user.last_name.0 }}</span>
+    <div class="overflow-x-auto">
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Ruta</th>
+                    <th>Vencido hace</th>
+                    <th>Progreso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                    <tr class="hover">
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                    <div class="bg-error text-error-content rounded-full w-8">
+                                        <span class="text-xs">{{ assignment.user.first_name.0 }}{{ assignment.user.last_name.0 }}</span>
+                                    </div>
+                                </div>
+                                <span>{{ assignment.user.get_full_name }}</span>
                             </div>
-                        </div>
-                        <span>{{ assignment.user.get_full_name }}</span>
-                    </div>
-                </td>
-                <td>{{ assignment.learning_path.name|truncatechars:25 }}</td>
-                <td>
-                    <span class="text-error font-medium">{{ assignment.days_overdue }} días</span>
-                </td>
-                <td>
-                    <div class="flex items-center gap-2">
-                        <progress class="progress progress-error w-16" value="{{ assignment.progress }}" max="100"></progress>
-                        <span class="text-xs">{{ assignment.progress }}%</span>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                        </td>
+                        <td>{{ assignment.learning_path.name|truncatechars:25 }}</td>
+                        <td>
+                            <span class="text-error font-medium">{{ assignment.days_overdue }} días</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <progress class="progress progress-error w-16"
+                                          value="{{ assignment.progress }}"
+                                          max="100"></progress>
+                                <span class="text-xs">{{ assignment.progress }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-<div class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-    <svg class="w-12 h-12 mb-2 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-    </svg>
-    <p>No hay asignaciones vencidas</p>
-</div>
+    <div class="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
+        <svg class="w-12 h-12 mb-2 text-success"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <p>No hay asignaciones vencidas</p>
+    </div>
 {% endif %}

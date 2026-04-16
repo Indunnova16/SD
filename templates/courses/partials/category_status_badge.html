@@ -1,8 +1,9 @@
-<div id="category-status-{{ category.id }}" class="flex items-center gap-2">
+<div id="category-status-{{ category.id }}"
+     class="flex items-center gap-2">
     {% if category.is_active %}
-    <span class="badge badge-success badge-sm">Activa</span>
+        <span class="badge badge-success badge-sm">Activa</span>
     {% else %}
-    <span class="badge badge-warning badge-sm">Inactiva</span>
+        <span class="badge badge-warning badge-sm">Inactiva</span>
     {% endif %}
     <button hx-post="{% url 'courses:category_toggle' category.id %}"
             hx-target="#category-status-{{ category.id }}"
@@ -10,13 +11,21 @@
             class="btn btn-ghost btn-xs tooltip"
             data-tip="{% if category.is_active %}Desactivar{% else %}Activar{% endif %}">
         {% if category.is_active %}
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-        </svg>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-4 w-4 text-warning"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
         {% else %}
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-4 w-4 text-success"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
         {% endif %}
     </button>
 </div>

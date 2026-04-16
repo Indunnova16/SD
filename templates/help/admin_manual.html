@@ -1,245 +1,319 @@
 {% extends "base.html" %}
-
 {% block title %}Manual de Administrador - SD LMS{% endblock %}
-
 {% block content %}
-<div class="container mx-auto px-4 py-6 max-w-4xl">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-2xl font-bold">Manual de Administrador</h1>
-        <p class="text-base-content/70 mt-1">Guía completa para gestionar la plataforma SD LMS</p>
-    </div>
-
-    <div class="space-y-4">
-
-        <!-- 1. Gestión de Usuarios -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" checked />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Gestión de Usuarios
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <div>
-                        <h4 class="font-semibold mb-2">Crear un usuario</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir a <strong>Sistema > Gestión de Usuarios</strong></li>
-                            <li>Clic en el botón <strong>"Nuevo Usuario"</strong></li>
-                            <li>Completar los campos: nombre, apellido, número de documento, perfil ocupacional</li>
-                            <li>Para perfiles profesionales (Jefe de Cuadrilla, Ingeniero, Coordinador), el correo es obligatorio</li>
-                            <li>La contraseña se genera automáticamente: <code class="badge badge-ghost">número de documento + 3 primeras letras del nombre</code></li>
-                            <li>Clic en <strong>"Guardar"</strong></li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Editar o desactivar un usuario</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Buscar al usuario en la lista (puede filtrar por nombre, cédula o perfil)</li>
-                            <li>Clic en el nombre del usuario para ver su detalle</li>
-                            <li>Clic en <strong>"Editar"</strong> para modificar datos</li>
-                            <li>Para desactivar, use el botón <strong>"Desactivar"</strong> - el usuario no podrá ingresar</li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Restablecer contraseña</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir al detalle del usuario</li>
-                            <li>Clic en <strong>"Restablecer Contraseña"</strong></li>
-                            <li>La contraseña vuelve al formato estándar: cédula + iniciales del nombre</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold">Manual de Administrador</h1>
+            <p class="text-base-content/70 mt-1">Guía completa para gestionar la plataforma SD LMS</p>
         </div>
-
-        <!-- 2. Carga Masiva -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                    </svg>
-                    Carga Masiva de Usuarios
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                        <li>Ir a <strong>Sistema > Gestión de Usuarios > Carga Masiva</strong></li>
-                        <li>Descargar la plantilla Excel haciendo clic en <strong>"Descargar Plantilla"</strong></li>
-                        <li>Completar el archivo con los datos de los trabajadores</li>
-                        <li>Columnas obligatorias: <code class="badge badge-ghost badge-sm">nombre</code>, <code class="badge badge-ghost badge-sm">apellido</code>, <code class="badge badge-ghost badge-sm">numero_documento</code></li>
-                        <li>Columnas opcionales: tipo_documento, correo, teléfono, cargo, perfil_ocupacional, tipo_vinculación, fecha_ingreso</li>
-                        <li>Subir el archivo Excel (máximo 5MB)</li>
-                        <li>El sistema creará los usuarios y generará las contraseñas automáticamente</li>
-                    </ol>
-                    <div class="alert alert-info">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        <div class="space-y-4">
+            <!-- 1. Gestión de Usuarios -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" checked />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                            </path>
                         </svg>
-                        <span>Cada fila del Excel corresponde a un usuario. Los perfiles válidos son: LINIERO, TECNICO, OPERADOR, JEFE_CUADRILLA, INGENIERO_RESIDENTE, COORDINADOR_HSEQ, ADMINISTRADOR</span>
+                        Gestión de Usuarios
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="font-semibold mb-2">Crear un usuario</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>
+                                    Ir a <strong>Sistema > Gestión de Usuarios</strong>
+                                </li>
+                                <li>
+                                    Clic en el botón <strong>"Nuevo Usuario"</strong>
+                                </li>
+                                <li>Completar los campos: nombre, apellido, número de documento, perfil ocupacional</li>
+                                <li>Para perfiles profesionales (Jefe de Cuadrilla, Ingeniero, Coordinador), el correo es obligatorio</li>
+                                <li>
+                                    La contraseña se genera automáticamente: <code class="badge badge-ghost">número de documento + 3 primeras letras del nombre</code>
+                                </li>
+                                <li>
+                                    Clic en <strong>"Guardar"</strong>
+                                </li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Editar o desactivar un usuario</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>Buscar al usuario en la lista (puede filtrar por nombre, cédula o perfil)</li>
+                                <li>Clic en el nombre del usuario para ver su detalle</li>
+                                <li>
+                                    Clic en <strong>"Editar"</strong> para modificar datos
+                                </li>
+                                <li>
+                                    Para desactivar, use el botón <strong>"Desactivar"</strong> - el usuario no podrá ingresar
+                                </li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Restablecer contraseña</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>Ir al detalle del usuario</li>
+                                <li>
+                                    Clic en <strong>"Restablecer Contraseña"</strong>
+                                </li>
+                                <li>La contraseña vuelve al formato estándar: cédula + iniciales del nombre</li>
+                            </ol>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 3. Parametrización -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Parametrización
+            <!-- 2. Carga Masiva -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-success"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
+                        </svg>
+                        Carga Masiva de Usuarios
+                    </div>
                 </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">La parametrización le permite gestionar categorías, cursos y perfiles sin depender del equipo de desarrollo.</p>
-                    <div>
-                        <h4 class="font-semibold mb-2">Gestionar Categorías</h4>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
                         <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir a <strong>Sistema > Parametrización > Categorías</strong></li>
-                            <li>Puede crear nuevas categorías (ej: Ambiental, Seguridad, Equipos)</li>
-                            <li>Cada categoría puede tener subcategorías</li>
-                            <li>Las categorías se usan para organizar y filtrar los cursos</li>
+                            <li>
+                                Ir a <strong>Sistema > Gestión de Usuarios > Carga Masiva</strong>
+                            </li>
+                            <li>
+                                Descargar la plantilla Excel haciendo clic en <strong>"Descargar Plantilla"</strong>
+                            </li>
+                            <li>Completar el archivo con los datos de los trabajadores</li>
+                            <li>
+                                Columnas obligatorias: <code class="badge badge-ghost badge-sm">nombre</code>, <code class="badge badge-ghost badge-sm">apellido</code>, <code class="badge badge-ghost badge-sm">numero_documento</code>
+                            </li>
+                            <li>
+                                Columnas opcionales: tipo_documento, correo, teléfono, cargo, perfil_ocupacional, tipo_vinculación, fecha_ingreso
+                            </li>
+                            <li>Subir el archivo Excel (máximo 5MB)</li>
+                            <li>El sistema creará los usuarios y generará las contraseñas automáticamente</li>
                         </ol>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Gestionar Cursos</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir a <strong>Sistema > Parametrización > Cursos</strong></li>
-                            <li>Puede crear, editar, archivar o eliminar cursos</li>
-                            <li>Configurar: título, descripción, categoría, tipo (obligatorio/opcional/refuerzo)</li>
-                            <li>Asignar perfiles objetivo (a quiénes aplica el curso)</li>
-                            <li>Estados: <span class="badge badge-success badge-sm">Publicado</span> <span class="badge badge-warning badge-sm">Borrador</span> <span class="badge badge-ghost badge-sm">Archivado</span></li>
-                        </ol>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Gestionar Perfiles Ocupacionales</h4>
-                        <ol class="list-decimal list-inside space-y-1 text-base-content/80">
-                            <li>Ir a <strong>Sistema > Parametrización > Perfiles</strong></li>
-                            <li>Puede crear nuevos perfiles (ej: Ingeniero, Técnico, Jefe de Cuadrilla)</li>
-                            <li>Activar o desactivar perfiles según necesidad</li>
-                        </ol>
+                        <div class="alert alert-info">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span>Cada fila del Excel corresponde a un usuario. Los perfiles válidos son: LINIERO, TECNICO, OPERADOR, JEFE_CUADRILLA, INGENIERO_RESIDENTE, COORDINADOR_HSEQ, ADMINISTRADOR</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- 4. Reportes y Analíticas -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Reportes y Analíticas
+            <!-- 3. Parametrización -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-warning"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Parametrización
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">
+                            La parametrización le permite gestionar categorías, cursos y perfiles sin depender del equipo de desarrollo.
+                        </p>
+                        <div>
+                            <h4 class="font-semibold mb-2">Gestionar Categorías</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>
+                                    Ir a <strong>Sistema > Parametrización > Categorías</strong>
+                                </li>
+                                <li>Puede crear nuevas categorías (ej: Ambiental, Seguridad, Equipos)</li>
+                                <li>Cada categoría puede tener subcategorías</li>
+                                <li>Las categorías se usan para organizar y filtrar los cursos</li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Gestionar Cursos</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>
+                                    Ir a <strong>Sistema > Parametrización > Cursos</strong>
+                                </li>
+                                <li>Puede crear, editar, archivar o eliminar cursos</li>
+                                <li>Configurar: título, descripción, categoría, tipo (obligatorio/opcional/refuerzo)</li>
+                                <li>Asignar perfiles objetivo (a quiénes aplica el curso)</li>
+                                <li>
+                                    Estados: <span class="badge badge-success badge-sm">Publicado</span> <span class="badge badge-warning badge-sm">Borrador</span> <span class="badge badge-ghost badge-sm">Archivado</span>
+                                </li>
+                            </ol>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Gestionar Perfiles Ocupacionales</h4>
+                            <ol class="list-decimal list-inside space-y-1 text-base-content/80">
+                                <li>
+                                    Ir a <strong>Sistema > Parametrización > Perfiles</strong>
+                                </li>
+                                <li>Puede crear nuevos perfiles (ej: Ingeniero, Técnico, Jefe de Cuadrilla)</li>
+                                <li>Activar o desactivar perfiles según necesidad</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <div>
-                        <h4 class="font-semibold mb-2">Dashboard de Analíticas</h4>
-                        <p class="text-base-content/80">Acceda desde <strong>Sistema > Reportes y Analytics</strong>. Podrá ver:</p>
-                        <ul class="list-disc list-inside space-y-1 text-base-content/80 mt-2">
-                            <li>Usuarios activos y tasa de cumplimiento</li>
-                            <li>Tendencia de completados por semana</li>
-                            <li>Progreso por curso</li>
-                            <li>Rendimiento en evaluaciones</li>
-                            <li>Certificaciones próximas a vencer</li>
-                            <li>Asignaciones vencidas</li>
+            <!-- 4. Reportes y Analíticas -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-info"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        Reportes y Analíticas
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <div>
+                            <h4 class="font-semibold mb-2">Dashboard de Analíticas</h4>
+                            <p class="text-base-content/80">
+                                Acceda desde <strong>Sistema > Reportes y Analytics</strong>. Podrá ver:
+                            </p>
+                            <ul class="list-disc list-inside space-y-1 text-base-content/80 mt-2">
+                                <li>Usuarios activos y tasa de cumplimiento</li>
+                                <li>Tendencia de completados por semana</li>
+                                <li>Progreso por curso</li>
+                                <li>Rendimiento en evaluaciones</li>
+                                <li>Certificaciones próximas a vencer</li>
+                                <li>Asignaciones vencidas</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Filtros</h4>
+                            <p class="text-base-content/80">
+                                Use los filtros de categoría, subcategoría y perfil ocupacional para ver datos específicos.
+                            </p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold mb-2">Exportar a Excel</h4>
+                            <p class="text-base-content/80">
+                                Desde Gestión de Usuarios, puede exportar la lista de personas con cursos pendientes a Excel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 5. Notificaciones -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-secondary"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                            </path>
+                        </svg>
+                        Notificaciones
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">
+                            El sistema permite enviar notificaciones a los trabajadores sobre cursos pendientes, vencimientos y recordatorios.
+                        </p>
+                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                            <li>Las notificaciones se pueden enviar por: correo, push, SMS o dentro de la app</li>
+                            <li>Los usuarios pueden configurar sus preferencias de notificación</li>
+                            <li>Las alertas de cursos por vencer se generan automáticamente</li>
                         </ul>
                     </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Filtros</h4>
-                        <p class="text-base-content/80">Use los filtros de categoría, subcategoría y perfil ocupacional para ver datos específicos.</p>
+                </div>
+            </div>
+            <!-- 6. Gamificación -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-error"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z">
+                            </path>
+                        </svg>
+                        Gamificación (Admin)
                     </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Exportar a Excel</h4>
-                        <p class="text-base-content/80">Desde Gestión de Usuarios, puede exportar la lista de personas con cursos pendientes a Excel.</p>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">
+                            La gamificación motiva a los trabajadores a completar sus cursos mediante puntos, insignias y desafíos.
+                        </p>
+                        <ul class="list-disc list-inside space-y-1 text-base-content/80">
+                            <li>
+                                <strong>Puntos:</strong> Se otorgan por completar lecciones, módulos, cursos y aprobar evaluaciones
+                            </li>
+                            <li>
+                                <strong>Insignias:</strong> Reconocimientos por logros especiales (rareza: Común, Rara, Épica, Legendaria)
+                            </li>
+                            <li>
+                                <strong>Desafíos:</strong> Retos temporales con recompensas en puntos e insignias
+                            </li>
+                            <li>
+                                <strong>Tabla de posiciones:</strong> Rankings semanales, mensuales y totales
+                            </li>
+                            <li>
+                                <strong>Tienda de recompensas:</strong> Los trabajadores canjean puntos por recompensas
+                            </li>
+                        </ul>
+                        <p class="text-base-content/80 mt-2">
+                            Acceda al panel de administración de gamificación desde <strong>Gamificación > Admin</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- 7. Soporte -->
+            <div class="collapse collapse-arrow bg-base-100 shadow">
+                <input type="checkbox" />
+                <div class="collapse-title text-lg font-medium">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-accent"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z">
+                            </path>
+                        </svg>
+                        Soporte Técnico
+                    </div>
+                </div>
+                <div class="collapse-content">
+                    <div class="space-y-4 text-sm">
+                        <p class="text-base-content/80">
+                            Si tiene problemas con la plataforma, puede contactar soporte técnico a través del botón de WhatsApp ubicado en la esquina inferior derecha de la pantalla.
+                        </p>
+                        <p class="text-base-content/80">También puede escribir directamente a soporte reportando el problema con detalle.</p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- 5. Notificaciones -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                    </svg>
-                    Notificaciones
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">El sistema permite enviar notificaciones a los trabajadores sobre cursos pendientes, vencimientos y recordatorios.</p>
-                    <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                        <li>Las notificaciones se pueden enviar por: correo, push, SMS o dentro de la app</li>
-                        <li>Los usuarios pueden configurar sus preferencias de notificación</li>
-                        <li>Las alertas de cursos por vencer se generan automáticamente</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- 6. Gamificación -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                    </svg>
-                    Gamificación (Admin)
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">La gamificación motiva a los trabajadores a completar sus cursos mediante puntos, insignias y desafíos.</p>
-                    <ul class="list-disc list-inside space-y-1 text-base-content/80">
-                        <li><strong>Puntos:</strong> Se otorgan por completar lecciones, módulos, cursos y aprobar evaluaciones</li>
-                        <li><strong>Insignias:</strong> Reconocimientos por logros especiales (rareza: Común, Rara, Épica, Legendaria)</li>
-                        <li><strong>Desafíos:</strong> Retos temporales con recompensas en puntos e insignias</li>
-                        <li><strong>Tabla de posiciones:</strong> Rankings semanales, mensuales y totales</li>
-                        <li><strong>Tienda de recompensas:</strong> Los trabajadores canjean puntos por recompensas</li>
-                    </ul>
-                    <p class="text-base-content/80 mt-2">Acceda al panel de administración de gamificación desde <strong>Gamificación > Admin</strong>.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 7. Soporte -->
-        <div class="collapse collapse-arrow bg-base-100 shadow">
-            <input type="checkbox" />
-            <div class="collapse-title text-lg font-medium">
-                <div class="flex items-center gap-2">
-                    <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    Soporte Técnico
-                </div>
-            </div>
-            <div class="collapse-content">
-                <div class="space-y-4 text-sm">
-                    <p class="text-base-content/80">Si tiene problemas con la plataforma, puede contactar soporte técnico a través del botón de WhatsApp ubicado en la esquina inferior derecha de la pantalla.</p>
-                    <p class="text-base-content/80">También puede escribir directamente a soporte reportando el problema con detalle.</p>
-                </div>
-            </div>
-        </div>
-
     </div>
-</div>
 {% endblock %}

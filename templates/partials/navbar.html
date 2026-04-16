@@ -1,140 +1,203 @@
 {% load static %}
 <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
-    <nav class="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" x-data="{ mobileMenuOpen: false }" role="navigation" aria-label="Navegacion principal">
+    <nav class="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+         x-data="{ mobileMenuOpen: false }"
+         role="navigation"
+         aria-label="Navegacion principal">
         <!-- Logo -->
         <div class="flex-1">
-            <a href="{% url 'home' %}" class="flex items-center gap-2 text-xl font-bold text-primary-600 dark:text-primary-400" aria-label="SD LMS - Ir a inicio">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+            <a href="{% url 'home' %}"
+               class="flex items-center gap-2 text-xl font-bold text-primary-600 dark:text-primary-400"
+               aria-label="SD LMS - Ir a inicio">
+                <svg class="w-8 h-8"
+                     fill="currentColor"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+                    <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z" />
                 </svg>
                 <span class="hidden sm:inline">SD LMS</span>
             </a>
         </div>
-
         <!-- Desktop Navigation -->
         <div class="hidden lg:flex flex-none gap-2">
             {% if user.is_authenticated %}
-            <ul class="menu menu-horizontal px-1 gap-1">
-                <!-- Dashboard -->
-                <li>
-                    <a href="{% url 'accounts:dashboard' %}" class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        Dashboard
-                    </a>
-                </li>
-
-                <!-- Aprendizaje -->
-                <li>
-                    <details>
-                        <summary>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                <ul class="menu menu-horizontal px-1 gap-1">
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="{% url 'accounts:dashboard' %}"
+                           class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
+                            <svg class="w-5 h-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                             </svg>
-                            Aprendizaje
-                        </summary>
-                        <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
-                            <li><a href="{% url 'courses:list' %}">📚 Todos los Cursos</a></li>
-                            <li><a href="{% url 'courses:my_courses' %}">📖 Mis Cursos</a></li>
-                            <li class="border-t dark:border-gray-600 my-1"></li>
-                            <li><a href="{% url 'learning_paths:list' %}">🎯 Rutas de Aprendizaje</a></li>
-                            <li><a href="{% url 'learning_paths:my_paths' %}">🛤️ Mis Rutas</a></li>
-                            <li class="border-t dark:border-gray-600 my-1"></li>
-                            <li><a href="{% url 'assessments:list' %}">📝 Evaluaciones</a></li>
-                        </ul>
-                    </details>
-                </li>
-
-                <!-- Certificaciones -->
-                <li>
-                    <a href="{% url 'certifications:my_certificates' %}" class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
-                        </svg>
-                        Certificados
-                    </a>
-                </li>
-
-                <!-- Operaciones -->
-                <li>
-                    <details>
-                        <summary>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                            </svg>
-                            Operaciones
-                        </summary>
-                        <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
-                            <li><a href="{% url 'preop_talks:list' %}">💬 Charlas Pre-Operacionales</a></li>
-                            <li><a href="{% url 'lessons_learned:list' %}">💡 Lecciones Aprendidas</a></li>
-                        </ul>
-                    </details>
-                </li>
-
-                <!-- Gamificacion -->
-                <li>
-                    <a href="{% url 'gamification:dashboard' %}" class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                        </svg>
-                        Gamificación
-                    </a>
-                </li>
-
-                <!-- Reportes y Notificaciones -->
-                <li>
-                    <details>
-                        <summary>
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-                            </svg>
-                            Sistema
-                        </summary>
-                        <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
-                            {% if user.is_staff %}
-                            <li><a href="{% url 'accounts:user_list' %}">👥 Gestión de Usuarios</a></li>
-                            <li><a href="{% url 'courses:parametrizacion' %}">⚙️ Parametrización</a></li>
-                            {% endif %}
-                            <li><a href="{% url 'reports:dashboard' %}">📊 Reportes y Analytics</a></li>
-                            <li><a href="{% url 'notifications:list' %}">🔔 Notificaciones</a></li>
-                            <li class="border-t dark:border-gray-600 my-1"></li>
-                            {% if user.is_staff %}
-                            <li><a href="{% url 'accounts:help_admin' %}">📖 Manual de Administrador</a></li>
-                            {% else %}
-                            <li><a href="{% url 'accounts:help_worker' %}">📖 Manual del Trabajador</a></li>
-                            {% endif %}
-                        </ul>
-                    </details>
-                </li>
-            </ul>
-
-            <!-- User Menu -->
-            <div class="dropdown dropdown-end">
-                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar" aria-label="Abrir menu de usuario" aria-haspopup="true" aria-expanded="false">
-                    <div class="w-10 rounded-full bg-primary-500 text-white flex items-center justify-center">
-                        <span class="text-sm font-medium" aria-hidden="true">{{ user.first_name.0|default:"#"|upper }}{{ user.last_name.0|default:"" }}</span>
-                    </div>
-                </div>
-                <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52 dark:bg-gray-700" role="menu" aria-label="Menu de usuario">
-                    <li class="menu-title">
-                        <span>{{ user.get_full_name|default:user.email }}</span>
-                    </li>
-                    <li><a href="{% url 'accounts:profile' %}">Mi Perfil</a></li>
-                    {% if user.is_staff %}
-                    <li><a href="{% url 'admin:index' %}">Administración</a></li>
-                    {% endif %}
-                    <li class="border-t mt-2 pt-2">
-                        <a href="{% url 'accounts:logout' %}">
-                            Cerrar Sesión
+                            Dashboard
                         </a>
                     </li>
+                    <!-- Aprendizaje -->
+                    <li>
+                        <details>
+                            <summary>
+                                <svg class="w-5 h-5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                Aprendizaje
+                            </summary>
+                            <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
+                                <li>
+                                    <a href="{% url 'courses:list' %}">📚 Todos los Cursos</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'courses:my_courses' %}">📖 Mis Cursos</a>
+                                </li>
+                                <li class="border-t dark:border-gray-600 my-1"></li>
+                                <li>
+                                    <a href="{% url 'learning_paths:list' %}">🎯 Rutas de Aprendizaje</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'learning_paths:my_paths' %}">🛤️ Mis Rutas</a>
+                                </li>
+                                <li class="border-t dark:border-gray-600 my-1"></li>
+                                <li>
+                                    <a href="{% url 'assessments:list' %}">📝 Evaluaciones</a>
+                                </li>
+                            </ul>
+                        </details>
+                    </li>
+                    <!-- Certificaciones -->
+                    <li>
+                        <a href="{% url 'certifications:my_certificates' %}"
+                           class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
+                            <svg class="w-5 h-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                            </svg>
+                            Certificados
+                        </a>
+                    </li>
+                    <!-- Operaciones -->
+                    <li>
+                        <details>
+                            <summary>
+                                <svg class="w-5 h-5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                                Operaciones
+                            </summary>
+                            <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
+                                <li>
+                                    <a href="{% url 'preop_talks:list' %}">💬 Charlas Pre-Operacionales</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'lessons_learned:list' %}">💡 Lecciones Aprendidas</a>
+                                </li>
+                            </ul>
+                        </details>
+                    </li>
+                    <!-- Gamificacion -->
+                    <li>
+                        <a href="{% url 'gamification:dashboard' %}"
+                           class="hover:bg-primary-100 dark:hover:bg-primary-900/30">
+                            <svg class="w-5 h-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                            </svg>
+                            Gamificación
+                        </a>
+                    </li>
+                    <!-- Reportes y Notificaciones -->
+                    <li>
+                        <details>
+                            <summary>
+                                <svg class="w-5 h-5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                </svg>
+                                Sistema
+                            </summary>
+                            <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
+                                {% if user.is_staff %}
+                                    <li>
+                                        <a href="{% url 'accounts:user_list' %}">👥 Gestión de Usuarios</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'courses:parametrizacion' %}">⚙️ Parametrización</a>
+                                    </li>
+                                {% endif %}
+                                <li>
+                                    <a href="{% url 'reports:dashboard' %}">📊 Reportes y Analytics</a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'notifications:list' %}">🔔 Notificaciones</a>
+                                </li>
+                                <li class="border-t dark:border-gray-600 my-1"></li>
+                                {% if user.is_staff %}
+                                    <li>
+                                        <a href="{% url 'accounts:help_admin' %}">📖 Manual de Administrador</a>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a href="{% url 'accounts:help_worker' %}">📖 Manual del Trabajador</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </details>
+                    </li>
                 </ul>
-            </div>
+                <!-- User Menu -->
+                <div class="dropdown dropdown-end">
+                    <div tabindex="0"
+                         role="button"
+                         class="btn btn-ghost btn-circle avatar"
+                         aria-label="Abrir menu de usuario"
+                         aria-haspopup="true"
+                         aria-expanded="false">
+                        <div class="w-10 rounded-full bg-primary-500 text-white flex items-center justify-center">
+                            <span class="text-sm font-medium" aria-hidden="true">{{ user.first_name.0|default:"#"|upper }}{{ user.last_name.0|default:"" }}</span>
+                        </div>
+                    </div>
+                    <ul tabindex="0"
+                        class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52 dark:bg-gray-700"
+                        role="menu"
+                        aria-label="Menu de usuario">
+                        <li class="menu-title">
+                            <span>{{ user.get_full_name|default:user.email }}</span>
+                        </li>
+                        <li>
+                            <a href="{% url 'accounts:profile' %}">Mi Perfil</a>
+                        </li>
+                        {% if user.is_staff %}
+                            <li>
+                                <a href="{% url 'admin:index' %}">Administración</a>
+                            </li>
+                        {% endif %}
+                        <li class="border-t mt-2 pt-2">
+                            <a href="{% url 'accounts:logout' %}">Cerrar Sesión</a>
+                        </li>
+                    </ul>
+                </div>
             {% else %}
-            <a href="{% url 'accounts:login' %}" class="btn btn-ghost">Iniciar Sesión</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-ghost">Iniciar Sesión</a>
             {% endif %}
-
             <!-- Dark Mode Toggle -->
             <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)"
                     class="btn btn-ghost btn-circle"
@@ -142,15 +205,23 @@
                     :aria-label="darkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
                     aria-pressed="false"
                     :aria-pressed="darkMode ? 'true' : 'false'">
-                <svg x-show="!darkMode" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+                <svg x-show="!darkMode"
+                     class="w-5 h-5"
+                     fill="currentColor"
+                     viewBox="0 0 20 20"
+                     aria-hidden="true">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                 </svg>
-                <svg x-show="darkMode" x-cloak class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+                <svg x-show="darkMode"
+                     x-cloak
+                     class="w-5 h-5"
+                     fill="currentColor"
+                     viewBox="0 0 20 20"
+                     aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
                 </svg>
             </button>
         </div>
-
         <!-- Mobile Menu Button -->
         <div class="flex-none lg:hidden">
             <button @click="mobileMenuOpen = !mobileMenuOpen"
@@ -158,17 +229,21 @@
                     :aria-expanded="mobileMenuOpen ? 'true' : 'false'"
                     aria-controls="mobile-menu"
                     aria-label="Abrir menu de navegacion movil">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    <path x-show="mobileMenuOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                <svg class="w-6 h-6"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+                    <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    <path x-show="mobileMenuOpen" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
     </nav>
-
     <!-- Mobile Menu -->
     <div id="mobile-menu"
-         x-show="mobileMenuOpen" x-cloak
+         x-show="mobileMenuOpen"
+         x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 -translate-y-1"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -180,50 +255,73 @@
          aria-label="Menu de navegacion movil">
         <div class="px-2 pt-2 pb-3 space-y-1">
             {% if user.is_authenticated %}
-            <!-- Dashboard -->
-            <a href="{% url 'accounts:dashboard' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold">🏠 Dashboard</a>
-
-            <!-- Aprendizaje -->
-            <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aprendizaje</div>
-            <a href="{% url 'courses:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📚 Todos los Cursos</a>
-            <a href="{% url 'courses:my_courses' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Mis Cursos</a>
-            <a href="{% url 'learning_paths:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🎯 Rutas de Aprendizaje</a>
-            <a href="{% url 'learning_paths:my_paths' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🛤️ Mis Rutas</a>
-            <a href="{% url 'assessments:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📝 Evaluaciones</a>
-
-            <!-- Certificaciones -->
-            <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Certificaciones</div>
-            <a href="{% url 'certifications:my_certificates' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🎓 Mis Certificados</a>
-
-            <!-- Operaciones -->
-            <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Operaciones</div>
-            <a href="{% url 'preop_talks:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💬 Charlas Pre-Op</a>
-            <a href="{% url 'lessons_learned:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💡 Lecciones Aprendidas</a>
-
-            <!-- Gamificacion -->
-            <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gamificación</div>
-            <a href="{% url 'gamification:dashboard' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⭐ Gamificación</a>
-
-            <!-- Sistema -->
-            <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sistema</div>
-            {% if user.is_staff %}
-            <a href="{% url 'accounts:user_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">👥 Gestión de Usuarios</a>
-            <a href="{% url 'courses:parametrizacion' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⚙️ Parametrización</a>
-            {% endif %}
-            <a href="{% url 'reports:dashboard' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📊 Reportes</a>
-            <a href="{% url 'notifications:list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones</a>
-            {% if user.is_staff %}
-            <a href="{% url 'accounts:help_admin' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual de Administrador</a>
+                <!-- Dashboard -->
+                <a href="{% url 'accounts:dashboard' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold">🏠 Dashboard</a>
+                <!-- Aprendizaje -->
+                <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Aprendizaje
+                </div>
+                <a href="{% url 'courses:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📚 Todos los Cursos</a>
+                <a href="{% url 'courses:my_courses' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Mis Cursos</a>
+                <a href="{% url 'learning_paths:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🎯 Rutas de Aprendizaje</a>
+                <a href="{% url 'learning_paths:my_paths' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🛤️ Mis Rutas</a>
+                <a href="{% url 'assessments:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📝 Evaluaciones</a>
+                <!-- Certificaciones -->
+                <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Certificaciones
+                </div>
+                <a href="{% url 'certifications:my_certificates' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🎓 Mis Certificados</a>
+                <!-- Operaciones -->
+                <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Operaciones
+                </div>
+                <a href="{% url 'preop_talks:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💬 Charlas Pre-Op</a>
+                <a href="{% url 'lessons_learned:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💡 Lecciones Aprendidas</a>
+                <!-- Gamificacion -->
+                <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Gamificación
+                </div>
+                <a href="{% url 'gamification:dashboard' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⭐ Gamificación</a>
+                <!-- Sistema -->
+                <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Sistema
+                </div>
+                {% if user.is_staff %}
+                    <a href="{% url 'accounts:user_list' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">👥 Gestión de Usuarios</a>
+                    <a href="{% url 'courses:parametrizacion' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⚙️ Parametrización</a>
+                {% endif %}
+                <a href="{% url 'reports:dashboard' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📊 Reportes</a>
+                <a href="{% url 'notifications:list' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'accounts:help_admin' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual de Administrador</a>
+                {% else %}
+                    <a href="{% url 'accounts:help_worker' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual del Trabajador</a>
+                {% endif %}
+                <!-- Cuenta -->
+                <div class="border-t dark:border-gray-700 my-2"></div>
+                <a href="{% url 'accounts:profile' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">👤 Mi Perfil</a>
+                <a href="{% url 'accounts:logout' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🚪 Cerrar Sesión</a>
             {% else %}
-            <a href="{% url 'accounts:help_worker' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual del Trabajador</a>
-            {% endif %}
-
-            <!-- Cuenta -->
-            <div class="border-t dark:border-gray-700 my-2"></div>
-            <a href="{% url 'accounts:profile' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">👤 Mi Perfil</a>
-            <a href="{% url 'accounts:logout' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🚪 Cerrar Sesión</a>
-            {% else %}
-            <a href="{% url 'accounts:login' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">Iniciar Sesión</a>
+                <a href="{% url 'accounts:login' %}"
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">Iniciar Sesión</a>
             {% endif %}
         </div>
     </div>

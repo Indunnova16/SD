@@ -271,7 +271,7 @@ class AssessmentAttemptViewSet(viewsets.ModelViewSet):
 
         # Get client info
         ip_address = request.META.get("REMOTE_ADDR", "")
-        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        user_agent = request.headers.get("user-agent", "")
 
         # Create attempt
         attempt = AssessmentAttempt.objects.create(

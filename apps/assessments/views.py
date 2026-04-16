@@ -119,7 +119,7 @@ def start_attempt(request, assessment_id):
         assessment=assessment,
         attempt_number=attempt_number,
         ip_address=request.META.get("REMOTE_ADDR", ""),
-        user_agent=request.META.get("HTTP_USER_AGENT", ""),
+        user_agent=request.headers.get("user-agent", ""),
     )
 
     return redirect("assessments:take", attempt_id=attempt.id)

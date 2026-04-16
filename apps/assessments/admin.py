@@ -100,10 +100,9 @@ class QuestionAdmin(admin.ModelAdmin):
     search_fields = ["text", "assessment__title"]
     inlines = [AnswerInline]
 
+    @admin.display(description=_("Pregunta"))
     def text_preview(self, obj):
         return obj.text[:100] + "..." if len(obj.text) > 100 else obj.text
-
-    text_preview.short_description = _("Pregunta")
 
 
 @admin.register(AssessmentAttempt)

@@ -1,58 +1,54 @@
 {% if enrollments %}
-<div class="overflow-x-auto">
-    <table class="table table-zebra w-full">
-        <thead>
-            <tr>
-                <th>Curso</th>
-                <th>Categoría</th>
-                <th>Estado</th>
-                <th>Progreso</th>
-                <th>Fecha inscripción</th>
-                <th>Fecha completado</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
-            <tr>
-                <td>
-                    <div class="font-bold text-sm">{{ enrollment.course.title }}</div>
-                    <div class="text-xs opacity-50">{{ enrollment.course.code }}</div>
-                </td>
-                <td class="text-sm">{{ enrollment.course.category.name|default:"-" }}</td>
-                <td>
-                    <span class="badge badge-sm
-                        {% if enrollment.status == 'completed' %}badge-success
-                        {% elif enrollment.status == 'in_progress' %}badge-info
-                        {% elif enrollment.status == 'enrolled' %}badge-warning
-                        {% elif enrollment.status == 'expired' %}badge-error
-                        {% elif enrollment.status == 'dropped' %}badge-ghost
-                        {% endif %}">
-                        {{ enrollment.get_status_display }}
-                    </span>
-                </td>
-                <td>
-                    <div class="flex items-center gap-2">
-                        <progress class="progress w-20
-                            {% if enrollment.progress == 100 %}progress-success
-                            {% elif enrollment.progress > 0 %}progress-info
-                            {% endif %}"
-                            value="{{ enrollment.progress|floatformat:0 }}" max="100"></progress>
-                        <span class="text-xs">{{ enrollment.progress|floatformat:0 }}%</span>
-                    </div>
-                </td>
-                <td class="text-sm">{{ enrollment.created_at|date:"d/m/Y" }}</td>
-                <td class="text-sm">{{ enrollment.completed_at|date:"d/m/Y"|default:"-" }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Curso</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Progreso</th>
+                    <th>Fecha inscripción</th>
+                    <th>Fecha completado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                    <tr>
+                        <td>
+                            <div class="font-bold text-sm">{{ enrollment.course.title }}</div>
+                            <div class="text-xs opacity-50">{{ enrollment.course.code }}</div>
+                        </td>
+                        <td class="text-sm">{{ enrollment.course.category.name|default:"-" }}</td>
+                        <td>
+                            <span class="badge badge-sm {% if enrollment.status == 'completed' %}badge-success {% elif enrollment.status == 'in_progress' %}badge-info {% elif enrollment.status == 'enrolled' %}badge-warning {% elif enrollment.status == 'expired' %}badge-error {% elif enrollment.status == 'dropped' %}badge-ghost {% endif %}">
+                                {{ enrollment.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <progress class="progress w-20 {% if enrollment.progress == 100 %}progress-success {% elif enrollment.progress > 0 %}progress-info {% endif %}"
+                                          value="{{ enrollment.progress|floatformat:0 }}"
+                                          max="100"></progress>
+                                <span class="text-xs">{{ enrollment.progress|floatformat:0 }}%</span>
+                            </div>
+                        </td>
+                        <td class="text-sm">{{ enrollment.created_at|date:"d/m/Y" }}</td>
+                        <td class="text-sm">{{ enrollment.completed_at|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-<div class="text-center py-8">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-    </svg>
-    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Sin historial de aprendizaje</h3>
-    <p class="text-gray-500 mt-1">Este usuario no tiene cursos asignados</p>
-</div>
+    <div class="text-center py-8">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-16 w-16 mx-auto text-gray-400 mb-4"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Sin historial de aprendizaje</h3>
+        <p class="text-gray-500 mt-1">Este usuario no tiene cursos asignados</p>
+    </div>
 {% endif %}

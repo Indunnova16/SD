@@ -5,66 +5,68 @@
     </td>
     <td>
         {% if report.format == 'pdf' %}
-        <span class="badge badge-error gap-1">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-            </svg>
-            PDF
-        </span>
+            <span class="badge badge-error gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
+                    </path>
+                </svg>
+                PDF
+            </span>
         {% elif report.format == 'excel' %}
-        <span class="badge badge-success gap-1">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-            </svg>
-            Excel
-        </span>
+            <span class="badge badge-success gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
+                    </path>
+                </svg>
+                Excel
+            </span>
         {% else %}
-        <span class="badge gap-1">
-            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"></path>
-            </svg>
-            {{ report.format|upper }}
-        </span>
+            <span class="badge gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z">
+                    </path>
+                </svg>
+                {{ report.format|upper }}
+            </span>
         {% endif %}
     </td>
     <td>
         {% if report.status == 'pending' %}
-        <span class="badge badge-warning gap-1">
-            <span class="loading loading-spinner loading-xs"></span>
-            Pendiente
-        </span>
+            <span class="badge badge-warning gap-1">
+                <span class="loading loading-spinner loading-xs"></span>
+                Pendiente
+            </span>
         {% elif report.status == 'generating' %}
-        <span class="badge badge-info gap-1"
-              hx-get="{% url 'reports:status' report.id %}"
-              hx-trigger="every 3s"
-              hx-swap="outerHTML">
-            <span class="loading loading-spinner loading-xs"></span>
-            Generando
-        </span>
+            <span class="badge badge-info gap-1"
+                  hx-get="{% url 'reports:status' report.id %}"
+                  hx-trigger="every 3s"
+                  hx-swap="outerHTML">
+                <span class="loading loading-spinner loading-xs"></span>
+                Generando
+            </span>
         {% elif report.status == 'completed' %}
-        <span class="badge badge-success">Completado</span>
+            <span class="badge badge-success">Completado</span>
         {% elif report.status == 'failed' %}
-        <span class="badge badge-error">Error</span>
+            <span class="badge badge-error">Error</span>
         {% endif %}
     </td>
     <td>{{ report.created_at|date:"d/m/Y H:i" }}</td>
     <td>
         {% if report.file_size %}
-        {{ report.file_size|filesizeformat }}
+            {{ report.file_size|filesizeformat }}
         {% else %}
-        -
+            -
         {% endif %}
     </td>
     <td>
         <div class="flex gap-2">
             {% if report.status == 'completed' and report.file %}
-            <a href="{{ report.file.url }}"
-               class="btn btn-ghost btn-sm"
-               download>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                </svg>
-            </a>
+                <a href="{{ report.file.url }}" class="btn btn-ghost btn-sm" download>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                        </path>
+                    </svg>
+                </a>
             {% endif %}
             <button class="btn btn-ghost btn-sm text-error"
                     hx-delete="{% url 'reports:delete' report.id %}"
@@ -72,7 +74,8 @@
                     hx-swap="outerHTML"
                     hx-confirm="¿Eliminar este reporte?">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
                 </svg>
             </button>
         </div>

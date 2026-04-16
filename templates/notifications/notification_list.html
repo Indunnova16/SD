@@ -1,53 +1,49 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}Notificaciones{% endblock %}
-
 {% block dashboard_content %}
-<div class="space-y-4">
-    <!-- Header Actions -->
-    <div class="flex justify-between items-center">
-        <div class="flex gap-2">
-            <button class="btn btn-sm {% if not filter or filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}"
-                    hx-get="{% url 'notifications:list' %}"
-                    hx-target="#notification-list"
-                    hx-push-url="true">
-                Todas
-            </button>
-            <button class="btn btn-sm {% if filter == 'unread' %}btn-primary{% else %}btn-ghost{% endif %}"
-                    hx-get="{% url 'notifications:list' %}?filter=unread"
-                    hx-target="#notification-list"
-                    hx-push-url="true">
-                No leídas
-                {% if unread_count > 0 %}
-                <span class="badge badge-secondary badge-sm">{{ unread_count }}</span>
-                {% endif %}
-            </button>
+    <div class="space-y-4">
+        <!-- Header Actions -->
+        <div class="flex justify-between items-center">
+            <div class="flex gap-2">
+                <button class="btn btn-sm {% if not filter or filter == 'all' %}btn-primary{% else %}btn-ghost{% endif %}"
+                        hx-get="{% url 'notifications:list' %}"
+                        hx-target="#notification-list"
+                        hx-push-url="true">Todas</button>
+                <button class="btn btn-sm {% if filter == 'unread' %}btn-primary{% else %}btn-ghost{% endif %}"
+                        hx-get="{% url 'notifications:list' %}?filter=unread"
+                        hx-target="#notification-list"
+                        hx-push-url="true">
+                    No leídas
+                    {% if unread_count > 0 %}<span class="badge badge-secondary badge-sm">{{ unread_count }}</span>{% endif %}
+                </button>
+            </div>
+            {% if unread_count > 0 %}
+                <button class="btn btn-ghost btn-sm"
+                        hx-post="{% url 'notifications:mark-all-read' %}"
+                        hx-target="#notification-list"
+                        hx-swap="innerHTML">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Marcar todas como leídas
+                </button>
+            {% endif %}
         </div>
-        {% if unread_count > 0 %}
-        <button class="btn btn-ghost btn-sm"
-                hx-post="{% url 'notifications:mark-all-read' %}"
-                hx-target="#notification-list"
-                hx-swap="innerHTML">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            Marcar todas como leídas
-        </button>
-        {% endif %}
-    </div>
-
-    <!-- Notification List -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body p-0">
-            <div id="notification-list"
-                 hx-get="{% url 'notifications:list' %}{% if filter %}?filter={{ filter }}{% endif %}"
-                 hx-trigger="load"
-                 hx-swap="innerHTML">
-                <div class="flex justify-center py-12">
-                    <span class="loading loading-spinner loading-lg"></span>
+        <!-- Notification List -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body p-0">
+                <div id="notification-list"
+                     hx-get="{% url 'notifications:list' %}{% if filter %}?filter={{ filter }}{% endif %}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="flex justify-center py-12">
+                        <span class="loading loading-spinner loading-lg"></span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

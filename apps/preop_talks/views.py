@@ -277,7 +277,7 @@ def search_users(request):
 
     html = ""
     for user in users:
-        html += f'''
+        html += f"""
         <div class="p-2 hover:bg-base-200 cursor-pointer rounded"
              hx-post="" hx-include="this"
              onclick="document.querySelector('[name=user_id]').value='{user.id}'; this.closest('form').requestSubmit()">
@@ -285,7 +285,7 @@ def search_users(request):
             <div class="font-medium">{user.get_full_name()}</div>
             <div class="text-sm text-gray-500">{user.document_number} - {user.job_position}</div>
         </div>
-        '''
+        """
 
     return HttpResponse(
         html

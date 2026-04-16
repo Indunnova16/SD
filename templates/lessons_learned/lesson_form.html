@@ -1,157 +1,192 @@
 {% extends "base/dashboard.html" %}
-
-{% block page_title %}{% if lesson %}Editar Lección{% else %}Nueva Lección{% endif %}{% endblock %}
-
+{% block page_title %}
+    {% if lesson %}
+        Editar Lección
+    {% else %}
+        Nueva Lección
+    {% endif %}
+{% endblock %}
 {% block dashboard_content %}
-<div class="max-w-3xl mx-auto">
-    <a href="{% url 'lessons_learned:list' %}" class="btn btn-ghost btn-sm mb-4">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-        Volver
-    </a>
-
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h2 class="card-title">{% if lesson %}Editar Lección{% else %}Nueva Lección Aprendida{% endif %}</h2>
-
-            <form method="post" class="space-y-4 mt-4">
-                {% csrf_token %}
-
-                <!-- Title -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Título *</span>
-                    </label>
-                    <input type="text" name="title" required maxlength="300"
-                           class="input input-bordered w-full"
-                           placeholder="Título de la lección aprendida"
-                           value="{{ lesson.title|default:'' }}">
-                </div>
-
-                <!-- Category, Type, Severity -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="max-w-3xl mx-auto">
+        <a href="{% url 'lessons_learned:list' %}"
+           class="btn btn-ghost btn-sm mb-4">
+            <svg class="w-4 h-4 mr-1"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Volver
+        </a>
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h2 class="card-title">
+                    {% if lesson %}
+                        Editar Lección
+                    {% else %}
+                        Nueva Lección Aprendida
+                    {% endif %}
+                </h2>
+                <form method="post" class="space-y-4 mt-4">
+                    {% csrf_token %}
+                    <!-- Title -->
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text font-medium">Categoría *</span>
+                            <span class="label-text font-medium">Título *</span>
                         </label>
-                        <select name="category" required class="select select-bordered w-full">
-                            <option value="">Seleccionar...</option>
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if lesson.category_id == cat.id %}selected{% endif %}>
-                                {{ cat.name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Tipo</span>
-                        </label>
-                        <select name="lesson_type" class="select select-bordered w-full">
-                            <option value="incident" {% if lesson.lesson_type == 'incident' %}selected{% endif %}>Incidente</option>
-                            <option value="near_miss" {% if lesson.lesson_type == 'near_miss' %}selected{% endif %}>Casi accidente</option>
-                            <option value="good_practice" {% if lesson.lesson_type == 'good_practice' %}selected{% endif %}>Buena práctica</option>
-                            <option value="improvement" {% if lesson.lesson_type == 'improvement' %}selected{% endif %}>Mejora</option>
-                            <option value="observation" {% if lesson.lesson_type == 'observation' or not lesson %}selected{% endif %}>Observación</option>
-                        </select>
-                    </div>
-
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Severidad</span>
-                        </label>
-                        <select name="severity" class="select select-bordered w-full">
-                            <option value="low" {% if lesson.severity == 'low' %}selected{% endif %}>Baja</option>
-                            <option value="medium" {% if lesson.severity == 'medium' or not lesson %}selected{% endif %}>Media</option>
-                            <option value="high" {% if lesson.severity == 'high' %}selected{% endif %}>Alta</option>
-                            <option value="critical" {% if lesson.severity == 'critical' %}selected{% endif %}>Crítica</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Description -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Descripción *</span>
-                    </label>
-                    <textarea name="description" required rows="3"
-                              class="textarea textarea-bordered w-full"
-                              placeholder="Descripción general del evento o situación">{{ lesson.description|default:'' }}</textarea>
-                </div>
-
-                <!-- Situation -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Situación / Contexto *</span>
-                    </label>
-                    <textarea name="situation" required rows="3"
-                              class="textarea textarea-bordered w-full"
-                              placeholder="Describe la situación o contexto en que ocurrió">{{ lesson.situation|default:'' }}</textarea>
-                </div>
-
-                <!-- Root Cause -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Causa Raíz</span>
-                    </label>
-                    <textarea name="root_cause" rows="3"
-                              class="textarea textarea-bordered w-full"
-                              placeholder="Análisis de la causa raíz (opcional)">{{ lesson.root_cause|default:'' }}</textarea>
-                </div>
-
-                <!-- Lesson -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Lección Aprendida *</span>
-                    </label>
-                    <textarea name="lesson" required rows="3"
-                              class="textarea textarea-bordered w-full"
-                              placeholder="¿Cuál es la lección aprendida?">{{ lesson.lesson|default:'' }}</textarea>
-                </div>
-
-                <!-- Recommendations -->
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text font-medium">Recomendaciones *</span>
-                    </label>
-                    <textarea name="recommendations" required rows="3"
-                              class="textarea textarea-bordered w-full"
-                              placeholder="Acciones recomendadas para prevenir o replicar">{{ lesson.recommendations|default:'' }}</textarea>
-                </div>
-
-                <!-- Location and Date -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-control">
-                        <label class="label">
-                            <span class="label-text font-medium">Ubicación</span>
-                        </label>
-                        <input type="text" name="location" maxlength="200"
+                        <input type="text"
+                               name="title"
+                               required
+                               maxlength="300"
                                class="input input-bordered w-full"
-                               placeholder="Proyecto, línea o sitio"
-                               value="{{ lesson.location|default:'' }}">
+                               placeholder="Título de la lección aprendida"
+                               value="{{ lesson.title|default:'' }}">
                     </div>
-
+                    <!-- Category, Type, Severity -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Categoría *</span>
+                            </label>
+                            <select name="category" required class="select select-bordered w-full">
+                                <option value="">Seleccionar...</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}"
+                                            {% if lesson.category_id == cat.id %}selected{% endif %}>
+                                        {{ cat.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Tipo</span>
+                            </label>
+                            <select name="lesson_type" class="select select-bordered w-full">
+                                <option value="incident"
+                                        {% if lesson.lesson_type == 'incident' %}selected{% endif %}>Incidente</option>
+                                <option value="near_miss"
+                                        {% if lesson.lesson_type == 'near_miss' %}selected{% endif %}>
+                                    Casi accidente
+                                </option>
+                                <option value="good_practice"
+                                        {% if lesson.lesson_type == 'good_practice' %}selected{% endif %}>
+                                    Buena práctica
+                                </option>
+                                <option value="improvement"
+                                        {% if lesson.lesson_type == 'improvement' %}selected{% endif %}>Mejora</option>
+                                <option value="observation"
+                                        {% if lesson.lesson_type == 'observation' or not lesson %}selected{% endif %}>
+                                    Observación
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Severidad</span>
+                            </label>
+                            <select name="severity" class="select select-bordered w-full">
+                                <option value="low" {% if lesson.severity == 'low' %}selected{% endif %}>Baja</option>
+                                <option value="medium"
+                                        {% if lesson.severity == 'medium' or not lesson %}selected{% endif %}>
+                                    Media
+                                </option>
+                                <option value="high" {% if lesson.severity == 'high' %}selected{% endif %}>Alta</option>
+                                <option value="critical"
+                                        {% if lesson.severity == 'critical' %}selected{% endif %}>Crítica</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Description -->
                     <div class="form-control">
                         <label class="label">
-                            <span class="label-text font-medium">Fecha del evento</span>
+                            <span class="label-text font-medium">Descripción *</span>
                         </label>
-                        <input type="date" name="date_occurred"
-                               class="input input-bordered w-full"
-                               value="{% if lesson.date_occurred %}{{ lesson.date_occurred|date:'Y-m-d' }}{% endif %}">
+                        <textarea name="description"
+                                  required
+                                  rows="3"
+                                  class="textarea textarea-bordered w-full"
+                                  placeholder="Descripción general del evento o situación">{{ lesson.description|default:'' }}</textarea>
                     </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex justify-end gap-2 pt-4">
-                    <a href="{% url 'lessons_learned:list' %}" class="btn btn-ghost">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">
-                        {% if lesson %}Guardar cambios{% else %}Crear lección{% endif %}
-                    </button>
-                </div>
-            </form>
+                    <!-- Situation -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Situación / Contexto *</span>
+                        </label>
+                        <textarea name="situation"
+                                  required
+                                  rows="3"
+                                  class="textarea textarea-bordered w-full"
+                                  placeholder="Describe la situación o contexto en que ocurrió">{{ lesson.situation|default:'' }}</textarea>
+                    </div>
+                    <!-- Root Cause -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Causa Raíz</span>
+                        </label>
+                        <textarea name="root_cause"
+                                  rows="3"
+                                  class="textarea textarea-bordered w-full"
+                                  placeholder="Análisis de la causa raíz (opcional)">{{ lesson.root_cause|default:'' }}</textarea>
+                    </div>
+                    <!-- Lesson -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Lección Aprendida *</span>
+                        </label>
+                        <textarea name="lesson"
+                                  required
+                                  rows="3"
+                                  class="textarea textarea-bordered w-full"
+                                  placeholder="¿Cuál es la lección aprendida?">{{ lesson.lesson|default:'' }}</textarea>
+                    </div>
+                    <!-- Recommendations -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Recomendaciones *</span>
+                        </label>
+                        <textarea name="recommendations"
+                                  required
+                                  rows="3"
+                                  class="textarea textarea-bordered w-full"
+                                  placeholder="Acciones recomendadas para prevenir o replicar">{{ lesson.recommendations|default:'' }}</textarea>
+                    </div>
+                    <!-- Location and Date -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Ubicación</span>
+                            </label>
+                            <input type="text"
+                                   name="location"
+                                   maxlength="200"
+                                   class="input input-bordered w-full"
+                                   placeholder="Proyecto, línea o sitio"
+                                   value="{{ lesson.location|default:'' }}">
+                        </div>
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">Fecha del evento</span>
+                            </label>
+                            <input type="date"
+                                   name="date_occurred"
+                                   class="input input-bordered w-full"
+                                   value="{% if lesson.date_occurred %}{{ lesson.date_occurred|date:'Y-m-d' }}{% endif %}">
+                        </div>
+                    </div>
+                    <!-- Actions -->
+                    <div class="flex justify-end gap-2 pt-4">
+                        <a href="{% url 'lessons_learned:list' %}" class="btn btn-ghost">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if lesson %}
+                                Guardar cambios
+                            {% else %}
+                                Crear lección
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -1,268 +1,245 @@
 {% extends "base/dashboard.html" %}
-
 {% block page_title %}{{ lesson.title }}{% endblock %}
-
 {% block dashboard_content %}
-<div class="max-w-4xl mx-auto space-y-6">
-    <!-- Back button -->
-    <a href="{% url 'lessons_learned:list' %}" class="btn btn-ghost btn-sm">
-        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-        Volver
-    </a>
-
-    <!-- Main Content Card -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <!-- Header -->
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        {% if lesson.lesson_type == 'incident' %}
-                        <span class="badge badge-error">Incidente</span>
-                        {% elif lesson.lesson_type == 'near_miss' %}
-                        <span class="badge badge-warning">Casi accidente</span>
-                        {% elif lesson.lesson_type == 'good_practice' %}
-                        <span class="badge badge-success">Buena práctica</span>
-                        {% elif lesson.lesson_type == 'observation' %}
-                        <span class="badge badge-ghost">Observación</span>
-                        {% else %}
-                        <span class="badge badge-info">Mejora</span>
-                        {% endif %}
-
-                        {% if lesson.severity == 'critical' %}
-                        <span class="badge badge-error badge-outline">Severidad Crítica</span>
-                        {% elif lesson.severity == 'high' %}
-                        <span class="badge badge-warning badge-outline">Severidad Alta</span>
-                        {% elif lesson.severity == 'medium' %}
-                        <span class="badge badge-info badge-outline">Severidad Media</span>
-                        {% else %}
-                        <span class="badge badge-ghost">Severidad Baja</span>
-                        {% endif %}
-
-                        {% if lesson.status == 'draft' %}
-                        <span class="badge badge-ghost">Borrador</span>
-                        {% elif lesson.status == 'pending_review' %}
-                        <span class="badge badge-warning">Pendiente revisión</span>
-                        {% elif lesson.status == 'approved' %}
-                        <span class="badge badge-success">Aprobada</span>
-                        {% endif %}
+    <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Back button -->
+        <a href="{% url 'lessons_learned:list' %}" class="btn btn-ghost btn-sm">
+            <svg class="w-4 h-4 mr-1"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Volver
+        </a>
+        <!-- Main Content Card -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <!-- Header -->
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            {% if lesson.lesson_type == 'incident' %}
+                                <span class="badge badge-error">Incidente</span>
+                            {% elif lesson.lesson_type == 'near_miss' %}
+                                <span class="badge badge-warning">Casi accidente</span>
+                            {% elif lesson.lesson_type == 'good_practice' %}
+                                <span class="badge badge-success">Buena práctica</span>
+                            {% elif lesson.lesson_type == 'observation' %}
+                                <span class="badge badge-ghost">Observación</span>
+                            {% else %}
+                                <span class="badge badge-info">Mejora</span>
+                            {% endif %}
+                            {% if lesson.severity == 'critical' %}
+                                <span class="badge badge-error badge-outline">Severidad Crítica</span>
+                            {% elif lesson.severity == 'high' %}
+                                <span class="badge badge-warning badge-outline">Severidad Alta</span>
+                            {% elif lesson.severity == 'medium' %}
+                                <span class="badge badge-info badge-outline">Severidad Media</span>
+                            {% else %}
+                                <span class="badge badge-ghost">Severidad Baja</span>
+                            {% endif %}
+                            {% if lesson.status == 'draft' %}
+                                <span class="badge badge-ghost">Borrador</span>
+                            {% elif lesson.status == 'pending_review' %}
+                                <span class="badge badge-warning">Pendiente revisión</span>
+                            {% elif lesson.status == 'approved' %}
+                                <span class="badge badge-success">Aprobada</span>
+                            {% endif %}
+                        </div>
+                        <h1 class="text-2xl font-bold">{{ lesson.title }}</h1>
                     </div>
-                    <h1 class="text-2xl font-bold">{{ lesson.title }}</h1>
+                    {% if user == lesson.created_by or user.is_staff %}
+                        <div class="dropdown dropdown-end">
+                            <label tabindex="0" class="btn btn-ghost btn-sm">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z">
+                                    </path>
+                                </svg>
+                            </label>
+                            <ul tabindex="0"
+                                class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
+                                <li>
+                                    <a href="{% url 'lessons_learned:edit' lesson.id %}">Editar</a>
+                                </li>
+                                {% if lesson.status == 'draft' %}
+                                    <li>
+                                        <button hx-post="{% url 'lessons_learned:submit-review' lesson.id %}"
+                                                hx-swap="none"
+                                                hx-confirm="¿Enviar para revisión?">Enviar para revisión</button>
+                                    </li>
+                                {% endif %}
+                                {% if user.is_staff and lesson.status == 'pending_review' %}
+                                    <li>
+                                        <button hx-post="{% url 'lessons_learned:approve' lesson.id %}"
+                                                hx-swap="none"
+                                                hx-confirm="¿Aprobar esta lección?">Aprobar</button>
+                                    </li>
+                                    <li>
+                                        <button onclick="document.getElementById('reject-modal').showModal()">Rechazar</button>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
                 </div>
-
-                {% if user == lesson.created_by or user.is_staff %}
-                <div class="dropdown dropdown-end">
-                    <label tabindex="0" class="btn btn-ghost btn-sm">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+                <!-- Meta -->
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-4">
+                    <div class="flex items-center gap-2">
+                        <div class="avatar placeholder">
+                            <div class="bg-neutral text-neutral-content rounded-full w-6">
+                                <span class="text-xs">{{ lesson.created_by.first_name.0 }}{{ lesson.created_by.last_name.0 }}</span>
+                            </div>
+                        </div>
+                        {{ lesson.created_by.get_full_name }}
+                    </div>
+                    <span>{{ lesson.created_at|date:"d/m/Y" }}</span>
+                    {% if lesson.category %}<span class="badge badge-ghost badge-sm">{{ lesson.category.name }}</span>{% endif %}
+                    <div class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                            </path>
                         </svg>
-                    </label>
-                    <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-10">
-                        <li><a href="{% url 'lessons_learned:edit' lesson.id %}">Editar</a></li>
-                        {% if lesson.status == 'draft' %}
-                        <li>
-                            <button hx-post="{% url 'lessons_learned:submit-review' lesson.id %}"
-                                    hx-swap="none"
-                                    hx-confirm="¿Enviar para revisión?">
-                                Enviar para revisión
-                            </button>
-                        </li>
-                        {% endif %}
-                        {% if user.is_staff and lesson.status == 'pending_review' %}
-                        <li>
-                            <button hx-post="{% url 'lessons_learned:approve' lesson.id %}"
-                                    hx-swap="none"
-                                    hx-confirm="¿Aprobar esta lección?">
-                                Aprobar
-                            </button>
-                        </li>
-                        <li>
-                            <button onclick="document.getElementById('reject-modal').showModal()">
-                                Rechazar
-                            </button>
-                        </li>
-                        {% endif %}
-                    </ul>
+                        {{ lesson.view_count }} visualizaciones
+                    </div>
                 </div>
-                {% endif %}
-            </div>
-
-            <!-- Meta -->
-            <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mt-4">
-                <div class="flex items-center gap-2">
-                    <div class="avatar placeholder">
-                        <div class="bg-neutral text-neutral-content rounded-full w-6">
-                            <span class="text-xs">{{ lesson.created_by.first_name.0 }}{{ lesson.created_by.last_name.0 }}</span>
+                <div class="divider"></div>
+                <!-- Description -->
+                <div class="prose dark:prose-invert max-w-none">
+                    <h3>Descripción</h3>
+                    <p>{{ lesson.description }}</p>
+                    {% if lesson.situation %}
+                        <h3>Situación / Contexto</h3>
+                        <p>{{ lesson.situation }}</p>
+                    {% endif %}
+                    {% if lesson.root_cause %}
+                        <h3>Causa Raíz</h3>
+                        <p>{{ lesson.root_cause }}</p>
+                    {% endif %}
+                    {% if lesson.lesson %}
+                        <h3>Lección Aprendida</h3>
+                        <p>{{ lesson.lesson }}</p>
+                    {% endif %}
+                    {% if lesson.recommendations %}
+                        <h3>Recomendaciones</h3>
+                        <p>{{ lesson.recommendations }}</p>
+                    {% endif %}
+                    {% if lesson.location %}
+                        <h3>Ubicación</h3>
+                        <p>{{ lesson.location }}</p>
+                    {% endif %}
+                    {% if lesson.date_occurred %}
+                        <h3>Fecha del evento</h3>
+                        <p>{{ lesson.date_occurred|date:"d/m/Y" }}</p>
+                    {% endif %}
+                </div>
+                <!-- Attachments -->
+                {% if lesson.attachments.exists %}
+                    <div class="mt-6">
+                        <h3 class="font-medium mb-3">Archivos adjuntos</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for attachment in lesson.attachments.all %}
+                                <a href="{{ attachment.file.url }}"
+                                   target="_blank"
+                                   class="btn btn-ghost btn-sm gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                        </path>
+                                    </svg>
+                                    {{ attachment.original_name }}
+                                </a>
+                            {% endfor %}
                         </div>
                     </div>
-                    {{ lesson.created_by.get_full_name }}
-                </div>
-                <span>{{ lesson.created_at|date:"d/m/Y" }}</span>
-                {% if lesson.category %}
-                <span class="badge badge-ghost badge-sm">{{ lesson.category.name }}</span>
                 {% endif %}
-                <div class="flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                    </svg>
-                    {{ lesson.view_count }} visualizaciones
-                </div>
-            </div>
-
-            <div class="divider"></div>
-
-            <!-- Description -->
-            <div class="prose dark:prose-invert max-w-none">
-                <h3>Descripción</h3>
-                <p>{{ lesson.description }}</p>
-
-                {% if lesson.situation %}
-                <h3>Situación / Contexto</h3>
-                <p>{{ lesson.situation }}</p>
-                {% endif %}
-
-                {% if lesson.root_cause %}
-                <h3>Causa Raíz</h3>
-                <p>{{ lesson.root_cause }}</p>
-                {% endif %}
-
-                {% if lesson.lesson %}
-                <h3>Lección Aprendida</h3>
-                <p>{{ lesson.lesson }}</p>
-                {% endif %}
-
-                {% if lesson.recommendations %}
-                <h3>Recomendaciones</h3>
-                <p>{{ lesson.recommendations }}</p>
-                {% endif %}
-
-                {% if lesson.location %}
-                <h3>Ubicación</h3>
-                <p>{{ lesson.location }}</p>
-                {% endif %}
-
-                {% if lesson.date_occurred %}
-                <h3>Fecha del evento</h3>
-                <p>{{ lesson.date_occurred|date:"d/m/Y" }}</p>
+                <!-- Tags -->
+                {% if lesson.tags %}
+                    <div class="mt-6">
+                        <h3 class="font-medium mb-3">Etiquetas</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in lesson.tags %}<span class="badge badge-primary badge-outline">{{ tag }}</span>{% endfor %}
+                        </div>
+                    </div>
                 {% endif %}
             </div>
-
-            <!-- Attachments -->
-            {% if lesson.attachments.exists %}
-            <div class="mt-6">
-                <h3 class="font-medium mb-3">Archivos adjuntos</h3>
-                <div class="flex flex-wrap gap-2">
-                    {% for attachment in lesson.attachments.all %}
-                    <a href="{{ attachment.file.url }}"
-                       target="_blank"
-                       class="btn btn-ghost btn-sm gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
-                        </svg>
-                        {{ attachment.original_name }}
-                    </a>
+        </div>
+        <!-- Comments Section -->
+        <div class="card bg-base-100 shadow">
+            <div class="card-body">
+                <h3 class="card-title">Comentarios</h3>
+                <!-- Comment Form -->
+                <form hx-post="{% url 'lessons_learned:add-comment' lesson.id %}"
+                      hx-target="#comments-list"
+                      hx-swap="afterbegin"
+                      hx-on::after-request="this.reset()"
+                      class="mb-6">
+                    {% csrf_token %}
+                    <div class="form-control">
+                        <textarea name="content"
+                                  class="textarea textarea-bordered"
+                                  placeholder="Escribe un comentario..."
+                                  rows="2"
+                                  required></textarea>
+                    </div>
+                    <div class="flex justify-end mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm">Comentar</button>
+                    </div>
+                </form>
+                <!-- Comments List -->
+                <div id="comments-list" class="space-y-4">
+                    {% for comment in lesson.comments.all %}
+                        <div class="flex gap-3" id="comment-{{ comment.id }}">
+                            <div class="avatar placeholder">
+                                <div class="bg-neutral text-neutral-content rounded-full w-8">
+                                    <span class="text-xs">{{ comment.user.first_name.0 }}{{ comment.user.last_name.0 }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-base-200 rounded-lg p-3">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-sm">{{ comment.user.get_full_name }}</span>
+                                        <span class="text-xs text-gray-500">{{ comment.created_at|timesince }} atrás</span>
+                                    </div>
+                                    <p class="text-sm">{{ comment.content }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-center text-gray-500 py-4">No hay comentarios aún. ¡Sé el primero!</p>
                     {% endfor %}
                 </div>
             </div>
-            {% endif %}
-
-            <!-- Tags -->
-            {% if lesson.tags %}
-            <div class="mt-6">
-                <h3 class="font-medium mb-3">Etiquetas</h3>
-                <div class="flex flex-wrap gap-2">
-                    {% for tag in lesson.tags %}
-                    <span class="badge badge-primary badge-outline">{{ tag }}</span>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
-
-    <!-- Comments Section -->
-    <div class="card bg-base-100 shadow">
-        <div class="card-body">
-            <h3 class="card-title">Comentarios</h3>
-
-            <!-- Comment Form -->
-            <form hx-post="{% url 'lessons_learned:add-comment' lesson.id %}"
-                  hx-target="#comments-list"
-                  hx-swap="afterbegin"
-                  hx-on::after-request="this.reset()"
-                  class="mb-6">
+    <!-- Reject Modal -->
+    <dialog id="reject-modal" class="modal">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg">Rechazar Lección</h3>
+            <form hx-post="{% url 'lessons_learned:reject' lesson.id %}" hx-swap="none">
                 {% csrf_token %}
-                <div class="form-control">
-                    <textarea name="content"
-                              class="textarea textarea-bordered"
-                              placeholder="Escribe un comentario..."
-                              rows="2"
-                              required></textarea>
+                <div class="py-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Motivo del rechazo</span>
+                        </label>
+                        <textarea name="reason"
+                                  class="textarea textarea-bordered"
+                                  rows="3"
+                                  required
+                                  placeholder="Explica por qué se rechaza esta lección..."></textarea>
+                    </div>
                 </div>
-                <div class="flex justify-end mt-2">
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        Comentar
-                    </button>
+                <div class="modal-action">
+                    <button type="button"
+                            class="btn"
+                            onclick="document.getElementById('reject-modal').close()">Cancelar</button>
+                    <button type="submit" class="btn btn-error">Rechazar</button>
                 </div>
             </form>
-
-            <!-- Comments List -->
-            <div id="comments-list" class="space-y-4">
-                {% for comment in lesson.comments.all %}
-                <div class="flex gap-3" id="comment-{{ comment.id }}">
-                    <div class="avatar placeholder">
-                        <div class="bg-neutral text-neutral-content rounded-full w-8">
-                            <span class="text-xs">{{ comment.user.first_name.0 }}{{ comment.user.last_name.0 }}</span>
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="bg-base-200 rounded-lg p-3">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="font-medium text-sm">{{ comment.user.get_full_name }}</span>
-                                <span class="text-xs text-gray-500">{{ comment.created_at|timesince }} atrás</span>
-                            </div>
-                            <p class="text-sm">{{ comment.content }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <p class="text-center text-gray-500 py-4">No hay comentarios aún. ¡Sé el primero!</p>
-                {% endfor %}
-            </div>
         </div>
-    </div>
-</div>
-
-<!-- Reject Modal -->
-<dialog id="reject-modal" class="modal">
-    <div class="modal-box">
-        <h3 class="font-bold text-lg">Rechazar Lección</h3>
-        <form hx-post="{% url 'lessons_learned:reject' lesson.id %}"
-              hx-swap="none">
-            {% csrf_token %}
-            <div class="py-4">
-                <div class="form-control">
-                    <label class="label">
-                        <span class="label-text">Motivo del rechazo</span>
-                    </label>
-                    <textarea name="reason"
-                              class="textarea textarea-bordered"
-                              rows="3"
-                              required
-                              placeholder="Explica por qué se rechaza esta lección..."></textarea>
-                </div>
-            </div>
-            <div class="modal-action">
-                <button type="button" class="btn" onclick="document.getElementById('reject-modal').close()">Cancelar</button>
-                <button type="submit" class="btn btn-error">Rechazar</button>
-            </div>
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
         </form>
-    </div>
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
+    </dialog>
 {% endblock %}
