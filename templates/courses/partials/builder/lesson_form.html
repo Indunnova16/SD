@@ -52,7 +52,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
             </select>
         </div>
         <!-- Duration (hide for quiz) -->
-        <div class="form-control">
+        <div class="form-control" x-show="lessonType !== 'quiz'">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
@@ -75,7 +75,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         </div>
     </div>
     <!-- Description (hide for quiz) -->
-    <div class="form-control mt-2">
+    <div class="form-control mt-2" x-show="lessonType !== 'quiz'">
         <label class="label py-1">
             <span class="label-text text-xs">Descripcion</span>
         </label>
@@ -86,7 +86,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
     <!-- Conditional fields based on lesson type -->
     <!-- Video: URL -->
-    <div class="form-control mt-2">
+    <div class="form-control mt-2" x-show="lessonType === 'video'" x-cloak>
         <label class="label py-1">
             <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
         </label>
@@ -97,7 +97,9 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                placeholder="https://youtube.com/...">
     </div>
     <!-- Single file input for video / pdf / scorm / audio -->
-    <div class="form-control mt-2">
+    <div class="form-control mt-2"
+         x-show="['video', 'pdf', 'scorm', 'audio'].includes(lessonType)"
+         x-cloak>
         <label class="label py-1">
             <span class="label-text text-xs"
                   x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
@@ -111,7 +113,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         {% endif %}
     </div>
     <!-- Content Text (for text type) -->
-    <div class="form-control mt-2">
+    <div class="form-control mt-2" x-show="lessonType === 'text'" x-cloak>
         <label class="label py-1">
             <span class="label-text text-xs">Contenido</span>
         </label>
@@ -409,16 +411,21 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 </form>
 <script nonce="{{ request.csp_nonce }}">
-    // Force Alpine.js to reinitialize after HTMX loads this form
-    setTimeout(() => {
-        if (window.Alpine) {
-            document.querySelectorAll('[x-data]').forEach(el => {
-                Alpine.discardElements([el]);
+    // Wait for Alpine to be ready and initialize
+    function initForm() {
+        if (window.Alpine && Alpine.discardElements) {
+            const forms = document.querySelectorAll('form[x-data]');
+            forms.forEach(form => {
+                Alpine.discardElements([form]);
             });
-            Alpine.flushAndStopDeferringMacroTask();
-            document.querySelectorAll('[x-data]').forEach(el => {
-                Alpine.initializeElements([el]);
-            });
+            setTimeout(() => {
+                forms.forEach(form => {
+                    Alpine.initializeElements([form]);
+                });
+            }, 10);
         }
-    }, 50);
+    }
+    // Initialize immediately and after short delay
+    initForm();
+    setTimeout(initForm, 100);
 </script>
