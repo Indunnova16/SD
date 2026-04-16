@@ -295,6 +295,8 @@
     })();
             </script>
         {% endif %}
+        <!-- Lesson Builder Form Script -->
+        <script src="{% static 'js/lesson-builder-form.js' %}" nonce="{{ request.csp_nonce }}"></script>
         {% block extra_js %}
         {% endblock %}
     </body>
