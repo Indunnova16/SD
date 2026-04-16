@@ -408,3 +408,17 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         </button>
     </div>
 </form>
+<script nonce="{{ request.csp_nonce }}">
+    // Force Alpine.js to reinitialize after HTMX loads this form
+    setTimeout(() => {
+        if (window.Alpine) {
+            document.querySelectorAll('[x-data]').forEach(el => {
+                Alpine.discardElements([el]);
+            });
+            Alpine.flushAndStopDeferringMacroTask();
+            document.querySelectorAll('[x-data]').forEach(el => {
+                Alpine.initializeElements([el]);
+            });
+        }
+    }, 50);
+</script>
