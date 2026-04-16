@@ -257,7 +257,16 @@
         // Reinitialize Alpine.js after HTMX content swap
         document.body.addEventListener('htmx:afterSettle', function(evt) {
             if (window.Alpine) {
-                Alpine.reinit();
+                // Find all new x-data elements and initialize them
+                const newElements = evt.detail.target.querySelectorAll('[x-data]');
+                newElements.forEach(el => {
+                    Alpine.discardElements([el]);
+                });
+                setTimeout(() => {
+                    newElements.forEach(el => {
+                        Alpine.initializeElements([el]);
+                    });
+                }, 10);
             }
         });
         </script>
