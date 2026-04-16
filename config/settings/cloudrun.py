@@ -41,8 +41,8 @@ STORAGES = {
 
 # GCP Cloud Storage settings
 GS_BUCKET_NAME = config("GS_BUCKET_NAME", default="sd-lms-media")
-GS_DEFAULT_ACL = "projectPrivate"
-GS_QUERYSTRING_AUTH = True
+GS_DEFAULT_ACL = "publicRead"
+GS_QUERYSTRING_AUTH = False
 GS_FILE_OVERWRITE = False
 
 # Database - Cloud SQL via Unix socket

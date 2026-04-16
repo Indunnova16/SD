@@ -995,11 +995,15 @@ def builder_add_module(request, course_id):
     form = ModuleBuilderForm(request.POST, request.FILES)
 
     if form.is_valid():
-        module = form.save(commit=False)
-        module.course = course
-        max_order = course.modules.aggregate(max_order=models.Max("order"))["max_order"]
-        module.order = (max_order or -1) + 1
-        module.save()
+        with transaction.atomic():
+            locked_course = Course.objects.select_for_update().get(id=course.id)
+            module = form.save(commit=False)
+            module.course = locked_course
+            max_order = locked_course.modules.aggregate(
+                max_order=models.Max("order")
+            )["max_order"]
+            module.order = (max_order or -1) + 1
+            module.save()
 
         if request.headers.get("HX-Request"):
             return render(
