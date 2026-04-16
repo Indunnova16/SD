@@ -52,7 +52,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
             </select>
         </div>
         <!-- Duration (hide for quiz) -->
-        <div class="form-control" x-show="lessonType !== 'quiz'">
+        <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
@@ -75,7 +75,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         </div>
     </div>
     <!-- Description (hide for quiz) -->
-    <div class="form-control mt-2" x-show="lessonType !== 'quiz'">
+    <div class="form-control mt-2 conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential">
         <label class="label py-1">
             <span class="label-text text-xs">Descripcion</span>
         </label>
@@ -86,7 +86,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
     <!-- Conditional fields based on lesson type -->
     <!-- Video: URL -->
-    <div class="form-control mt-2" x-show="lessonType === 'video'" x-cloak>
+    <div class="form-control mt-2 conditional-field" data-show-for="video" style="display:none;">
         <label class="label py-1">
             <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
         </label>
@@ -97,9 +97,9 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                placeholder="https://youtube.com/...">
     </div>
     <!-- Single file input for video / pdf / scorm / audio -->
-    <div class="form-control mt-2"
-         x-show="['video', 'pdf', 'scorm', 'audio'].includes(lessonType)"
-         x-cloak>
+    <div class="form-control mt-2 conditional-field"
+         data-show-for="video,pdf,scorm,audio"
+         style="display:none;">
         <label class="label py-1">
             <span class="label-text text-xs"
                   x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
@@ -113,7 +113,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         {% endif %}
     </div>
     <!-- Content Text (for text type) -->
-    <div class="form-control mt-2" x-show="lessonType === 'text'" x-cloak>
+    <div class="form-control mt-2 conditional-field" data-show-for="text" style="display:none;">
         <label class="label py-1">
             <span class="label-text text-xs">Contenido</span>
         </label>
@@ -125,7 +125,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
-    <div x-show="lessonType === 'quiz'" x-cloak class="mt-3">
+    <div class="mt-3 conditional-field" data-show-for="quiz" style="display:none;">
         <input type="hidden"
                name="quiz_questions"
                :value="JSON.stringify(questions)">
@@ -411,18 +411,34 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 </form>
 <script nonce="{{ request.csp_nonce }}">
-document.addEventListener('htmx:afterSettle', function() {
-    setTimeout(() => {
-        if (window.Alpine) {
-            document.querySelectorAll('[x-data]').forEach(el => {
-                Alpine.discardElements([el]);
-            });
-            setTimeout(() => {
-                document.querySelectorAll('[x-data]').forEach(el => {
-                    Alpine.initializeElements([el]);
-                });
-            }, 10);
+function updateConditionalFields() {
+    const form = document.querySelector('form[x-data]');
+    if (!form) return;
+
+    const lessonTypeSelect = form.querySelector('select[name="lesson_type"]');
+    if (!lessonTypeSelect) return;
+
+    const selectedType = lessonTypeSelect.value;
+
+    // Show/hide conditional fields
+    form.querySelectorAll('.conditional-field').forEach(field => {
+        const showFor = field.getAttribute('data-show-for');
+        if (showFor) {
+            const types = showFor.split(',');
+            field.style.display = types.includes(selectedType) ? 'block' : 'none';
         }
-    }, 50);
-});
+    });
+}
+
+// Initialize on load and when type changes
+document.addEventListener('DOMContentLoaded', updateConditionalFields);
+document.addEventListener('htmx:afterSettle', updateConditionalFields);
+
+const form = document.querySelector('form[x-data]');
+if (form) {
+    const select = form.querySelector('select[name="lesson_type"]');
+    if (select) {
+        select.addEventListener('change', updateConditionalFields);
+    }
+}
 </script>
