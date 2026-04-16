@@ -125,7 +125,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
-    <div class="mt-3" x-show="lessonType === 'quiz'" x-cloak>
+    <div x-show="lessonType === 'quiz'" x-cloak class="mt-3">
         <input type="hidden"
                name="quiz_questions"
                :value="JSON.stringify(questions)">
@@ -411,21 +411,18 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 </form>
 <script nonce="{{ request.csp_nonce }}">
-    // Wait for Alpine to be ready and initialize
-    function initForm() {
-        if (window.Alpine && Alpine.discardElements) {
-            const forms = document.querySelectorAll('form[x-data]');
-            forms.forEach(form => {
-                Alpine.discardElements([form]);
+document.addEventListener('htmx:afterSettle', function() {
+    setTimeout(() => {
+        if (window.Alpine) {
+            document.querySelectorAll('[x-data]').forEach(el => {
+                Alpine.discardElements([el]);
             });
             setTimeout(() => {
-                forms.forEach(form => {
-                    Alpine.initializeElements([form]);
+                document.querySelectorAll('[x-data]').forEach(el => {
+                    Alpine.initializeElements([el]);
                 });
             }, 10);
         }
-    }
-    // Initialize immediately and after short delay
-    initForm();
-    setTimeout(initForm, 100);
+    }, 50);
+});
 </script>
