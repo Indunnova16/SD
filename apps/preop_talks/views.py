@@ -109,16 +109,18 @@ def talk_create(request):
                 conducted_by=request.user,
                 project_name=request.POST.get("project_name", ""),
                 location=request.POST.get("location", ""),
+                work_activity=request.POST.get("work_activity", ""),
                 scheduled_at=scheduled_at,
             )
         else:
-            talk = PreopTalk.objects.create(
+            talk = PreopTalkService.create_custom_talk(
                 title=request.POST.get("title", "Charla Preoperacional"),
+                content=request.POST.get("content", ""),
                 conducted_by=request.user,
                 project_name=request.POST.get("project_name", ""),
                 location=request.POST.get("location", ""),
+                work_activity=request.POST.get("work_activity", ""),
                 scheduled_at=scheduled_at,
-                status=PreopTalk.Status.SCHEDULED,
             )
 
         messages.success(request, "Charla creada exitosamente")

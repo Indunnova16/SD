@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inspecciones de Equipos - Energía</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.5/dist/signature_pad.umd.js"></script>
+    <style>
+        :root {
+            --primary-color: #d32f2f;
+            --secondary-color: #c62828;
+            --success-color: #388e3c;
+            --danger-color: #d32f2f;
+            --warning-color: #f57c00;
+            --info-color: #1a1a1a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #d32f2f 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+
+        .navbar-custom {
+            background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 50%, var(--primary-color) 100%);
+            box-shadow: 0 8px 30px rgba(211, 47, 47, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 0.8rem 2rem;
+            border-bottom: 3px solid #d32f2f;
+        }
+
+        .navbar-custom h1 {
+            color: white;
+            margin: 0;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-logo {
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .container-main {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 60px rgba(211, 47, 47, 0.25), 0 0 0 1px rgba(211, 47, 47, 0.1);
+            overflow: hidden;
+            border-top: 4px solid var(--primary-color);
+        }
+
+        .tabs-container {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: #f5f5f5;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: rgba(211, 47, 47, 0.08);
+            color: var(--primary-color);
+        }
+
+        .tab-button.active {
+            color: white;
+            border-bottom-color: var(--primary-color);
+            background: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header-custom {
+            background: linear-gradient(90deg, #1a1a1a 0%, var(--primary-color) 50%, #d32f2f 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2);
+            border-bottom: 3px solid #d32f2f;
+        }
+
+        .card-header-custom h3 {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(to right, rgba(211, 47, 47, 0.05) 0%, #f9f9f9 20%);
+            border-radius: 10px;
+            border-left: 5px solid var(--primary-color);
+            border-top: 1px solid rgba(211, 47, 47, 0.2);
+        }
+
+        .form-section h5 {
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        .form-section h5 i {
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(211, 47, 47, 0.25);
+        }
+
+        .checkbox-custom {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-custom:hover {
+            background: rgba(211, 47, 47, 0.08);
+            border-color: var(--primary-color);
+        }
+
+        .checkbox-custom input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-custom label {
+            margin: 0;
+            cursor: pointer;
+            flex: 1;
+            color: #333;
+        }
+
+        .signature-pad {
+            border: 3px solid var(--primary-color);
+            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(211, 47, 47, 0.04) 100%);
+            margin: 10px 0;
+            height: 200px;
+            cursor: crosshair;
+            box-shadow: inset 0 2px 10px rgba(211, 47, 47, 0.1);
+        }
+
+        .signature-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-custom {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary-color);
+            color: white;
+            border: 2px solid var(--secondary-color);
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.4);
+            border-color: #1a1a1a;
+        }
+
+        .btn-success-custom {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success-custom:hover {
+            background: #2e7d32;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger-custom {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger-custom:hover {
+            background: #b71c1c;
+        }
+
+        .btn-warning-custom {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .photo-upload {
+            border: 3px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(211, 47, 47, 0.08) 0%, rgba(211, 47, 47, 0.04) 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload:hover {
+            background: rgba(211, 47, 47, 0.12);
+            border-color: var(--secondary-color);
+            transform: scale(1.02);
+        }
+
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .photo-item .delete-photo {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(211, 47, 47, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .badge-custom {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .badge-success {
+            background: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        .badge-danger {
+            background: #ffcdd2;
+            color: #b71c1c;
+        }
+
+        .badge-warning {
+            background: #ffe0b2;
+            color: #e65100;
+        }
+
+        .summary-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid var(--primary-color);
+            box-shadow: 0 2px 8px rgba(211, 47, 47, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.15);
+        }
+
+        .summary-card h5 {
+            color: #1a1a1a;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .summary-card h5 i {
+            color: var(--primary-color);
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 50%, #1a1a1a 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.3);
+            border: 2px solid rgba(211, 47, 47, 0.5);
+        }
+
+        .stat-box h6 {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-box .number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .hallazgo-item {
+            background: linear-gradient(to right, rgba(245, 124, 0, 0.08) 0%, #fff9f5 100%);
+            border-left: 5px solid var(--warning-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-top: 1px solid rgba(245, 124, 0, 0.2);
+        }
+
+        .hallazgo-item.critical {
+            background: linear-gradient(to right, rgba(211, 47, 47, 0.1) 0%, #fff5f5 100%);
+            border-left-color: var(--danger-color);
+        }
+
+        .plan-accion {
+            background: linear-gradient(to right, rgba(211, 47, 47, 0.08) 0%, #f5f5f5 100%);
+            border-left: 5px solid var(--primary-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-top: 1px solid rgba(211, 47, 47, 0.2);
+        }
+
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline-item {
+            padding-left: 40px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 3px var(--primary-color), 0 3px 10px rgba(211, 47, 47, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .modal-custom {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-custom.active {
+            display: flex;
+        }
+
+        .modal-content-custom {
+            background: white;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header-custom {
+            background: linear-gradient(90deg, #1a1a1a 0%, var(--primary-color) 50%, #d32f2f 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid var(--primary-color);
+        }
+
+        .modal-body-custom {
+            padding: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(211, 47, 47, 0.3);
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-custom th {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .table-custom td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table-custom tr:hover {
+            background: #f9f9f9;
+        }
+
+        .alert-custom {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .alert-success-custom {
+            background: #c8e6c9;
+            color: #1b5e20;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-warning-custom {
+            background: #ffe0b2;
+            color: #e65100;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .alert-danger-custom {
+            background: #ffcdd2;
+            color: #b71c1c;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .accordion-custom {
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .accordion-button-custom {
+            background: #f5f5f5;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1a1a1a;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .accordion-button-custom:hover {
+            background: rgba(211, 47, 47, 0.08);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .accordion-button-custom.active {
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-color: var(--secondary-color);
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        }
+
+        .accordion-content {
+            display: none;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0 0 8px 8px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .formatos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .formato-casilla {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .formato-casilla::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, var(--primary-color) 50%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .formato-casilla:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 25px rgba(211, 47, 47, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .formato-casilla:hover::before {
+            opacity: 1;
+        }
+
+        .formato-casilla.activo {
+            background: linear-gradient(135deg, rgba(211, 47, 47, 0.08) 0%, rgba(211, 47, 47, 0.04) 100%);
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 30px rgba(211, 47, 47, 0.2);
+            border-width: 2px;
+        }
+
+        .formato-casilla.activo::after {
+            content: '✓';
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            background: var(--primary-color);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .formato-icono {
+            font-size: 36px;
+            color: var(--primary-color);
+        }
+
+        .formato-nombre {
+            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 14px;
+        }
+
+        .formato-descrip {
+            font-size: 11px;
+            color: #999;
+            line-height: 1.3;
+        }
+
+        @media (max-width: 768px) {
+            .container-main {
+                border-radius: 0;
+            }
+
+            .navbar-custom {
+                padding: 0.8rem;
+            }
+
+            .navbar-custom h1 {
+                font-size: 1.1rem;
+            }
+
+            .tab-button {
+                font-size: 12px;
+                padding: 12px 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .photo-gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .tab-content {
+                padding: 15px;
+            }
+
+            .formatos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+
+            .formato-casilla {
+                padding: 15px;
+            }
+
+            .formato-icono {
+                font-size: 28px;
+            }
+
+            .formato-nombre {
+                font-size: 12px;
+            }
+
+            .formato-descrip {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar-custom">
+        <div style="display: flex; align-items: center; gap: 20px; width: 100%;">
+            <div style="background: white; padding: 8px 14px; border-radius: 6px; font-weight: 900; color: #d32f2f; font-size: 24px; letter-spacing: -2px;">SD</div>
+            <div>
+                <h1 style="margin-bottom: 2px;">Sistema de Inspecciones de Equipos</h1>
+                <small style="color: rgba(255,255,255,0.85); display: block; font-weight: 500;">Salomón Durán S.A.S. | Energía & Transmisión</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-main">
+        <!-- TABS -->
+        <div class="tabs-container">
+            <button class="tab-button active" onclick="switchTab('nueva-inspeccion', this)">
+                <i class="bi bi-plus-circle"></i> Nueva Inspección
+            </button>
+            <button class="tab-button" onclick="switchTab('inspecciones', this)">
+                <i class="bi bi-list-check"></i> Mis Inspecciones
+            </button>
+            <button class="tab-button" onclick="switchTab('reportes', this)">
+                <i class="bi bi-bar-chart"></i> Reportes y Analíticas
+            </button>
+            <button class="tab-button" onclick="switchTab('configuracion', this)">
+                <i class="bi bi-gear"></i> Configuración
+            </button>
+        </div>
+
+        <!-- TAB 1: NUEVA INSPECCIÓN -->
+        <div id="nueva-inspeccion" class="tab-content active">
+            <div class="card-header-custom">
+                <h3><i class="bi bi-pencil-square"></i> Crear Nueva Inspección de Equipo</h3>
+            </div>
+
+            <!-- SECCIÓN 0: SELECCIONAR FORMATO DE INSPECCIÓN -->
+            <div class="form-section" id="formatoSection">
+                <h5><i class="bi bi-bookmark"></i> Paso 1: Selecciona el Formato de Inspección</h5>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Elige el tipo de equipo para cargar el cuestionario correspondiente</p>
+
+                <div class="formatos-grid" id="formatosGrid">
+                    <!-- Las casillas se generarán con JavaScript -->
+                </div>
+
+                <div id="formatoSeleccionado" style="display: none; margin-top: 20px; padding: 15px; background: rgba(51, 153, 51, 0.1); border-left: 4px solid #388e3c; border-radius: 8px;">
+                    <h6 style="color: #388e3c; margin-bottom: 5px;"><i class="bi bi-check-circle"></i> Formato Seleccionado:</h6>
+                    <p id="formatoSeleccionadoNombre" style="font-weight: 600; margin: 0;"></p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 1: DATOS DEL EQUIPO -->
+            <div class="form-section">
+                <h5><i class="bi bi-info-circle"></i> Datos del Equipo</h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="equipo">Equipo a Inspeccionar *</label>
+                            <select class="form-select" id="equipo" onchange="updateEquipoInfo()">
+                                <option value="">-- Seleccionar equipo --</option>
+                                <option value="trafo-1">Transformador TR-001 (69kV, Subestación Central)</option>
+                                <option value="disyuntor-1">Disyuntor DSJ-042 (33kV, Línea Sur)</option>
+                                <option value="capacitor-1">Banco de Capacitores BC-015 (Compensación)</option>
+                                <option value="reactor-1">Reactor de Línea RL-008 (Amortiguamiento)</option>
+                                <option value="cable-1">Sistema de Cables SC-025 (Enterrado)</option>
+                                <option value="pararrayos-1">Pararrayos PR-003 (Protección)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="serial">Número de Serie / Folio</label>
+                            <input type="text" class="form-control" id="serial" placeholder="Ej: TR-001-2024-001" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="locacion">Ubicación / Subestación *</label>
+                            <input type="text" class="form-control" id="locacion" placeholder="Ej: Subestación Central">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="tipo-equipo">Tipo de Equipo *</label>
+                            <select class="form-select" id="tipo-equipo">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="transformador">Transformador</option>
+                                <option value="disyuntor">Disyuntor</option>
+                                <option value="capacitor">Capacitor</option>
+                                <option value="reactor">Reactor</option>
+                                <option value="aislador">Aislador</option>
+                                <option value="pararrayos">Pararrayos</option>
+                                <option value="cable">Cable</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="voltaje">Voltaje Nominal *</label>
+                            <input type="text" class="form-control" id="voltaje" placeholder="Ej: 69kV">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="potencia">Potencia / Capacidad</label>
+                            <input type="text" class="form-control" id="potencia" placeholder="Ej: 40 MVA">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="fabricante">Fabricante</label>
+                            <input type="text" class="form-control" id="fabricante" placeholder="Ej: ABB, Siemens">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: INFORMACIÓN DE LA INSPECCIÓN -->
+            <div class="form-section">
+                <h5><i class="bi bi-calendar-event"></i> Información de la Inspección</h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="fecha-insp">Fecha de Inspección *</label>
+                            <input type="date" class="form-control" id="fecha-insp">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="hora-insp">Hora de Inspección *</label>
+                            <input type="time" class="form-control" id="hora-insp">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inspector">Inspector Responsable *</label>
+                            <select class="form-select" id="inspector">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="miguel-r">Miguel Rodríguez (Especialista Senior)</option>
+                                <option value="ana-sofia">Ana Sofía Muñera (Técnico)</option>
+                                <option value="linda-amaya">Linda Amaya (Supervisor HSE)</option>
+                                <option value="otro">Otro Inspector</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="tipo-insp">Tipo de Inspección *</label>
+                            <select class="form-select" id="tipo-insp">
+                                <option value="">-- Seleccionar --</option>
+                                <option value="rutinaria">Rutinaria (Semanal)</option>
+                                <option value="preventiva">Preventiva (Mensual)</option>
+                                <option value="correctiva">Correctiva (Por hallazgo)</option>
+                                <option value="anual">Anual Completa</option>
+                                <option value="especial">Especial / A Solicitud</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="observaciones">Observaciones Generales</label>
+                    <textarea class="form-control" id="observaciones" rows="3" placeholder="Notas adicionales sobre el equipo o condiciones..."></textarea>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: CHECKLIST DE INSPECCIÓN -->
+            <div class="form-section">
+                <h5><i class="bi bi-check2-square"></i> Checklist de Inspección</h5>
+
+                <div class="accordion-custom">
+                    <!-- Grupo 1: Condición Visual -->
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-eye"></i> Condición Visual del Equipo
+                    </button>
+                    <div class="accordion-content">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check1">
+                            <label for="check1">Limpieza general - Sin acumulación de polvo o suciedad</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check2">
+                            <label for="check2">Inspección visual de aisladores - Sin grietas visibles</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check3">
+                            <label for="check3">Verificación de signos de corrosión</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check4">
+                            <label for="check4">Revisión de tuercas y conexiones - Firmemente ajustadas</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check5">
+                            <label for="check5">Inspección de sellos y empaquetaduras</label>
+                        </div>
+                    </div>
+
+                    <!-- Grupo 2: Parámetros Eléctricos -->
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-lightning-charge"></i> Parámetros Eléctricos
+                    </button>
+                    <div class="accordion-content">
+                        <div class="form-group">
+                            <label>Voltaje de Fase (V - L1)</label>
+                            <input type="number" class="form-control" placeholder="Ej: 69000" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Corriente de Carga (A)</label>
+                            <input type="number" class="form-control" placeholder="Ej: 120.5" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Factor de Potencia</label>
+                            <input type="number" class="form-control" placeholder="Ej: 0.95" step="0.01" min="0" max="1">
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check6">
+                            <label for="check6">Parámetros dentro de rango normal</label>
+                        </div>
+                    </div>
+
+                    <!-- Grupo 3: Pruebas Dieléctricas -->
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-shield-exclamation"></i> Pruebas Dieléctricas
+                    </button>
+                    <div class="accordion-content">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check7">
+                            <label for="check7">Resistencia de aislamiento (Megaohmios)</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Medido (MΩ)</label>
+                            <input type="number" class="form-control" placeholder="Ej: 1500" step="0.1">
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check8">
+                            <label for="check8">Prueba de rigidez dieléctrica realizada</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check9">
+                            <label for="check9">Análisis de aceite (si aplica)</label>
+                        </div>
+                    </div>
+
+                    <!-- Grupo 4: Seguridad y Protecciones -->
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-exclamation-triangle"></i> Seguridad y Protecciones
+                    </button>
+                    <div class="accordion-content">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check10">
+                            <label for="check10">Sistemas de puesta a tierra correctos</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check11">
+                            <label for="check11">Resistencia de tierra dentro de especificaciones</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Resistencia de Tierra (Ω)</label>
+                            <input type="number" class="form-control" placeholder="Ej: 5" step="0.1">
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check12">
+                            <label for="check12">Señalización de seguridad presente y legible</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check13">
+                            <label for="check13">Acceso restringido asegurado</label>
+                        </div>
+                    </div>
+
+                    <!-- Grupo 5: Mantenimiento y Estado Operativo -->
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-tools"></i> Mantenimiento y Estado Operativo
+                    </button>
+                    <div class="accordion-content">
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check14">
+                            <label for="check14">Último mantenimiento registrado (< 6 meses)</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check15">
+                            <label for="check15">Calibración de instrumentos vigente</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check16">
+                            <label for="check16">Documentación técnica disponible</label>
+                        </div>
+                        <div class="checkbox-custom">
+                            <input type="checkbox" id="check17">
+                            <label for="check17">Equipo operando dentro de especificaciones</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 4: FOTOS Y EVIDENCIA -->
+            <div class="form-section">
+                <h5><i class="bi bi-images"></i> Fotos y Evidencia</h5>
+                <p class="text-muted" style="font-size: 14px;">Captura fotos del estado actual del equipo para documentar la inspección</p>
+
+                <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                    <i class="bi bi-cloud-arrow-up" style="font-size: 32px; color: var(--info-color);"></i>
+                    <p style="margin: 10px 0; color: var(--info-color); font-weight: 600;">Haz clic para agregar fotos</p>
+                    <small style="color: #666;">O arrastra imágenes aquí (JPG, PNG, máximo 5MB cada una)</small>
+                </div>
+                <input type="file" id="photoInput" multiple accept="image/*" onchange="handlePhotoUpload(event)">
+
+                <div class="photo-gallery" id="photoGallery"></div>
+            </div>
+
+            <!-- SECCIÓN 5: FIRMA DIGITAL -->
+            <div class="form-section">
+                <h5><i class="bi bi-pen"></i> Firma del Inspector</h5>
+                <p class="text-muted" style="font-size: 14px;">Dibuja tu firma en el área siguiente</p>
+
+                <canvas class="signature-pad" id="signaturePad"></canvas>
+                <div class="signature-buttons">
+                    <button class="btn-custom btn-warning-custom" onclick="clearSignature()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+                    </button>
+                    <button class="btn-custom btn-success-custom" onclick="saveSignature()">
+                        <i class="bi bi-check-circle"></i> Confirmar Firma
+                    </button>
+                </div>
+                <div id="signatureStatus" style="margin-top: 10px;"></div>
+            </div>
+
+            <!-- SECCIÓN 6: HALLAZGOS Y ACCIONES CORRECTIVAS -->
+            <div class="form-section">
+                <h5><i class="bi bi-exclamation-circle"></i> Hallazgos y Acciones Correctivas</h5>
+
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="col-md-6">
+                        <label for="severidad">Nivel de Severidad (si aplica) *</label>
+                        <select class="form-select" id="severidad">
+                            <option value="">-- Sin hallazgos --</option>
+                            <option value="menor">Menor (Atención futura)</option>
+                            <option value="mayor">Mayor (Requiere acción en corto plazo)</option>
+                            <option value="critico">Crítico (Riesgo operacional inmediato)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="descripcion-hallazgo">Descripción del Hallazgo</label>
+                        <textarea class="form-control" id="descripcion-hallazgo" rows="2" placeholder="Describe el problema encontrado..."></textarea>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="accion-correctiva">Acción Correctiva Recomendada</label>
+                        <textarea class="form-control" id="accion-correctiva" rows="3" placeholder="¿Qué se debe hacer para corregir?"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="responsable-accion">Responsable de Acción</label>
+                        <select class="form-select" id="responsable-accion">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="mantenimiento">Equipo de Mantenimiento</option>
+                            <option value="operacion">Operaciones</option>
+                            <option value="proveedor">Proveedor / Fabricante</option>
+                            <option value="otro">Otro</option>
+                        </select>
+
+                        <label for="fecha-limite" style="margin-top: 15px;">Fecha Límite de Corrección</label>
+                        <input type="date" class="form-control" id="fecha-limite">
+                    </div>
+                </div>
+
+                <button class="btn-custom btn-primary-custom" style="margin-top: 15px;" onclick="addHallazgo()">
+                    <i class="bi bi-plus-circle"></i> Agregar Hallazgo
+                </button>
+
+                <div id="hallazgosContainer" style="margin-top: 20px;"></div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div style="padding: 20px; background: #f5f5f5; border-radius: 10px; display: flex; gap: 10px; flex-wrap: wrap; margin-top: 30px;">
+                <button class="btn-custom btn-success-custom" onclick="submitInspeccion()">
+                    <i class="bi bi-cloud-check"></i> Guardar Inspección
+                </button>
+                <button class="btn-custom btn-primary-custom" onclick="previewInspeccion()">
+                    <i class="bi bi-eye"></i> Vista Previa
+                </button>
+                <button class="btn-custom btn-danger-custom" onclick="resetForm()">
+                    <i class="bi bi-arrow-clockwise"></i> Limpiar Formulario
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 2: MIS INSPECCIONES -->
+        <div id="inspecciones" class="tab-content">
+            <div class="card-header-custom">
+                <h3><i class="bi bi-list-check"></i> Historial de Inspecciones Realizadas</h3>
+            </div>
+
+            <div style="margin-bottom: 20px; padding: 20px; background: #f9f9f9; border-radius: 10px;">
+                <div class="row">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" placeholder="Buscar equipo...">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option>-- Todos los estados --</option>
+                            <option>Completada</option>
+                            <option>Pendiente</option>
+                            <option>Con Hallazgos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select">
+                            <option>-- Todos los meses --</option>
+                            <option>Enero 2024</option>
+                            <option>Febrero 2024</option>
+                            <option>Marzo 2024</option>
+                            <option>Abril 2024</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn-custom btn-primary-custom" style="width: 100%;">
+                            <i class="bi bi-funnel"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <table class="table-custom">
+                <thead>
+                    <tr>
+                        <th>Folio</th>
+                        <th>Equipo</th>
+                        <th>Fecha</th>
+                        <th>Inspector</th>
+                        <th>Estado</th>
+                        <th>Hallazgos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>INS-2024-001</strong></td>
+                        <td>Transformador TR-001</td>
+                        <td>2024-04-15</td>
+                        <td>Miguel Rodríguez</td>
+                        <td><span class="badge-custom badge-success">Completada</span></td>
+                        <td><span class="badge-custom badge-danger">1 Crítico</span></td>
+                        <td>
+                            <button class="btn-custom btn-primary-custom" style="padding: 5px 10px; font-size: 12px;" onclick="viewInspeccion('INS-2024-001')">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>INS-2024-002</strong></td>
+                        <td>Disyuntor DSJ-042</td>
+                        <td>2024-04-14</td>
+                        <td>Ana Sofía Muñera</td>
+                        <td><span class="badge-custom badge-success">Completada</span></td>
+                        <td><span class="badge-custom badge-warning">2 Menores</span></td>
+                        <td>
+                            <button class="btn-custom btn-primary-custom" style="padding: 5px 10px; font-size: 12px;" onclick="viewInspeccion('INS-2024-002')">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>INS-2024-003</strong></td>
+                        <td>Banco Capacitores BC-015</td>
+                        <td>2024-04-12</td>
+                        <td>Linda Amaya</td>
+                        <td><span class="badge-custom badge-success">Completada</span></td>
+                        <td>Sin hallazgos</td>
+                        <td>
+                            <button class="btn-custom btn-primary-custom" style="padding: 5px 10px; font-size: 12px;" onclick="viewInspeccion('INS-2024-003')">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>INS-2024-004</strong></td>
+                        <td>Reactor de Línea RL-008</td>
+                        <td>2024-04-10</td>
+                        <td>Miguel Rodríguez</td>
+                        <td><span class="badge-custom badge-warning">Pendiente Revisión</span></td>
+                        <td><span class="badge-custom badge-danger">3 Mayores</span></td>
+                        <td>
+                            <button class="btn-custom btn-primary-custom" style="padding: 5px 10px; font-size: 12px;" onclick="viewInspeccion('INS-2024-004')">Ver</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>INS-2024-005</strong></td>
+                        <td>Sistema Cables SC-025</td>
+                        <td>2024-04-08</td>
+                        <td>Ana Sofía Muñera</td>
+                        <td><span class="badge-custom badge-success">Completada</span></td>
+                        <td>Sin hallazgos</td>
+                        <td>
+                            <button class="btn-custom btn-primary-custom" style="padding: 5px 10px; font-size: 12px;" onclick="viewInspeccion('INS-2024-005')">Ver</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB 3: REPORTES Y ANALÍTICAS -->
+        <div id="reportes" class="tab-content">
+            <div class="card-header-custom">
+                <h3><i class="bi bi-bar-chart"></i> Reportes y Analíticas</h3>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <h6>Total Inspecciones</h6>
+                    <div class="number">145</div>
+                    <small>En los últimos 12 meses</small>
+                </div>
+                <div class="stat-box">
+                    <h6>Promedio Cumplimiento</h6>
+                    <div class="number">92.5%</div>
+                    <small>Equipos en buen estado</small>
+                </div>
+                <div class="stat-box">
+                    <h6>Hallazgos Críticos</h6>
+                    <div class="number">12</div>
+                    <small>Resuelta: 10, Pendiente: 2</small>
+                </div>
+                <div class="stat-box">
+                    <h6>Tiempo Promedio</h6>
+                    <div class="number">45 min</div>
+                    <small>Por inspección</small>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="summary-card">
+                        <h5><i class="bi bi-pie-chart"></i> Distribución de Hallazgos</h5>
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="summary-card">
+                        <h5><i class="bi bi-line-chart"></i> Tendencia Mensual de Inspecciones</h5>
+                        <canvas id="lineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top: 20px;">
+                <div class="col-md-12">
+                    <div class="summary-card">
+                        <h5><i class="bi bi-bar-chart"></i> Equipos Inspeccionados por Tipo</h5>
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Pendientes -->
+            <div class="summary-card" style="margin-top: 20px;">
+                <h5><i class="bi bi-clock-history"></i> Acciones Correctivas Pendientes</h5>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div>
+                            <h6>Transformador TR-001: Reemplazo de aisladores</h6>
+                            <small style="color: #f57c00;">Vencimiento: 2024-04-25 (5 días)</small>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: 70%;"></div>
+                            </div>
+                            <p style="font-size: 12px; margin-top: 5px;">Responsable: Equipo de Mantenimiento</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div>
+                            <h6>Disyuntor DSJ-042: Calibración de protecciones</h6>
+                            <small style="color: #f57c00;">Vencimiento: 2024-05-10 (25 días)</small>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: 40%;"></div>
+                            </div>
+                            <p style="font-size: 12px; margin-top: 5px;">Responsable: Proveedor / Fabricante</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div>
+                            <h6>Reactor RL-008: Inspección ultrasónica</h6>
+                            <small style="color: #d32f2f;">Vencimiento: 2024-04-20 (VENCIDA)</small>
+                            <div class="progress-bar-custom">
+                                <div class="progress-fill" style="width: 100%; background: #d32f2f;"></div>
+                            </div>
+                            <p style="font-size: 12px; margin-top: 5px;">Responsable: Operaciones</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: CONFIGURACIÓN -->
+        <div id="configuracion" class="tab-content">
+            <div class="card-header-custom">
+                <h3><i class="bi bi-gear"></i> Configuración del Sistema</h3>
+            </div>
+
+            <!-- Equipos -->
+            <div class="form-section">
+                <h5><i class="bi bi-lightning-charge"></i> Gestión de Equipos</h5>
+
+                <div style="margin-bottom: 15px;">
+                    <button class="btn-custom btn-primary-custom" onclick="openEquiposModal()">
+                        <i class="bi bi-plus-circle"></i> Agregar Nuevo Equipo
+                    </button>
+                </div>
+
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Ubicación</th>
+                            <th>Voltaje</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TR-001</td>
+                            <td>Transformador TR-001</td>
+                            <td>Subestación Central</td>
+                            <td>69kV</td>
+                            <td><span class="badge-custom badge-success">Activo</span></td>
+                            <td>
+                                <button style="padding: 3px 6px; font-size: 11px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer;">Editar</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>DSJ-042</td>
+                            <td>Disyuntor DSJ-042</td>
+                            <td>Línea Sur</td>
+                            <td>33kV</td>
+                            <td><span class="badge-custom badge-success">Activo</span></td>
+                            <td>
+                                <button style="padding: 3px 6px; font-size: 11px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer;">Editar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Inspectores -->
+            <div class="form-section" style="margin-top: 30px;">
+                <h5><i class="bi bi-person-badge"></i> Gestión de Inspectores</h5>
+
+                <div style="margin-bottom: 15px;">
+                    <button class="btn-custom btn-primary-custom" onclick="openInspectoresModal()">
+                        <i class="bi bi-plus-circle"></i> Agregar Inspector
+                    </button>
+                </div>
+
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Especialidad</th>
+                            <th>Inspecciones</th>
+                            <th>Activo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Miguel Rodríguez</td>
+                            <td>Especialista Senior</td>
+                            <td>67</td>
+                            <td><span class="badge-custom badge-success">Sí</span></td>
+                            <td>
+                                <button style="padding: 3px 6px; font-size: 11px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer;">Editar</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Ana Sofía Muñera</td>
+                            <td>Técnico</td>
+                            <td>45</td>
+                            <td><span class="badge-custom badge-success">Sí</span></td>
+                            <td>
+                                <button style="padding: 3px 6px; font-size: 11px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer;">Editar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Plantillas de Checklist -->
+            <div class="form-section" style="margin-top: 30px;">
+                <h5><i class="bi bi-clipboard-check"></i> Plantillas de Checklist</h5>
+
+                <p style="margin-bottom: 15px; color: #666;">Personaliza los checklists según el tipo de equipo</p>
+
+                <div style="margin-bottom: 15px;">
+                    <button class="btn-custom btn-primary-custom" onclick="openChecklistModal()">
+                        <i class="bi bi-plus-circle"></i> Crear Nueva Plantilla
+                    </button>
+                </div>
+
+                <div class="accordion-custom">
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-check-all"></i> Checklist: Transformadores
+                    </button>
+                    <div class="accordion-content">
+                        <p>22 ítems configurados</p>
+                        <p style="font-size: 12px; color: #666;">Última actualización: 2024-03-15</p>
+                        <button style="padding: 5px 10px; font-size: 12px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">Editar</button>
+                        <button style="padding: 5px 10px; font-size: 12px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Duplicar</button>
+                    </div>
+
+                    <button class="accordion-button-custom" onclick="toggleAccordion(this)">
+                        <i class="bi bi-check-all"></i> Checklist: Disyuntores
+                    </button>
+                    <div class="accordion-content">
+                        <p>18 ítems configurados</p>
+                        <p style="font-size: 12px; color: #666;">Última actualización: 2024-04-01</p>
+                        <button style="padding: 5px 10px; font-size: 12px; background: #0d47a1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;">Editar</button>
+                        <button style="padding: 5px 10px; font-size: 12px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Duplicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferencias -->
+            <div class="form-section" style="margin-top: 30px;">
+                <h5><i class="bi bi-sliders"></i> Preferencias Generales</h5>
+
+                <div class="form-group">
+                    <label for="idioma">Idioma</label>
+                    <select class="form-select" id="idioma">
+                        <option selected>Español (Colombia)</option>
+                        <option>English</option>
+                        <option>Português</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="timezone">Zona Horaria</label>
+                    <select class="form-select" id="timezone">
+                        <option selected>America/Bogota (UTC-5)</option>
+                        <option>America/Mexico_City</option>
+                        <option>America/Los_Angeles</option>
+                    </select>
+                </div>
+
+                <div class="checkbox-custom">
+                    <input type="checkbox" id="notificaciones" checked>
+                    <label for="notificaciones">Recibir notificaciones de acciones vencidas</label>
+                </div>
+
+                <div class="checkbox-custom">
+                    <input type="checkbox" id="reportes" checked>
+                    <label for="reportes">Enviar reportes mensuales por correo</label>
+                </div>
+
+                <button class="btn-custom btn-success-custom" style="margin-top: 20px;">
+                    <i class="bi bi-check-circle"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PREVIEW INSPECCIÓN -->
+    <div class="modal-custom" id="previewModal">
+        <div class="modal-content-custom">
+            <div class="modal-header-custom">
+                <h4><i class="bi bi-eye"></i> Vista Previa de Inspección</h4>
+                <button class="modal-close" onclick="closeModal('previewModal')">✕</button>
+            </div>
+            <div class="modal-body-custom">
+                <div class="alert-custom alert-success-custom">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Inspección validada correctamente. ¡Lista para guardar!</span>
+                </div>
+
+                <h5 style="margin-top: 20px;">Resumen de Inspección</h5>
+                <table style="width: 100%; font-size: 14px;">
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; font-weight: 600;">Equipo:</td>
+                        <td style="padding: 8px;" id="previewEquipo">-</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; font-weight: 600;">Folio:</td>
+                        <td style="padding: 8px;" id="previewFolio">-</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; font-weight: 600;">Fecha:</td>
+                        <td style="padding: 8px;" id="previewFecha">-</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; font-weight: 600;">Inspector:</td>
+                        <td style="padding: 8px;" id="previewInspector">-</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 8px; font-weight: 600;">Items Verificados:</td>
+                        <td style="padding: 8px;" id="previewItems">-</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; font-weight: 600;">Fotos Capturadas:</td>
+                        <td style="padding: 8px;" id="previewFotos">-</td>
+                    </tr>
+                </table>
+
+                <button class="btn-custom btn-success-custom" style="margin-top: 20px; width: 100%;" onclick="finalizeInspeccion()">
+                    <i class="bi bi-cloud-check"></i> Confirmar y Guardar Inspección
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let signaturePad = null;
+        let photos = [];
+        let hallazgos = [];
+        let formatoSeleccionado = null;
+
+        // Datos de formatos disponibles
+        const formatos = [
+            {
+                id: 'transformadores',
+                nombre: 'Transformadores',
+                icono: '⚡',
+                descripcion: '69kV, 33kV, 13.8kV',
+                items: ['Limpieza', 'Aisladores', 'Corrosión', 'Sellos', 'Voltaje', 'Corriente', 'Factor de potencia', 'Resistencia aislamiento']
+            },
+            {
+                id: 'disyuntores',
+                nombre: 'Disyuntores',
+                icono: '🔌',
+                descripcion: 'Circuitos de protección',
+                items: ['Estado mecánico', 'Contactos', 'Operación', 'Protecciones', 'Calibración', 'Tiempos respuesta', 'Prueba carga']
+            },
+            {
+                id: 'capacitores',
+                nombre: 'Capacitores',
+                icono: '📦',
+                descripcion: 'Compensación de carga',
+                items: ['Voltaje operativo', 'Corriente fase', 'Temperatura', 'Fugas', 'Conexiones', 'Fusibles', 'Relé termostático']
+            },
+            {
+                id: 'reactores',
+                nombre: 'Reactores',
+                icono: '🔋',
+                descripcion: 'Amortiguamiento línea',
+                items: ['Estado físico', 'Aislamiento', 'Temperatura', 'Voltaje', 'Corriente', 'Vibraciones', 'Ruido operativo']
+            },
+            {
+                id: 'cables',
+                nombre: 'Cables',
+                icono: '📍',
+                descripcion: 'Sistemas subterráneos',
+                items: ['Aislamiento', 'Integridad cubierta', 'Empalmes', 'Puesta tierra', 'Capacitancia', 'Pérdidas dieléctricas']
+            },
+            {
+                id: 'pararrayos',
+                nombre: 'Pararrayos',
+                icono: '⚔️',
+                descripcion: 'Protección sobretensión',
+                items: ['Resistencia de fuga', 'Voltaje nominal', 'Conexiones', 'Estado físico', 'Contaminación', 'Funcionalidad']
+            },
+            {
+                id: 'aisladores',
+                nombre: 'Aisladores',
+                icono: '🔷',
+                descripcion: 'Cadenas aislantes',
+                items: ['Limpieza', 'Grietas visibles', 'Corrosión herrajes', 'Pérdida de brillo', 'Contaminación', 'Rotura cerámica']
+            },
+            {
+                id: 'estructuras',
+                nombre: 'Estructuras',
+                icono: '🏗️',
+                descripcion: 'Accesorios metálicos',
+                items: ['Pintura', 'Corrosión', 'Tornilería', 'Alineación', 'Grietas', 'Deformaciones', 'Pernos sueltos']
+            }
+        ];
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initFormatos();
+            initSignaturePad();
+            setDefaultDate();
+            initCharts();
+        });
+
+        // Inicializar formatos
+        function initFormatos() {
+            const grid = document.getElementById('formatosGrid');
+            grid.innerHTML = '';
+
+            formatos.forEach(formato => {
+                const casilla = document.createElement('div');
+                casilla.className = 'formato-casilla';
+                casilla.onclick = () => selectFormato(formato);
+                casilla.innerHTML = `
+                    <div class="formato-icono">${formato.icono}</div>
+                    <div class="formato-nombre">${formato.nombre}</div>
+                    <div class="formato-descrip">${formato.descripcion}</div>
+                `;
+                grid.appendChild(casilla);
+            });
+        }
+
+        // Seleccionar formato
+        function selectFormato(formato) {
+            formatoSeleccionado = formato;
+
+            // Actualizar UI
+            document.querySelectorAll('.formato-casilla').forEach(el => {
+                el.classList.remove('activo');
+            });
+            event.target.closest('.formato-casilla').classList.add('activo');
+
+            // Mostrar confirmación
+            document.getElementById('formatoSeleccionado').style.display = 'block';
+            document.getElementById('formatoSeleccionadoNombre').textContent = `${formato.icono} ${formato.nombre}`;
+
+            // Scroll hacia datos del equipo
+            setTimeout(() => {
+                document.querySelector('[id="locacion"]').scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+
+            // Cargar checklist del formato
+            loadChecklistFormato(formato);
+        }
+
+        // Cargar checklist específico del formato
+        function loadChecklistFormato(formato) {
+            // Actualizar tipos de equipo basado en formato
+            const tipoSelect = document.getElementById('tipo-equipo');
+            tipoSelect.value = formato.id;
+
+            // Regenerar checklist dinámico basado en el formato
+            const checklistContainer = document.querySelector('.accordion-custom');
+            // El checklist actual se puede mantener o regenerar según necesidad
+            // Por ahora mantenermos el actual que es genérico
+        }
+
+        // Configuración del pad de firma
+        function initSignaturePad() {
+            const canvas = document.getElementById('signaturePad');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            signaturePad = new SignaturePad(canvas);
+        }
+
+        // Fecha por defecto
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha-insp').value = today;
+        }
+
+        // Switch de tabs
+        function switchTab(tabName, button) {
+            // Ocultar todos los tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remover active de botones
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar tab seleccionado
+            document.getElementById(tabName).classList.add('active');
+            button.classList.add('active');
+        }
+
+        // Cargar información del equipo
+        function updateEquipoInfo() {
+            const select = document.getElementById('equipo');
+            const selected = select.options[select.selectedIndex];
+            const text = selected.text;
+
+            // Generar folio
+            const folio = 'INS-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 999).toString().padStart(3, '0');
+            document.getElementById('serial').value = folio;
+
+            // Si hay formato seleccionado, usar su tipo
+            if (formatoSeleccionado) {
+                document.getElementById('tipo-equipo').value = formatoSeleccionado.id;
+            } else {
+                // Extraer tipo de equipo del texto
+                const tipoMatch = text.match(/Transformador|Disyuntor|Banco|Reactor|Cables|Pararrayos/);
+                if (tipoMatch) {
+                    document.getElementById('tipo-equipo').value = tipoMatch[0].toLowerCase();
+                }
+            }
+        }
+
+        // Firma digital
+        function clearSignature() {
+            signaturePad.clear();
+            document.getElementById('signatureStatus').innerHTML = '';
+        }
+
+        function saveSignature() {
+            if (signaturePad.isEmpty()) {
+                alert('Por favor, dibuja tu firma antes de confirmar.');
+                return;
+            }
+            document.getElementById('signatureStatus').innerHTML =
+                '<div class="alert-custom alert-success-custom"><i class="bi bi-check-circle"></i> Firma capturada correctamente</div>';
+        }
+
+        // Subir fotos
+        function handlePhotoUpload(event) {
+            const files = event.target.files;
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photos.push(e.target.result);
+                        renderPhotos();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function renderPhotos() {
+            const gallery = document.getElementById('photoGallery');
+            gallery.innerHTML = '';
+            photos.forEach((photo, index) => {
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.innerHTML = `
+                    <img src="${photo}" alt="Foto ${index + 1}">
+                    <button class="delete-photo" onclick="deletePhoto(${index})">✕</button>
+                `;
+                gallery.appendChild(div);
+            });
+        }
+
+        function deletePhoto(index) {
+            photos.splice(index, 1);
+            renderPhotos();
+        }
+
+        // Acordeón
+        function toggleAccordion(button) {
+            const content = button.nextElementSibling;
+            const isActive = content.classList.contains('active');
+
+            // Cerrar todos los otros
+            document.querySelectorAll('.accordion-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.accordion-button-custom').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Abrir el seleccionado
+            if (!isActive) {
+                content.classList.add('active');
+                button.classList.add('active');
+            }
+        }
+
+        // Hallazgos
+        function addHallazgo() {
+            const severidad = document.getElementById('severidad').value;
+            const descripcion = document.getElementById('descripcion-hallazgo').value;
+            const accion = document.getElementById('accion-correctiva').value;
+
+            if (!severidad || !descripcion) {
+                alert('Por favor completa los campos obligatorios del hallazgo.');
+                return;
+            }
+
+            hallazgos.push({
+                severidad,
+                descripcion,
+                accion
+            });
+
+            renderHallazgos();
+
+            // Limpiar campos
+            document.getElementById('severidad').value = '';
+            document.getElementById('descripcion-hallazgo').value = '';
+            document.getElementById('accion-correctiva').value = '';
+            document.getElementById('responsable-accion').value = '';
+            document.getElementById('fecha-limite').value = '';
+        }
+
+        function renderHallazgos() {
+            const container = document.getElementById('hallazgosContainer');
+            container.innerHTML = '';
+            hallazgos.forEach((hallazgo, index) => {
+                const badge = hallazgo.severidad === 'menor' ? 'badge-warning' : hallazgo.severidad === 'mayor' ? 'badge-danger' : 'badge-danger';
+                const div = document.createElement('div');
+                div.className = `hallazgo-item ${hallazgo.severidad === 'critico' ? 'critical' : ''}`;
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <span class="badge-custom ${badge}">${hallazgo.severidad.toUpperCase()}</span>
+                            <p style="margin: 10px 0; font-weight: 600;">${hallazgo.descripcion}</p>
+                            ${hallazgo.accion ? `<p style="font-size: 13px;"><strong>Acción:</strong> ${hallazgo.accion}</p>` : ''}
+                        </div>
+                        <button onclick="removeHallazgo(${index})" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 20px;">✕</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function removeHallazgo(index) {
+            hallazgos.splice(index, 1);
+            renderHallazgos();
+        }
+
+        // Modales
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openEquiposModal() {
+            alert('Modal para agregar nuevo equipo (a implementar)');
+        }
+
+        function openInspectoresModal() {
+            alert('Modal para agregar inspector (a implementar)');
+        }
+
+        function openChecklistModal() {
+            alert('Modal para crear checklist (a implementar)');
+        }
+
+        // Preview e envío
+        function previewInspeccion() {
+            if (!formatoSeleccionado) {
+                alert('⚠️ Por favor selecciona primero un Formato de Inspección');
+                document.getElementById('formatoSection').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            const equipo = document.getElementById('equipo').value;
+            if (!equipo) {
+                alert('Por favor selecciona un equipo');
+                return;
+            }
+
+            const formatoInfo = `${formatoSeleccionado.icono} ${formatoSeleccionado.nombre}`;
+            document.getElementById('previewEquipo').textContent = formatoInfo + ' - ' + (document.getElementById('equipo').options[document.getElementById('equipo').selectedIndex].text || 'No especificado');
+            document.getElementById('previewFolio').textContent = document.getElementById('serial').value;
+            document.getElementById('previewFecha').textContent = document.getElementById('fecha-insp').value;
+            document.getElementById('previewInspector').textContent = document.getElementById('inspector').options[document.getElementById('inspector').selectedIndex].text;
+            document.getElementById('previewItems').textContent = document.querySelectorAll('.checkbox-custom input:checked').length;
+            document.getElementById('previewFotos').textContent = photos.length + ' foto(s)';
+
+            openModal('previewModal');
+        }
+
+        function submitInspeccion() {
+            previewInspeccion();
+        }
+
+        function finalizeInspeccion() {
+            const folio = document.getElementById('serial').value;
+            closeModal('previewModal');
+            alert(`✓ Inspección ${folio} guardada correctamente en el sistema.`);
+            resetForm();
+        }
+
+        function resetForm() {
+            document.querySelector('form')?.reset() || location.reload();
+            photos = [];
+            hallazgos = [];
+            formatoSeleccionado = null;
+            signaturePad.clear();
+            document.getElementById('photoGallery').innerHTML = '';
+            document.getElementById('hallazgosContainer').innerHTML = '';
+            document.getElementById('signatureStatus').innerHTML = '';
+            document.getElementById('formatoSeleccionado').style.display = 'none';
+            document.querySelectorAll('.formato-casilla').forEach(el => {
+                el.classList.remove('activo');
+            });
+            setDefaultDate();
+            // Scroll al inicio
+            document.getElementById('formatoSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Funciones auxiliares
+        function viewInspeccion(folio) {
+            alert(`Abriendo inspección: ${folio}`);
+        }
+
+        // Gráficos
+        function initCharts() {
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sin Hallazgos', 'Hallazgos Menores', 'Hallazgos Mayores', 'Hallazgos Críticos'],
+                        datasets: [{
+                            data: [92, 5, 2, 1],
+                            backgroundColor: ['#388e3c', '#f57c00', '#ff9800', '#d32f2f']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+            }
+
+            // Line Chart
+            const lineCtx = document.getElementById('lineChart');
+            if (lineCtx) {
+                new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Inspecciones Completadas',
+                            data: [20, 25, 18, 30, 28, 35],
+                            borderColor: '#0d47a1',
+                            backgroundColor: 'rgba(13, 71, 161, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            // Bar Chart
+            const barCtx = document.getElementById('barChart');
+            if (barCtx) {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Transformadores', 'Disyuntores', 'Capacitores', 'Reactores', 'Cables', 'Pararrayos'],
+                        datasets: [{
+                            label: 'Inspecciones Realizadas',
+                            data: [35, 28, 18, 22, 19, 23],
+                            backgroundColor: '#0d47a1'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

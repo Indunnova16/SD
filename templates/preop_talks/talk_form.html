@@ -1,0 +1,128 @@
+{% extends "base/dashboard.html" %}
+{% load static %}
+
+{% block page_title %}Nueva Charla Preoperacional{% endblock %}
+
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Crea una nueva charla de seguridad preoperacional</p>
+{% endblock %}
+
+{% block dashboard_content %}
+    <div class="max-w-2xl">
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-6">Nueva Charla Preoperacional</h2>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Template Selection -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Usar Plantilla (Opcional)</span>
+                        </label>
+                        <select name="template" class="select select-bordered" id="template-select">
+                            <option value="">Sin plantilla</option>
+                            {% for template in templates %}
+                                <option value="{{ template.id }}">{{ template.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Selecciona una plantilla para usar sus ítems de checklist</span>
+                        </label>
+                    </div>
+
+                    <!-- Title (only shown if no template) -->
+                    <div class="form-control" id="title-field" style="display: none;">
+                        <label class="label">
+                            <span class="label-text font-medium">Título de la Charla</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="title"
+                            placeholder="Ej: Charla de Seguridad - Zona A"
+                            class="input input-bordered"
+                            value="Charla Preoperacional"
+                        >
+                    </div>
+
+                    <!-- Project Name -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Proyecto/Obra</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="project_name"
+                            placeholder="Ej: Construcción Torre A"
+                            class="input input-bordered"
+                        >
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Ubicación</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="location"
+                            placeholder="Ej: Sitio de trabajo, Cancha de acopio"
+                            class="input input-bordered"
+                        >
+                    </div>
+
+                    <!-- Scheduled Date/Time -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">Fecha y Hora Programada</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            name="scheduled_at"
+                            class="input input-bordered"
+                        >
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Deja en blanco para usar la fecha/hora actual</span>
+                        </label>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="card-actions justify-end gap-3 mt-8">
+                        <a href="{% url 'preop_talks:list' %}" class="btn btn-ghost">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Crear Charla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle title field based on template selection
+        const templateSelect = document.getElementById('template-select');
+        const titleField = document.getElementById('title-field');
+
+        templateSelect.addEventListener('change', function() {
+            if (this.value === '') {
+                titleField.style.display = 'block';
+            } else {
+                titleField.style.display = 'none';
+            }
+        });
+
+        // Set current date/time by default
+        const scheduledAtInput = document.querySelector('input[name="scheduled_at"]');
+        if (!scheduledAtInput.value) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            scheduledAtInput.value = now.toISOString().slice(0, 16);
+        }
+    </script>
+{% endblock %}
