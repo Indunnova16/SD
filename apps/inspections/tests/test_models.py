@@ -63,7 +63,9 @@ class InspectionTestCase(TestCase):
     """Tests para Inspection"""
 
     def setUp(self):
-        self.user = User.objects.create_user("inspector", "test@test.com", "password")
+        self.user = User.objects.create_user(
+            email="inspector@test.com", password="password", first_name="Inspector"
+        )
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
         self.equipment = Equipment.objects.create(
             folio="EXC-001",
@@ -98,7 +100,9 @@ class FindingTestCase(TestCase):
     """Tests para Finding"""
 
     def setUp(self):
-        self.user = User.objects.create_user("inspector", "test@test.com", "password")
+        self.user = User.objects.create_user(
+            email="inspector@test.com", password="password", first_name="Inspector"
+        )
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
         self.equipment = Equipment.objects.create(
             folio="EXC-001",
@@ -128,7 +132,9 @@ class CorrectiveActionTestCase(TestCase):
     """Tests para CorrectiveAction"""
 
     def setUp(self):
-        self.user = User.objects.create_user("inspector", "test@test.com", "password")
+        self.user = User.objects.create_user(
+            email="inspector@test.com", password="password", first_name="Inspector"
+        )
         self.responsible = User.objects.create_user("responsible", "resp@test.com", "password")
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
         self.equipment = Equipment.objects.create(
