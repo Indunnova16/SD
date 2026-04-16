@@ -39,7 +39,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <span class="label-text text-xs">Tipo <span class="text-error">*</span></span>
             </label>
             <select name="lesson_type"
-                    class="select select-bordered select-sm w-full">
+                    class="select select-bordered select-sm w-full"
+                    x-model="lessonType">
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="text">Texto</option>
@@ -51,7 +52,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
             </select>
         </div>
         <!-- Duration (hide for quiz) -->
-        <div class="form-control lesson-duration-field" style="display: none;">
+        <div class="form-control">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
@@ -74,7 +75,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         </div>
     </div>
     <!-- Description (hide for quiz) -->
-    <div class="form-control mt-2 lesson-description-field" style="display: none;">
+    <div class="form-control mt-2">
         <label class="label py-1">
             <span class="label-text text-xs">Descripcion</span>
         </label>
@@ -85,7 +86,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
     <!-- Conditional fields based on lesson type -->
     <!-- Video: URL -->
-    <div class="form-control mt-2 lesson-video-url-field" style="display: none;">
+    <div class="form-control mt-2">
         <label class="label py-1">
             <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
         </label>
@@ -96,7 +97,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                placeholder="https://youtube.com/...">
     </div>
     <!-- Single file input for video / pdf / scorm / audio -->
-    <div class="form-control mt-2 lesson-content-file-field" style="display: none;">
+    <div class="form-control mt-2">
         <label class="label py-1">
             <span class="label-text text-xs"
                   x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
@@ -110,7 +111,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         {% endif %}
     </div>
     <!-- Content Text (for text type) -->
-    <div class="form-control mt-2 lesson-content-field" style="display: none;">
+    <div class="form-control mt-2">
         <label class="label py-1">
             <span class="label-text text-xs">Contenido</span>
         </label>
@@ -122,7 +123,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
-    <div class="mt-3 lesson-quiz-section" style="display: none;" data-quiz-section>
+    <div class="mt-3" x-show="lessonType === 'quiz'" x-cloak>
         <input type="hidden"
                name="quiz_questions"
                :value="JSON.stringify(questions)">
