@@ -1,0 +1,217 @@
+{% extends "base/dashboard.html" %}
+{% load static %}
+
+{% block page_title %}{{ talk.title }}{% endblock %}
+
+{% block page_description %}
+    <div class="flex justify-between items-center">
+        <div>
+            <p class="text-sm text-gray-500">Charla Preoperacional</p>
+            <p class="text-xs text-gray-400 mt-1">ID: {{ talk.id }}</p>
+        </div>
+        <div class="flex gap-2">
+            {% if talk.status == 'scheduled' %}
+                <span class="badge badge-warning">Programada</span>
+            {% elif talk.status == 'in_progress' %}
+                <span class="badge badge-info">En progreso</span>
+            {% elif talk.status == 'completed' %}
+                <span class="badge badge-success">Completada</span>
+            {% elif talk.status == 'cancelled' %}
+                <span class="badge badge-error">Cancelada</span>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block dashboard_content %}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Talk Information -->
+            <div class="card bg-base-100 shadow-lg">
+                <div class="card-body">
+                    <h2 class="card-title text-2xl mb-4">{{ talk.title }}</h2>
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Proyecto/Obra</label>
+                            <p class="text-lg font-semibold">{{ talk.project_name|default:"No especificado" }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Ubicación</label>
+                            <p class="text-lg font-semibold">{{ talk.location|default:"No especificada" }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Actividad de Trabajo</label>
+                            <p class="text-lg font-semibold">{{ talk.work_activity|default:"No especificada" }}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Programada</label>
+                            <p class="text-lg font-semibold">{{ talk.scheduled_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="divider"></div>
+                    <h3 class="text-lg font-semibold mb-3">Contenido</h3>
+                    <div class="prose max-w-none prose-sm">
+                        {{ talk.content|linebreaks }}
+                    </div>
+
+                    <!-- Key Points -->
+                    {% if talk.key_points %}
+                        <div class="divider mt-6"></div>
+                        <h3 class="text-lg font-semibold mb-3">Puntos Clave</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            {% for point in talk.key_points %}
+                                <li>{{ point }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    {% if talk.status == 'scheduled' %}
+                        <div class="divider mt-6"></div>
+                        <div class="flex gap-3">
+                            <form method="post" action="{% url 'preop_talks:start' talk.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Iniciar Charla
+                                </button>
+                            </form>
+                            <a href="{% url 'preop_talks:conduct' talk.id %}" class="btn btn-info btn-sm">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                Conducir
+                            </a>
+                        </div>
+                    {% elif talk.status == 'in_progress' %}
+                        <div class="divider mt-6"></div>
+                        <div class="flex gap-3">
+                            <a href="{% url 'preop_talks:conduct' talk.id %}" class="btn btn-info btn-sm">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                                Continuar
+                            </a>
+                        </div>
+                    {% elif talk.status == 'completed' %}
+                        <div class="divider mt-6"></div>
+                        <div class="flex gap-3">
+                            <a href="{% url 'preop_talks:report' talk.id %}" class="btn btn-ghost btn-sm">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Ver Reporte
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Conductor -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-base mb-3">Conductor</h3>
+                    <div class="flex items-center gap-3">
+                        {% if talk.conducted_by.profile_image %}
+                            <img src="{{ talk.conducted_by.profile_image.url }}" alt="{{ talk.conducted_by.get_full_name }}" class="w-12 h-12 rounded-full object-cover">
+                        {% else %}
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
+                                {{ talk.conducted_by.first_name|first }}{{ talk.conducted_by.last_name|first }}
+                            </div>
+                        {% endif %}
+                        <div>
+                            <p class="font-semibold">{{ talk.conducted_by.get_full_name }}</p>
+                            <p class="text-sm text-gray-500">{{ talk.conducted_by.job_position|default:"Posición no especificada" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Info (if applicable) -->
+            {% if talk.template %}
+                <div class="card bg-base-100 shadow">
+                    <div class="card-body">
+                        <h3 class="card-title text-base mb-3">Plantilla</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="text-xs font-medium text-gray-500">Nombre</label>
+                                <p class="font-semibold">{{ talk.template.title }}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-gray-500">Tipo</label>
+                                <p class="font-semibold">{{ talk.template.get_talk_type_display }}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-gray-500">Duración Estimada</label>
+                                <p class="font-semibold">{{ talk.template.estimated_duration }} minutos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Dates -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-base mb-3">Fechas</h3>
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <label class="font-medium text-gray-500">Creada</label>
+                            <p>{{ talk.created_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div>
+                            <label class="font-medium text-gray-500">Programada</label>
+                            <p>{{ talk.scheduled_at|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        {% if talk.started_at %}
+                            <div>
+                                <label class="font-medium text-gray-500">Iniciada</label>
+                                <p>{{ talk.started_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        {% endif %}
+                        {% if talk.completed_at %}
+                            <div>
+                                <label class="font-medium text-gray-500">Completada</label>
+                                <p>{{ talk.completed_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-base mb-4">Estadísticas</h3>
+                    <div class="stats stats-vertical shadow">
+                        <div class="stat">
+                            <div class="stat-title">Asistentes</div>
+                            <div class="stat-value text-lg">{{ talk.attendees.count }}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title">Firmantes</div>
+                            <div class="stat-value text-lg">{{ talk.attendees.filter|length }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="flex gap-2">
+                <a href="{% url 'preop_talks:list' %}" class="btn btn-ghost btn-block btn-sm">
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

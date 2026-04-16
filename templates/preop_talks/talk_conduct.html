@@ -37,26 +37,21 @@
         <div x-show="activeTab === 'content'" class="card bg-base-100 shadow">
             <div class="card-body prose dark:prose-invert max-w-none">
                 {% if talk.template %}
-                    <h3>{{ talk.template.name }}</h3>
+                    <h3>{{ talk.template.title }}</h3>
                     {{ talk.template.content|sanitize_html }}
+
+                    <!-- Key Points from Template -->
+                    {% if talk.template.key_points %}
+                        <h4>Puntos Clave</h4>
+                        <ul>
+                            {% for point in talk.template.key_points %}
+                                <li>{{ point }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
                 {% else %}
+                    <h3>{{ talk.title }}</h3>
                     <p>{{ talk.content|default:"Sin contenido definido" }}</p>
-                {% endif %}
-                {% if talk.template.attachments.exists %}
-                    <h4>Material de Apoyo</h4>
-                    <div class="flex flex-wrap gap-2 not-prose">
-                        {% for attachment in talk.template.attachments.all %}
-                            <a href="{{ attachment.file.url }}"
-                               target="_blank"
-                               class="btn btn-ghost btn-sm gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
-                                    </path>
-                                </svg>
-                                {{ attachment.filename }}
-                            </a>
-                        {% endfor %}
-                    </div>
                 {% endif %}
             </div>
         </div>
@@ -102,28 +97,8 @@
                               placeholder="Identifica los riesgos del día..."
                               hx-post="{% url 'preop_talks:update-notes' talk.id %}"
                               hx-trigger="blur"
-                              hx-swap="none">{{ talk.risks_identified }}</textarea>
+                              hx-swap="none">{{ talk.special_risks }}</textarea>
                 </div>
-                {% if talk.template and talk.template.questions %}
-                    <div class="space-y-4">
-                        {% for question in talk.template.questions %}
-                            <div class="p-4 bg-base-200 rounded-lg">
-                                <p class="font-medium mb-3">{{ question.text }}</p>
-                                <div class="flex flex-wrap gap-2">
-                                    {% for option in question.options %}
-                                        <label class="cursor-pointer flex items-center gap-2">
-                                            <input type="radio"
-                                                   name="question_{{ forloop.parentloop.counter }}"
-                                                   value="{{ option }}"
-                                                   class="radio radio-primary radio-sm">
-                                            <span>{{ option }}</span>
-                                        </label>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
                 <!-- Additional notes -->
                 <div class="form-control mt-6">
                     <label class="label">

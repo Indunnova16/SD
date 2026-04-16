@@ -15,6 +15,7 @@ urlpatterns = [
     path("table/", views.talks_table, name="table"),
     # Templates
     path("templates/", views.templates_list, name="templates"),
+    path("templates/create/", views.template_create, name="template-create"),
     # Talk CRUD
     path("create/", views.talk_create, name="create"),
     path("<int:talk_id>/", views.talk_detail, name="detail"),

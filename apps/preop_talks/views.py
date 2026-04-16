@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.models import User
+from apps.preop_talks.forms import TalkTemplateForm
 from apps.preop_talks.models import PreopTalk, TalkAttendee, TalkTemplate
 from apps.preop_talks.services import PreopTalkService, TalkAttendeeService
 
@@ -92,7 +93,7 @@ def talk_detail(request, talk_id):
 @login_required
 def talk_create(request):
     """Create a new talk."""
-    templates = TalkTemplate.objects.filter(is_active=True).order_by("name")
+    templates = TalkTemplate.objects.filter(is_active=True).order_by("title")
 
     if request.method == "POST":
         template_id = request.POST.get("template")
@@ -333,6 +334,24 @@ def talk_report(request, talk_id):
 @require_GET
 def templates_list(request):
     """Talk templates list."""
-    templates = TalkTemplate.objects.filter(is_active=True).order_by("name")
+    templates = TalkTemplate.objects.filter(is_active=True).order_by("title")
     context = {"templates": templates}
     return render(request, "preop_talks/templates_list.html", context)
+
+
+@login_required
+def template_create(request):
+    """Create a new talk template."""
+    if request.method == "POST":
+        form = TalkTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.created_by = request.user
+            template.save()
+            messages.success(request, "Plantilla creada exitosamente")
+            return redirect("preop_talks:templates")
+    else:
+        form = TalkTemplateForm()
+
+    context = {"form": form, "title": "Nueva Plantilla"}
+    return render(request, "preop_talks/template_form.html", context)

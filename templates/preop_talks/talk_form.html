@@ -22,13 +22,13 @@
                             <span class="label-text font-medium">Usar Plantilla (Opcional)</span>
                         </label>
                         <select name="template" class="select select-bordered" id="template-select">
-                            <option value="">Sin plantilla</option>
+                            <option value="">-- Sin plantilla (Charla personalizada) --</option>
                             {% for template in templates %}
                                 <option value="{{ template.id }}">{{ template.title }}</option>
                             {% endfor %}
                         </select>
                         <label class="label">
-                            <span class="label-text-alt text-gray-500">Selecciona una plantilla para usar sus ítems de checklist</span>
+                            <span class="label-text-alt text-gray-500">Selecciona una plantilla para usar sus puntos clave y temas de seguridad</span>
                         </label>
                     </div>
 

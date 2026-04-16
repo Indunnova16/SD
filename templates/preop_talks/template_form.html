@@ -1,0 +1,192 @@
+{% extends "base/dashboard.html" %}
+{% load static %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Crea una nueva plantilla de charla preoperacional reutilizable</p>
+{% endblock %}
+
+{% block dashboard_content %}
+    <div class="max-w-4xl">
+        <div class="card bg-base-100 shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-2xl mb-6">{{ title }}</h2>
+
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Row 1: Title and Type -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Title -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">{{ form.title.label }}</span>
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.title.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Type -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">{{ form.talk_type.label }}</span>
+                            </label>
+                            {{ form.talk_type }}
+                            {% if form.talk_type.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.talk_type.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ form.description.label }}</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.description.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                        <label class="label">
+                            <span class="label-text-alt text-gray-500">Descripción breve de la plantilla</span>
+                        </label>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ form.content.label }}</span>
+                        </label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.content.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Key Points -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ form.key_points.label }}</span>
+                        </label>
+                        {{ form.key_points }}
+                        {% if form.key_points.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.key_points.errors.0 }}</span>
+                            </label>
+                        {% else %}
+                            <label class="label">
+                                <span class="label-text-alt text-gray-500">{{ form.key_points.help_text }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Safety Topics -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ form.safety_topics.label }}</span>
+                        </label>
+                        {{ form.safety_topics }}
+                        {% if form.safety_topics.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.safety_topics.errors.0 }}</span>
+                            </label>
+                        {% else %}
+                            <label class="label">
+                                <span class="label-text-alt text-gray-500">{{ form.safety_topics.help_text }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Target Activities -->
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text font-medium">{{ form.target_activities.label }}</span>
+                        </label>
+                        {{ form.target_activities }}
+                        {% if form.target_activities.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.target_activities.errors.0 }}</span>
+                            </label>
+                        {% else %}
+                            <label class="label">
+                                <span class="label-text-alt text-gray-500">{{ form.target_activities.help_text }}</span>
+                            </label>
+                        {% endif %}
+                    </div>
+
+                    <!-- Row 2: Duration, Recurrence -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Duration -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">{{ form.estimated_duration.label }}</span>
+                            </label>
+                            {{ form.estimated_duration }}
+                            {% if form.estimated_duration.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.estimated_duration.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+
+                        <!-- Recurrence -->
+                        <div class="form-control">
+                            <label class="label">
+                                <span class="label-text font-medium">{{ form.recurrence_months.label }}</span>
+                            </label>
+                            {{ form.recurrence_months }}
+                            {% if form.recurrence_months.errors %}
+                                <label class="label">
+                                    <span class="label-text-alt text-error">{{ form.recurrence_months.errors.0 }}</span>
+                                </label>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div class="space-y-4">
+                        <!-- Requires Signature -->
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                {{ form.requires_signature }}
+                                <span class="label-text font-medium">{{ form.requires_signature.label }}</span>
+                            </label>
+                        </div>
+
+                        <!-- Is Active -->
+                        <div class="form-control">
+                            <label class="label cursor-pointer justify-start gap-3">
+                                {{ form.is_active }}
+                                <span class="label-text font-medium">{{ form.is_active.label }}</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="card-actions justify-end gap-3 mt-8">
+                        <a href="{% url 'preop_talks:templates' %}" class="btn btn-ghost">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Crear Plantilla
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
