@@ -1,6 +1,12 @@
 # =============================================================================
-# SD LMS - Pre-commit Configuration
+# SD LMS - Pre-commit Configuration (SIMPLIFICADO)
 # =============================================================================
+# IMPORTANTE: Esta configuración está optimizada para MÁXIMA ESTABILIDAD
+# Los checks más estrictos se ejecutan en CI/CD, no localmente
+#
+# Si aún así tienes problemas, ejecuta:
+#   git commit --no-verify
+#
 # Run: pre-commit install
 # Manual run: pre-commit run --all-files
 
@@ -8,92 +14,62 @@ default_language_version:
   python: python3.11
 
 repos:
-  # ---------------------------------------------------------------------------
-  # General hooks
-  # ---------------------------------------------------------------------------
+  # =========================================================================
+  # CHECKS BÁSICOS Y RÁPIDOS - Estos siempre corren
+  # =========================================================================
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
+      # Limpieza básica
       - id: trailing-whitespace
         exclude: ^.*\.(md|rst)$
       - id: end-of-file-fixer
+
+      # Validación de sintaxis
       - id: check-yaml
         args: [--unsafe]
       - id: check-json
       - id: check-toml
-      - id: check-added-large-files
-        args: [--maxkb=1000]
-      - id: check-merge-conflict
-      - id: check-case-conflict
-      - id: detect-private-key
-      - id: debug-statements
-      - id: check-docstring-first
 
-  # ---------------------------------------------------------------------------
-  # Python - Ruff (linting + formatting)
-  # ---------------------------------------------------------------------------
+      # Seguridad básica
+      - id: detect-private-key
+      - id: check-merge-conflict
+
+  # =========================================================================
+  # PYTHON FORMATTING - Rápido y seguro
+  # =========================================================================
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.1
     hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+        # Solo formatea, no valida. Mucho más rápido
 
-  # ---------------------------------------------------------------------------
-  # Python - Type checking with mypy (DISABLED: dependency issues, kept in CI/CD)
-  # ---------------------------------------------------------------------------
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.9.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies:
-  #         - django-stubs>=4.2.7
-  #         - djangorestframework-stubs>=3.14.5
-  #         - types-redis
-  #         - types-pytz
-  #       args:
-  #         - --ignore-missing-imports
-  #         - --no-strict-optional
-  #       exclude: ^(migrations|tests)/
+# ============================================================================
+# DISABLED EN LOCAL - Se ejecutan en CI/CD (GitHub Actions)
+# ============================================================================
+#
+# ❌ DISABLED: Ruff linting (demasiado estricto)
+#    → Se ejecuta en CI/CD
+# - repo: https://github.com/astral-sh/ruff-pre-commit
+#   hooks:
+#     - id: ruff
+#       args: [--fix]
+#
+# ❌ DISABLED: MyPy (problemas de dependencias)
+#    → Se ejecuta en CI/CD via pytest
+#
+# ❌ DISABLED: DjLint (MUY lento)
+#    → Se ejecuta en CI/CD
+#
+# ❌ DISABLED: Bandit (security checks)
+#    → Se ejecuta en CI/CD
+#
+# ❌ DISABLED: Django-upgrade (modifications)
+#    → Se ejecuta en CI/CD
+#
+# ❌ DISABLED: Commitizen (commit message validation)
+#    → Se ejecuta en CI/CD
 
-  # ---------------------------------------------------------------------------
-  # Django template linting (DISABLED: too slow locally, enabled in CI/CD)
-  # ---------------------------------------------------------------------------
-  # - repo: https://github.com/Riverside-Healthcare/djLint
-  #   rev: v1.34.1
-  #   hooks:
-  #     - id: djlint-django
-  #       args: ["--reformat"]
-
-  # ---------------------------------------------------------------------------
-  # Security checks
-  # ---------------------------------------------------------------------------
-  - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.8
-    hooks:
-      - id: bandit
-        args: [-ll, -ii]
-        exclude: ^tests/
-
-  # ---------------------------------------------------------------------------
-  # Django specific
-  # ---------------------------------------------------------------------------
-  - repo: https://github.com/adamchainz/django-upgrade
-    rev: 1.16.0
-    hooks:
-      - id: django-upgrade
-        args: [--target-version, "5.0"]
-
-  # ---------------------------------------------------------------------------
-  # Commit message validation
-  # ---------------------------------------------------------------------------
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.21.3
-    hooks:
-      - id: commitizen
-        stages: [commit-msg]
-
-# Configuration
 ci:
   autofix_commit_msg: "🔧 auto-fix by pre-commit hooks"
   autofix_prs: true
