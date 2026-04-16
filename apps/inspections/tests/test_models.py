@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from apps.inspections.models import (
@@ -12,6 +12,8 @@ from apps.inspections.models import (
     Finding,
     Inspection,
 )
+
+User = get_user_model()
 
 
 class EquipmentCategoryTestCase(TestCase):
