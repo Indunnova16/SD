@@ -88,7 +88,7 @@ class LearningPathService:
 
         # Find users with this profile
         users = User.objects.filter(
-            job_profile=job_profile,
+            job_profile__code=job_profile,
             is_active=True,
         )
 

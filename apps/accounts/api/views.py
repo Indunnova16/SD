@@ -100,7 +100,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-    filterset_fields = ["status", "job_profile", "is_active"]
+    filterset_fields = ["status", "job_profile__code", "is_active"]
     search_fields = ["email", "first_name", "last_name", "document_number"]
     ordering_fields = ["last_name", "first_name", "hire_date", "created_at"]
     ordering = ["last_name", "first_name"]

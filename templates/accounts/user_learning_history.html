@@ -23,7 +23,7 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Historial de Aprendizaje</h1>
                         <p class="text-gray-500 mt-1">
-                            {{ user_obj.get_full_name }} &mdash; {{ user_obj.get_job_profile_display|default:"Sin perfil" }}
+                            {{ user_obj.get_full_name }} &mdash; {{ user_obj.job_profile.name|default:"Sin perfil" }}
                         </p>
                     </div>
                     <a href="{% url 'accounts:user_detail' user_obj.pk %}"

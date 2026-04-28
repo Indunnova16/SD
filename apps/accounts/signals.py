@@ -44,8 +44,8 @@ def track_job_profile_changes(sender, instance, **kwargs):
             user=instance,
             previous_position=old_user.job_position,
             new_position=instance.job_position,
-            previous_profile=old_user.job_profile,
-            new_profile=instance.job_profile,
+            previous_profile=old_user.job_profile.code if old_user.job_profile else "",
+            new_profile=instance.job_profile.code if instance.job_profile else "",
             previous_employment_type=old_user.employment_type,
             new_employment_type=instance.employment_type,
             change_date=date.today(),
@@ -53,7 +53,7 @@ def track_job_profile_changes(sender, instance, **kwargs):
         )
         logger.info(
             f"Job profile change recorded for {instance.document_number}: "
-            f"{old_user.job_profile} → {instance.job_profile}"
+            f"{old_user.job_profile.code if old_user.job_profile else 'None'} → {instance.job_profile.code if instance.job_profile else 'None'}"
         )
 
 
@@ -75,7 +75,9 @@ def _auto_enroll_by_profile(user):
         from apps.courses.models import Course
         from apps.courses.services import EnrollmentService
 
-        courses = Course.objects.published().for_profile(user.job_profile)
+        courses = Course.objects.published().for_profile(
+            user.job_profile.code if user.job_profile else None
+        )
         enrolled_count = 0
 
         for course in courses:
@@ -157,7 +159,9 @@ def _reset_and_reenroll_by_profile(user):
         )
 
         # Enroll in any new courses for the profile
-        courses = Course.objects.published().for_profile(user.job_profile)
+        courses = Course.objects.published().for_profile(
+            user.job_profile.code if user.job_profile else None
+        )
         new_count = 0
         for course in courses:
             try:

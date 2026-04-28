@@ -346,7 +346,8 @@ def my_courses(request):
         for course in Course.objects.filter(status=Course.Status.PUBLISHED):
             if (
                 course.target_profiles
-                and user.job_profile in course.target_profiles
+                and user.job_profile
+                and user.job_profile.code in course.target_profiles
                 and course.id not in existing_course_ids
             ):
                 Enrollment.objects.create(

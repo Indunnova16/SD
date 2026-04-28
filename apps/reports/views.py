@@ -50,12 +50,14 @@ def _apply_profile_filter(qs, filters, user_field="user__job_profile"):
 @require_GET
 def admin_dashboard(request):
     """Main admin dashboard view."""
+    from apps.courses.models import JobProfileType
+
     categories = Category.objects.filter(parent__isnull=True, is_active=True).order_by(
         "order", "name"
     )
     context = {
         "categories": categories,
-        "job_profiles": User.JobProfile.choices,
+        "job_profiles": JobProfileType.objects.filter(is_active=True).values_list("code", "name"),
     }
     return render(request, "dashboard/admin.html", context)
 
@@ -86,7 +88,7 @@ def dashboard_stats(request):
     # Active users (filtered by profile)
     users_qs = User.objects.filter(is_active=True)
     if filters["job_profile"]:
-        users_qs = users_qs.filter(job_profile=filters["job_profile"])
+        users_qs = users_qs.filter(job_profile__code=filters["job_profile"])
     active_users = users_qs.count()
 
     # Users change (vs last month)
@@ -348,7 +350,7 @@ def course_progress(request):
     # Build enrollment filter conditions for annotations
     enroll_filter = Q()
     if filters["job_profile"]:
-        enroll_filter &= Q(enrollments__user__job_profile=filters["job_profile"])
+        enroll_filter &= Q(enrollments__user__job_profile__code=filters["job_profile"])
 
     courses = (
         courses_qs.annotate(
@@ -464,7 +466,7 @@ def assessment_performance(request):
     # Build attempt filter for profile
     attempt_filter = Q(attempts__status=AssessmentAttempt.Status.GRADED)
     if filters["job_profile"]:
-        attempt_filter &= Q(attempts__user__job_profile=filters["job_profile"])
+        attempt_filter &= Q(attempts__user__job_profile__code=filters["job_profile"])
 
     assessments = (
         assessments_qs.annotate(

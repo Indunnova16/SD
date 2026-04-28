@@ -105,11 +105,13 @@ class User(AbstractUser):
 
     # Employment information
     job_position = models.CharField(_("Cargo"), max_length=100)
-    job_profile = models.CharField(
-        _("Perfil ocupacional"),
-        max_length=50,
-        choices=JobProfile.choices,
-        default=JobProfile.LINIERO,
+    job_profile = models.ForeignKey(
+        "courses.JobProfileType",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="users",
+        verbose_name=_("Perfil ocupacional"),
     )
     employment_type = models.CharField(
         _("Tipo de vinculación"),
@@ -152,7 +154,7 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         """Auto-assign is_staff=True for ADMINISTRADOR profile."""
-        if self.job_profile == self.JobProfile.ADMINISTRADOR:
+        if self.job_profile and self.job_profile.code == "ADMINISTRADOR":
             self.is_staff = True
         # Normalize empty email to None to avoid unique constraint violations
         if not self.email:
@@ -168,39 +170,39 @@ class User(AbstractUser):
     @property
     def is_operational(self):
         """Check if user is operational staff (uses document number for login)."""
-        return self.job_profile in [
-            self.JobProfile.LINIERO,
-            self.JobProfile.TECNICO,
-            self.JobProfile.OPERADOR,
+        return self.job_profile and self.job_profile.code in [
+            "LINIERO",
+            "TECNICO",
+            "OPERADOR",
         ]
 
     @property
     def is_professional(self):
         """Check if user is professional staff (requires email for login)."""
-        return self.job_profile in [
-            self.JobProfile.JEFE_CUADRILLA,
-            self.JobProfile.INGENIERO_RESIDENTE,
-            self.JobProfile.COORDINADOR_HSEQ,
-            self.JobProfile.COORDINADOR_VISUALIZACION,
+        return self.job_profile and self.job_profile.code in [
+            "JEFE_CUADRILLA",
+            "INGENIERO_RESIDENTE",
+            "COORDINADOR_HSEQ",
+            "COORDINADOR_VIZ",
         ]
 
     @property
     def is_viewer_only(self):
         """Check if user has view-only permissions (no editing capabilities)."""
-        return self.job_profile == self.JobProfile.COORDINADOR_VISUALIZACION
+        return self.job_profile and self.job_profile.code == "COORDINADOR_VIZ"
 
     @property
     def is_admin(self):
         """Check if user is system administrator (requires email for login)."""
-        return self.job_profile == self.JobProfile.ADMINISTRADOR
+        return self.job_profile and self.job_profile.code == "ADMINISTRADOR"
 
     @property
     def is_supervisor(self):
         """Check if user has supervisor role (can modify data)."""
-        return self.job_profile in [
-            self.JobProfile.JEFE_CUADRILLA,
-            self.JobProfile.INGENIERO_RESIDENTE,
-            self.JobProfile.COORDINADOR_HSEQ,
+        return self.job_profile and self.job_profile.code in [
+            "JEFE_CUADRILLA",
+            "INGENIERO_RESIDENTE",
+            "COORDINADOR_HSEQ",
         ]
 
     @property

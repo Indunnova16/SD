@@ -81,7 +81,9 @@ class TalkAttendeeSerializer(serializers.ModelSerializer):
 
     user_name = serializers.SerializerMethodField()
     user_email = serializers.EmailField(source="user.email", read_only=True)
-    user_profile = serializers.CharField(source="user.job_profile", read_only=True)
+    user_profile = serializers.CharField(
+        source="user.job_profile.code", read_only=True, allow_null=True
+    )
 
     class Meta:
         model = TalkAttendee

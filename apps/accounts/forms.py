@@ -219,7 +219,7 @@ class UserCreateForm(forms.ModelForm):
         email = cleaned_data.get("email")
 
         # Solo administradores requieren email obligatoriamente
-        if job_profile == User.JobProfile.ADMINISTRADOR and not email:
+        if job_profile and job_profile.code == "ADMINISTRADOR" and not email:
             self.add_error("email", _("El correo electrónico es requerido para administradores."))
 
         return cleaned_data
@@ -302,7 +302,7 @@ class UserEditForm(forms.ModelForm):
         email = cleaned_data.get("email")
 
         # Solo administradores requieren email obligatoriamente
-        if job_profile == User.JobProfile.ADMINISTRADOR and not email:
+        if job_profile and job_profile.code == "ADMINISTRADOR" and not email:
             self.add_error("email", _("El correo electrónico es requerido para administradores."))
 
         return cleaned_data

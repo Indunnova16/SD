@@ -63,7 +63,7 @@
                                 </div>
                                 <div>
                                     <label class="text-gray-500 text-sm">Perfil</label>
-                                    <p class="font-medium">{{ user.get_job_profile_display|default:"No asignado" }}</p>
+                                    <p class="font-medium">{{ user.job_profile.name|default:"No asignado" }}</p>
                                 </div>
                                 <div>
                                     <label class="text-gray-500 text-sm">Frente de trabajo</label>

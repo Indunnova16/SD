@@ -103,10 +103,12 @@ def dashboard(request):
     categories = Category.objects.filter(parent__isnull=True, is_active=True).order_by(
         "order", "name"
     )
+    from apps.courses.models import JobProfileType
+
     context = {
         "user": request.user,
         "categories": categories,
-        "job_profiles": User.JobProfile.choices,
+        "job_profiles": JobProfileType.objects.filter(is_active=True).values_list("code", "name"),
     }
     return render(request, "accounts/dashboard.html", context)
 
@@ -287,11 +289,13 @@ def user_list(request):
         users = users.filter(status=status_filter)
 
     if job_profile_filter:
-        users = users.filter(job_profile=job_profile_filter)
+        users = users.filter(job_profile__code=job_profile_filter)
 
     # Get unique job profiles for filter dropdown
     job_profiles = (
-        User.objects.values_list("job_profile", flat=True).distinct().order_by("job_profile")
+        User.objects.values_list("job_profile__code", flat=True)
+        .distinct()
+        .order_by("job_profile__code")
     )
 
     context = {
@@ -455,7 +459,7 @@ def user_toggle_status(request, user_id):
         _reset_and_reenroll_by_profile(user)
         messages.info(
             request,
-            f"Cursos reiniciados y reasignados según perfil: {user.get_job_profile_display()}",
+            f"Cursos reiniciados y reasignados según perfil: {user.job_profile.name if user.job_profile else 'N/A'}",
         )
 
     if request.htmx:

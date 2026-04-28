@@ -8,6 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from ..models import Contract, Role
+from apps.courses.models import JobProfileType
 
 User = get_user_model()
 
@@ -16,6 +17,12 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model."""
 
     full_name = serializers.CharField(source="get_full_name", read_only=True)
+    job_profile = serializers.SlugRelatedField(
+        slug_field="code",
+        queryset=JobProfileType.objects.all(),
+        allow_null=True,
+        required=False,
+    )
 
     class Meta:
         model = User
@@ -45,6 +52,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
+    job_profile = serializers.SlugRelatedField(
+        slug_field="code",
+        queryset=JobProfileType.objects.all(),
+        allow_null=True,
+        required=False,
+    )
 
     class Meta:
         model = User

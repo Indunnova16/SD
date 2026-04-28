@@ -208,7 +208,7 @@ class BulkUploadService:
             job_position = str(row.get("cargo", "Operario") or "Operario").strip()
 
             profile_raw = str(row.get("perfil_ocupacional", "LINIERO") or "LINIERO").strip().lower()
-            job_profile = BulkUploadService.JOB_PROFILE_MAP.get(profile_raw, "LINIERO")
+            profile_code = BulkUploadService.JOB_PROFILE_MAP.get(profile_raw, "LINIERO")
 
             emp_raw = str(row.get("tipo_vinculacion", "directo") or "directo").strip().lower()
             employment_type = BulkUploadService.EMPLOYMENT_TYPE_MAP.get(emp_raw, "direct")
@@ -229,6 +229,12 @@ class BulkUploadService:
             password = PasswordService.generate_password(document_number, first_name)
 
             try:
+                from apps.courses.models import JobProfileType
+
+                job_profile = JobProfileType.objects.filter(code=profile_code).first()
+                if not job_profile:
+                    job_profile = JobProfileType.objects.get(code="LINIERO")
+
                 user = User(
                     email=email,
                     first_name=first_name,
@@ -338,7 +344,7 @@ class ExportService:
             enrollments = enrollments.filter(course__category_id=category_id)
 
         if profile:
-            enrollments = enrollments.filter(user__job_profile=profile)
+            enrollments = enrollments.filter(user__job_profile__code=profile)
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -377,7 +383,7 @@ class ExportService:
                     enrollment.user.first_name,
                     enrollment.user.last_name,
                     enrollment.user.document_number,
-                    enrollment.user.get_job_profile_display(),
+                    enrollment.user.job_profile.name if enrollment.user.job_profile else "N/A",
                     enrollment.user.job_position,
                     enrollment.course.title,
                     enrollment.course.category.name

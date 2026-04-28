@@ -210,7 +210,7 @@
                 </td>
                 <td>
                     <div class="label">Perfil ocupacional</div>
-                    <div class="value">{{ user_obj.get_job_profile_display|default:"No asignado" }}</div>
+                    <div class="value">{{ user_obj.job_profile.name|default:"No asignado" }}</div>
                 </td>
             </tr>
             <tr>

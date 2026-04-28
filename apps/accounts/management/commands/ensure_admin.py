@@ -5,6 +5,7 @@ from datetime import date
 from django.core.management.base import BaseCommand
 
 from apps.accounts.models import User
+from apps.courses.models import JobProfileType
 
 
 class Command(BaseCommand):
@@ -23,6 +24,7 @@ class Command(BaseCommand):
         password = "admin123"
 
         user = User.objects.filter(document_number=document_number).first()
+        admin_profile = JobProfileType.objects.get(code="ADMINISTRADOR")
 
         if user is None:
             user = User.objects.create_superuser(
@@ -34,7 +36,7 @@ class Command(BaseCommand):
                 document_number=document_number,
                 phone="+573001234567",
                 job_position="Administrador del Sistema",
-                job_profile="ADMINISTRADOR",
+                job_profile=admin_profile,
                 hire_date=date.today(),
             )
             self.stdout.write(self.style.SUCCESS(f"Superuser created: {document_number} / {email}"))
