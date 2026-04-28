@@ -999,10 +999,8 @@ def builder_add_module(request, course_id):
             locked_course = Course.objects.select_for_update().get(id=course.id)
             module = form.save(commit=False)
             module.course = locked_course
-            max_order = locked_course.modules.aggregate(
-                max_order=models.Max("order")
-            )["max_order"]
-            module.order = (max_order or -1) + 1
+            max_order = locked_course.modules.aggregate(max_order=models.Max("order"))["max_order"]
+            module.order = max_order + 1 if max_order is not None else 0
             module.save()
 
         if request.headers.get("HX-Request"):
@@ -1114,7 +1112,7 @@ def builder_add_lesson(request, course_id, module_id):
             lesson = form.save(commit=False)
             lesson.module = module
             max_order = module.lessons.aggregate(max_order=models.Max("order"))["max_order"]
-            lesson.order = (max_order or -1) + 1
+            lesson.order = max_order + 1 if max_order is not None else 0
             lesson.save()
         except Exception as e:
             import logging
@@ -1435,7 +1433,7 @@ def builder_add_question(request, course_id, assessment_id):
         text=text,
         explanation=explanation,
         points=points,
-        order=(max_order or -1) + 1,
+        order=max_order + 1 if max_order is not None else 0,
     )
 
     # Create answers based on question type
