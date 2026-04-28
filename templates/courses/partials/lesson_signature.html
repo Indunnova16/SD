@@ -1,0 +1,142 @@
+<!-- Signature capture for presential lessons -->
+<div id="signature-section" class="card bg-base-100 shadow-md p-6 mt-4">
+    <h3 class="card-title text-lg mb-4">Firma de Asistencia</h3>
+
+    {% if lesson_evidence.signed_at %}
+        <div class="alert alert-success">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+                <h3 class="font-bold">Firmado</h3>
+                <div class="text-sm">{{ lesson_evidence.signed_at|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+        {% if lesson_evidence.signature %}
+            <div class="mt-4">
+                <img src="{{ lesson_evidence.signature.url }}" alt="Firma" class="w-32 h-16 object-contain border rounded">
+            </div>
+        {% endif %}
+    {% else %}
+        <form method="post" action="{% url 'courses:sign_lesson_evidence' course.id lesson.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Dibuja tu firma en el área inferior</span>
+                </label>
+                <canvas id="signature-canvas" class="border-2 border-gray-300 rounded bg-white w-full"
+                        style="height: 200px; cursor: crosshair; touch-action: none;"></canvas>
+            </div>
+
+            <input type="hidden" id="signature-data" name="signature" value="">
+
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="clearSignatureCanvas()" class="btn btn-outline btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Limpiar
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Firmar y Completar
+                </button>
+            </div>
+        </form>
+
+        <script>
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            const canvas = document.getElementById('signature-canvas');
+            const ctx = canvas.getContext('2d');
+            const signatureDataInput = document.getElementById('signature-data');
+
+            // Set canvas resolution
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Set line style
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#000';
+
+            // Mouse events
+            canvas.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                lastX = e.clientX - rect.left;
+                lastY = e.clientY - rect.top;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                lastX = x;
+                lastY = y;
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDrawing = false;
+            });
+
+            canvas.addEventListener('mouseout', () => {
+                isDrawing = false;
+            });
+
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                lastX = touch.clientX - rect.left;
+                lastY = touch.clientY - rect.top;
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                lastX = x;
+                lastY = y;
+            });
+
+            canvas.addEventListener('touchend', () => {
+                isDrawing = false;
+            });
+
+            function clearSignatureCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                signatureDataInput.value = '';
+            }
+
+            // On form submit, save canvas to data URL
+            document.querySelector('form').addEventListener('submit', (e) => {
+                const dataURL = canvas.toDataURL('image/png');
+                signatureDataInput.value = dataURL;
+            });
+        </script>
+    {% endif %}
+</div>

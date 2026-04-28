@@ -210,6 +210,9 @@
                                     <span class="text-sm">Completa el video para avanzar a la siguiente leccion.</span>
                                 </div>
                             </div>
+                        {% elif lesson.is_presential %}
+                            <!-- Signature for presential lessons -->
+                            {% include "courses/partials/lesson_signature.html" %}
                         {% else %}
                             <div class="border-t dark:border-gray-700 pt-6 mt-6">
                                 <form hx-post="{% url 'courses:update_progress' course.id lesson.id %}"
@@ -284,15 +287,27 @@
                         </button>
                     {% endif %}
                 {% else %}
-                    <a href="{% url 'courses:detail' course.id %}" class="btn btn-success">
-                        Finalizar Curso
-                        <svg class="w-5 h-5 ml-2"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </a>
+                    {% if not enrollment.completion_signature and enrollment.progress >= 100 %}
+                        <button onclick="document.getElementById('completion-signature-modal').showModal()" class="btn btn-success">
+                            Finalizar Curso
+                            <svg class="w-5 h-5 ml-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </button>
+                    {% else %}
+                        <a href="{% url 'courses:detail' course.id %}" class="btn btn-success">
+                            Finalizar Curso
+                            <svg class="w-5 h-5 ml-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </a>
+                    {% endif %}
                 {% endif %}
             </div>
         </main>
@@ -441,5 +456,9 @@ document.addEventListener('alpine:init', () => {
     }));
 });
         </script>
+    {% endif %}
+    <!-- Course completion signature modal -->
+    {% if enrollment.progress >= 100 and not enrollment.completion_signature %}
+        {% include "courses/partials/course_completion_signature.html" %}
     {% endif %}
 {% endblock %}

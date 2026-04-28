@@ -804,6 +804,17 @@ class Enrollment(models.Model):
         related_name="enrollments_assigned",
         verbose_name=_("Asignado por"),
     )
+    completion_signature = models.ImageField(
+        _("Firma de finalización"),
+        upload_to="enrollments/signatures/%Y/%m/",
+        null=True,
+        blank=True,
+    )
+    completion_signed_at = models.DateTimeField(
+        _("Fecha de firma de finalización"),
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -999,6 +1010,17 @@ class LessonEvidence(models.Model):
         blank=True,
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    signature = models.ImageField(
+        _("Firma"),
+        upload_to="lesson_evidences/signatures/%Y/%m/",
+        null=True,
+        blank=True,
+    )
+    signed_at = models.DateTimeField(
+        _("Fecha de firma"),
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = "lesson_evidences"

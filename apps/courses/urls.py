@@ -42,6 +42,16 @@ urlpatterns = [
         views.update_video_progress,
         name="update_video_progress",
     ),
+    path(
+        "<int:course_id>/lessons/<int:lesson_id>/sign/",
+        views.sign_lesson_evidence,
+        name="sign_lesson_evidence",
+    ),
+    path(
+        "<int:course_id>/sign-completion/",
+        views.sign_course_completion,
+        name="sign_course_completion",
+    ),
     # Parametrizacion hub
     path("parametrizacion/", views.parametrizacion_hub, name="parametrizacion"),
     # Course admin management (Parametrizacion)

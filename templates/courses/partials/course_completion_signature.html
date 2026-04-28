@@ -1,0 +1,142 @@
+<!-- Modal for course completion signature -->
+<dialog id="completion-signature-modal" class="modal" open>
+    <div class="modal-box w-11/12 max-w-md">
+        <div class="text-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-success mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="font-bold text-lg">¡Felicidades!</h3>
+            <p class="text-sm text-gray-600 mt-2">Has completado el curso</p>
+        </div>
+
+        <form method="post" action="{% url 'courses:sign_course_completion' course.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <label class="label">
+                    <span class="label-text">Firma para confirmar la finalización</span>
+                </label>
+                <canvas id="completion-signature-canvas"
+                        class="border-2 border-gray-300 rounded bg-white w-full"
+                        style="height: 180px; cursor: crosshair; touch-action: none;"></canvas>
+            </div>
+
+            <input type="hidden" id="completion-signature-data" name="signature" value="">
+
+            <div class="modal-action">
+                <button type="button" onclick="document.getElementById('completion-signature-modal').close()"
+                        class="btn btn-ghost btn-sm">
+                    Cancelar
+                </button>
+                <button type="button" onclick="clearCompletionSignatureCanvas()"
+                        class="btn btn-outline btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Limpiar
+                </button>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Firmar
+                </button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+<script>
+    let completionIsDrawing = false;
+    let completionLastX = 0;
+    let completionLastY = 0;
+    const completionCanvas = document.getElementById('completion-signature-canvas');
+    const completionCtx = completionCanvas.getContext('2d');
+    const completionSignatureDataInput = document.getElementById('completion-signature-data');
+
+    // Set canvas resolution
+    const completionRect = completionCanvas.getBoundingClientRect();
+    completionCanvas.width = completionRect.width;
+    completionCanvas.height = completionRect.height;
+
+    // Set line style
+    completionCtx.lineCap = 'round';
+    completionCtx.lineJoin = 'round';
+    completionCtx.lineWidth = 2;
+    completionCtx.strokeStyle = '#000';
+
+    // Mouse events
+    completionCanvas.addEventListener('mousedown', (e) => {
+        completionIsDrawing = true;
+        const rect = completionCanvas.getBoundingClientRect();
+        completionLastX = e.clientX - rect.left;
+        completionLastY = e.clientY - rect.top;
+    });
+
+    completionCanvas.addEventListener('mousemove', (e) => {
+        if (!completionIsDrawing) return;
+        const rect = completionCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        completionCtx.beginPath();
+        completionCtx.moveTo(completionLastX, completionLastY);
+        completionCtx.lineTo(x, y);
+        completionCtx.stroke();
+
+        completionLastX = x;
+        completionLastY = y;
+    });
+
+    completionCanvas.addEventListener('mouseup', () => {
+        completionIsDrawing = false;
+    });
+
+    completionCanvas.addEventListener('mouseout', () => {
+        completionIsDrawing = false;
+    });
+
+    // Touch events for mobile
+    completionCanvas.addEventListener('touchstart', (e) => {
+        completionIsDrawing = true;
+        const rect = completionCanvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        completionLastX = touch.clientX - rect.left;
+        completionLastY = touch.clientY - rect.top;
+    });
+
+    completionCanvas.addEventListener('touchmove', (e) => {
+        if (!completionIsDrawing) return;
+        e.preventDefault();
+        const rect = completionCanvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+
+        completionCtx.beginPath();
+        completionCtx.moveTo(completionLastX, completionLastY);
+        completionCtx.lineTo(x, y);
+        completionCtx.stroke();
+
+        completionLastX = x;
+        completionLastY = y;
+    });
+
+    completionCanvas.addEventListener('touchend', () => {
+        completionIsDrawing = false;
+    });
+
+    function clearCompletionSignatureCanvas() {
+        completionCtx.clearRect(0, 0, completionCanvas.width, completionCanvas.height);
+        completionSignatureDataInput.value = '';
+    }
+
+    // On form submit, save canvas to data URL
+    document.querySelector('#completion-signature-modal form').addEventListener('submit', (e) => {
+        const dataURL = completionCanvas.toDataURL('image/png');
+        completionSignatureDataInput.value = dataURL;
+    });
+</script>

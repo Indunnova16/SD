@@ -207,6 +207,11 @@ def lesson_view(request, course_id, lesson_id):
         accessible, _ = EnrollmentService.is_lesson_accessible(enrollment, next_lesson)
         next_lesson_accessible = accessible
 
+    # Get lesson evidence for presential lessons
+    lesson_evidence = None
+    if lesson.is_presential:
+        lesson_evidence = LessonEvidence.objects.filter(lesson=lesson, user=request.user).first()
+
     context = {
         "course": course,
         "lesson": lesson,
@@ -215,6 +220,7 @@ def lesson_view(request, course_id, lesson_id):
         "next_lesson": next_lesson,
         "next_lesson_accessible": next_lesson_accessible,
         "enrollment": enrollment,
+        "lesson_evidence": lesson_evidence,
     }
     return render(request, "courses/lesson_view.html", context)
 
@@ -1602,3 +1608,105 @@ def builder_reorder_questions(request, course_id, assessment_id):
         Question.objects.filter(id=qid, assessment=assessment).update(order=i)
 
     return JsonResponse({"status": "ok"})
+
+
+@login_required
+@require_http_methods(["POST"])
+def sign_lesson_evidence(request, course_id, lesson_id):
+    """Record a signature for a presential lesson."""
+    import base64
+    from django.core.files.base import ContentFile
+    from django.utils import timezone
+
+    lesson = get_object_or_404(Lesson, id=lesson_id, module__course_id=course_id)
+    signature_data = request.POST.get("signature")
+    if not signature_data:
+        return JsonResponse({"error": "Firma requerida"}, status=400)
+
+    try:
+        format_part, imgstr = signature_data.split(";base64,")
+        img_file = ContentFile(
+            base64.b64decode(imgstr), name=f"sig_{request.user.id}_{lesson_id}.png"
+        )
+    except (ValueError, IndexError):
+        return JsonResponse({"error": "Formato de firma inválido"}, status=400)
+
+    evidence, _ = LessonEvidence.objects.get_or_create(
+        lesson=lesson,
+        user=request.user,
+        defaults={"evidence_type": LessonEvidence.EvidenceType.ATTENDANCE, "file": img_file},
+    )
+    evidence.signature = img_file
+    evidence.signed_at = timezone.now()
+    evidence.save()
+
+    enrollment = get_object_or_404(Enrollment, user=request.user, course_id=course_id)
+    progress, _ = LessonProgress.objects.get_or_create(enrollment=enrollment, lesson=lesson)
+    progress.is_completed = True
+    progress.progress_percent = 100
+    progress.completed_at = timezone.now()
+    progress.save()
+
+    total = enrollment.course.get_total_lessons()
+    completed = enrollment.lesson_progress.filter(is_completed=True).count()
+    new_progress = (completed / total * 100) if total > 0 else 0
+    enrollment.progress = new_progress
+
+    if new_progress >= 100:
+        enrollment.status = Enrollment.Status.COMPLETED
+        enrollment.completed_at = timezone.now()
+    elif enrollment.status == Enrollment.Status.ENROLLED:
+        enrollment.status = Enrollment.Status.IN_PROGRESS
+        enrollment.started_at = enrollment.started_at or timezone.now()
+
+    enrollment.save()
+
+    if request.headers.get("HX-Request"):
+        return JsonResponse(
+            {
+                "success": True,
+                "progress": float(new_progress),
+                "status": enrollment.status,
+                "show_completion_modal": new_progress >= 100,
+            }
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "progress": float(new_progress),
+            "status": enrollment.status,
+            "show_completion_modal": new_progress >= 100,
+        }
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def sign_course_completion(request, course_id):
+    """Record user signature upon course completion."""
+    import base64
+    from django.core.files.base import ContentFile
+    from django.utils import timezone
+
+    enrollment = get_object_or_404(Enrollment, user=request.user, course_id=course_id)
+    signature_data = request.POST.get("signature")
+    if not signature_data:
+        return JsonResponse({"error": "Firma requerida"}, status=400)
+
+    try:
+        format_part, imgstr = signature_data.split(";base64,")
+        img_file = ContentFile(
+            base64.b64decode(imgstr), name=f"sig_completion_{request.user.id}_{course_id}.png"
+        )
+    except (ValueError, IndexError):
+        return JsonResponse({"error": "Formato de firma inválido"}, status=400)
+
+    enrollment.completion_signature = img_file
+    enrollment.completion_signed_at = timezone.now()
+    enrollment.save()
+
+    if request.headers.get("HX-Request"):
+        return JsonResponse({"success": True, "signed_at": str(enrollment.completion_signed_at)})
+
+    return JsonResponse({"success": True, "signed_at": str(enrollment.completion_signed_at)})
