@@ -212,6 +212,11 @@ def lesson_view(request, course_id, lesson_id):
     if lesson.is_presential:
         lesson_evidence = LessonEvidence.objects.filter(lesson=lesson, user=request.user).first()
 
+    # Get assessment for quiz lessons
+    assessment = None
+    if lesson.lesson_type == "quiz":
+        assessment = lesson.assessments.first()
+
     context = {
         "course": course,
         "lesson": lesson,
@@ -221,6 +226,7 @@ def lesson_view(request, course_id, lesson_id):
         "next_lesson_accessible": next_lesson_accessible,
         "enrollment": enrollment,
         "lesson_evidence": lesson_evidence,
+        "assessment": assessment,
     }
     return render(request, "courses/lesson_view.html", context)
 

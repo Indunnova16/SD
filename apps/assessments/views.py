@@ -74,7 +74,6 @@ def assessment_detail(request, assessment_id):
 
 
 @login_required
-@require_POST
 def start_attempt(request, assessment_id):
     """Start a new assessment attempt."""
     assessment = get_object_or_404(

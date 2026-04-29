@@ -2,6 +2,9 @@
 Course and content models for SD LMS.
 """
 
+import re
+from urllib.parse import parse_qs, urlparse
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -14,6 +17,42 @@ from apps.core.validators import (
     validate_target_profiles,
     validate_url,
 )
+
+
+def convert_youtube_url_to_embed(url: str, use_nocookie: bool = False) -> str:
+    """Convierte URLs de YouTube normales a URLs de embed.
+
+    Args:
+        url: URL de YouTube
+        use_nocookie: Si True, usa youtube-nocookie.com (útil para videos age-restricted)
+
+    Returns:
+        URL de embed funcional
+    """
+    if not url:
+        return url
+
+    # Patrones de URLs de YouTube
+    patterns = [
+        # youtube.com/watch?v=xxxxx
+        r"youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})",
+        # youtu.be/xxxxx
+        r"youtu\.be/([a-zA-Z0-9_-]{11})",
+        # youtube.com/embed/xxxxx (ya es URL de embed)
+        r"youtube\.com/embed/([a-zA-Z0-9_-]{11})",
+        # youtube-nocookie.com/embed/xxxxx
+        r"youtube-nocookie\.com/embed/([a-zA-Z0-9_-]{11})",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            video_id = match.group(1)
+            if use_nocookie:
+                return f"https://www.youtube-nocookie.com/embed/{video_id}?modestbranding=1"
+            return f"https://www.youtube.com/embed/{video_id}"
+
+    return url
 
 
 class JobProfileType(models.Model):
@@ -359,6 +398,11 @@ class Lesson(models.Model):
         indexes = [
             models.Index(fields=["module", "order"]),
         ]
+
+    def save(self, *args, **kwargs):
+        if self.video_url and self.lesson_type == "video":
+            self.video_url = convert_youtube_url_to_embed(self.video_url)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.module.title} - {self.title}"

@@ -134,8 +134,12 @@
                                 <div class="aspect-video bg-black rounded-lg overflow-hidden">
                                     <iframe src="{{ lesson.video_url }}"
                                             class="w-full h-full"
+                                            title="{{ lesson.title }}"
                                             allowfullscreen
-                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                                            loading="lazy"
+                                            referrerpolicy="strict-origin-when-cross-origin"
+                                            sandbox="allow-same-origin allow-scripts allow-popups allow-presentation"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture">
                                     </iframe>
                                 </div>
                                 {% if lesson.duration > 0 %}
@@ -151,6 +155,9 @@
                                         Duracion estimada: {{ lesson.duration }} minutos. El progreso se registra automaticamente.
                                     </p>
                                 {% endif %}
+                                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <p>💡 Si el video no carga, intenta usar una URL de YouTube normal o de <strong>youtube-nocookie.com</strong></p>
+                                </div>
                             </div>
                         {% else %}
                             <div class="aspect-video bg-black rounded-lg flex items-center justify-center mb-6">
@@ -193,6 +200,64 @@
                         </div>
                     {% elif lesson.lesson_type == 'text' or lesson.lesson_type == 'interactive' %}
                         <div class="prose prose-lg dark:prose-invert max-w-none mb-6">{{ lesson.content|sanitize_html }}</div>
+                    {% elif lesson.lesson_type == 'quiz' %}
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mb-6">
+                            <div class="flex items-start gap-4">
+                                <svg class="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-4a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd" />
+                                </svg>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-3">📋 Quiz: {{ lesson.title }}</h3>
+                                    {% if assessment %}
+                                        <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                            <div class="bg-white dark:bg-blue-900/40 rounded p-3">
+                                                <p class="text-gray-600 dark:text-gray-300 mb-1">Preguntas totales</p>
+                                                <p class="font-bold text-blue-600 dark:text-blue-300">{{ assessment.questions.count }}</p>
+                                            </div>
+                                            <div class="bg-white dark:bg-blue-900/40 rounded p-3">
+                                                <p class="text-gray-600 dark:text-gray-300 mb-1">Puntaje mínimo</p>
+                                                <p class="font-bold text-green-600 dark:text-green-400">{{ assessment.passing_score }}%</p>
+                                            </div>
+                                            <div class="bg-white dark:bg-blue-900/40 rounded p-3">
+                                                <p class="text-gray-600 dark:text-gray-300 mb-1">Intentos permitidos</p>
+                                                <p class="font-bold text-orange-600 dark:text-orange-400">
+                                                    {% if assessment.max_attempts == 0 %}
+                                                        Ilimitados
+                                                    {% else %}
+                                                        {{ assessment.max_attempts }}
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            {% if assessment.time_limit %}
+                                                <div class="bg-white dark:bg-blue-900/40 rounded p-3">
+                                                    <p class="text-gray-600 dark:text-gray-300 mb-1">Tiempo límite</p>
+                                                    <p class="font-bold text-purple-600 dark:text-purple-400">{{ assessment.time_limit }} min</p>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-700 rounded p-2 mb-4 text-xs text-blue-800 dark:text-blue-200">
+                                            💡 Necesitas obtener al menos <strong>{{ assessment.passing_score }}%</strong> de respuestas correctas para aprobar este quiz.
+                                        </div>
+                                        <a href="{% url 'assessments:start' assessment.id %}"
+                                           class="btn btn-sm btn-primary">
+                                            <svg class="w-4 h-4 mr-2"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                            </svg>
+                                            Comenzar Quiz
+                                        </a>
+                                    {% else %}
+                                        <p class="text-sm text-blue-700 dark:text-blue-300">
+                                            Este quiz aún no ha sido configurado. Contacta al instructor.
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     {% else %}
                         <div class="text-center py-12 text-gray-400">
                             Contenido de tipo "{{ lesson.get_lesson_type_display }}" no soportado en visualizacion web.
