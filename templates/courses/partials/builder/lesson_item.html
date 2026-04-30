@@ -247,18 +247,31 @@
                                class="file-input file-input-bordered file-input-sm w-full"
                                accept=".pdf,.zip,.mp3,.wav">
                     </div>
-                    <!-- Quiz Time Limit (for quiz lessons) -->
-                    <div class="form-control mt-2" x-show="lessonType === 'quiz'">
-                        <label class="label py-1">
-                            <span class="label-text text-xs">Límite de tiempo (minutos)</span>
-                        </label>
-                        <input type="number"
-                               name="quiz_time_limit"
-                               {% if lesson.assessments.first and lesson.assessments.first.time_limit %}value="{{ lesson.assessments.first.time_limit }}"{% endif %}
-                               class="input input-bordered input-sm w-full"
-                               min="0"
-                               placeholder="Sin límite si está vacío">
-                    </div>
+                    <!-- Quiz Time Limit (for quiz lessons) - Separate form -->
+                    {% if lesson.lesson_type == 'quiz' and lesson.assessments.first %}
+                        <div class="form-control mt-2">
+                            <label class="label py-1">
+                                <span class="label-text text-xs">Límite de tiempo (minutos)</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number"
+                                       id="quiz_time_limit_{{ lesson.id }}"
+                                       value="{% if lesson.assessments.first.time_limit %}{{ lesson.assessments.first.time_limit }}{% endif %}"
+                                       class="input input-bordered input-sm flex-1"
+                                       min="0"
+                                       placeholder="Sin límite si está vacío">
+                                <button type="button"
+                                        class="btn btn-sm btn-ghost"
+                                        hx-post="{% url 'courses:builder_update_quiz_time_limit' course.id lesson.assessments.first.id %}"
+                                        hx-vals='{"time_limit": document.getElementById("quiz_time_limit_{{ lesson.id }}").value}'
+                                        hx-target="closest .form-control"
+                                        hx-swap="outerHTML"
+                                        onclick="this.setAttribute('hx-vals', JSON.stringify({time_limit: document.getElementById('quiz_time_limit_{{ lesson.id }}').value}))">
+                                    Guardar tiempo
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
                     <!-- Actions -->
                     <div class="flex gap-2 justify-end mt-3">
                         <button type="button"

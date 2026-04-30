@@ -142,6 +142,11 @@ urlpatterns = [
         name="builder_delete_lesson",
     ),
     path(
+        "admin-courses/<int:course_id>/builder/quiz/<int:assessment_id>/update-time-limit/",
+        views.builder_update_quiz_time_limit,
+        name="builder_update_quiz_time_limit",
+    ),
+    path(
         "admin-courses/<int:course_id>/builder/modules/<int:module_id>/lessons/reorder/",
         views.builder_reorder_lessons,
         name="builder_reorder_lessons",

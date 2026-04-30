@@ -1306,6 +1306,61 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
 
 @login_required
 @require_http_methods(["POST"])
+def builder_update_quiz_time_limit(request, course_id, assessment_id):
+    """Update quiz time limit."""
+    from apps.assessments.models import Assessment
+    from django.urls import reverse
+
+    if err := _staff_required(request):
+        return err
+
+    assessment = get_object_or_404(Assessment, id=assessment_id)
+    time_limit = request.POST.get("time_limit", "").strip()
+
+    if not time_limit:
+        # Clear time limit
+        assessment.time_limit = None
+        assessment.save(update_fields=["time_limit"])
+    else:
+        try:
+            assessment.time_limit = int(time_limit)
+            assessment.save(update_fields=["time_limit"])
+        except (ValueError, TypeError):
+            return HttpResponse(
+                '<div class="alert alert-error">Ingresa un número válido</div>',
+                status=400,
+            )
+
+    update_url = reverse(
+        "courses:builder_update_quiz_time_limit",
+        kwargs={"course_id": course_id, "assessment_id": assessment_id},
+    )
+    lesson_id = assessment.lesson.id
+    current_value = assessment.time_limit or ""
+
+    html = f"""
+    <div class="form-control mt-2">
+        <label class="label py-1">
+            <span class="label-text text-xs">Límite de tiempo (minutos)</span>
+        </label>
+        <div class="flex gap-2">
+            <input type="number" id="quiz_time_limit_{lesson_id}" value="{current_value}"
+                   class="input input-bordered input-sm flex-1" min="0"
+                   placeholder="Sin límite si está vacío">
+            <button type="button" class="btn btn-sm btn-ghost"
+                    onclick="this.setAttribute('hx-vals', JSON.stringify({{time_limit: document.getElementById('quiz_time_limit_{lesson_id}').value}}))"
+                    hx-post="{update_url}" hx-target="closest .form-control" hx-swap="outerHTML">
+                Guardar tiempo
+            </button>
+        </div>
+        <span class="text-sm text-success">✓ Guardado</span>
+    </div>
+    """
+    return HttpResponse(html.strip(), status=200)
+
+
+@login_required
+@require_http_methods(["POST"])
 def builder_delete_lesson(request, course_id, module_id, lesson_id):
     """Delete a lesson."""
     if err := _staff_required(request):
