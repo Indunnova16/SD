@@ -1240,15 +1240,31 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
             if lesson.lesson_type == "quiz":
                 quiz_time_limit = request.POST.get("quiz_time_limit", "").strip()
                 assessment = lesson.assessments.first()
+
+                import logging
+
+                logger = logging.getLogger(__name__)
+                logger.info(
+                    f"Quiz edit - lesson_id={lesson.id}, quiz_time_limit='{quiz_time_limit}', has_assessment={assessment is not None}"
+                )
+
                 if assessment:
                     if quiz_time_limit:
                         try:
-                            assessment.time_limit = int(quiz_time_limit)
+                            time_limit_int = int(quiz_time_limit)
+                            logger.info(
+                                f"Saving time_limit={time_limit_int} to assessment {assessment.id}"
+                            )
+                            assessment.time_limit = time_limit_int
                             assessment.save(update_fields=["time_limit"])
-                        except (ValueError, TypeError):
-                            pass
+                            logger.info(f"Saved successfully")
+                        except (ValueError, TypeError) as ve:
+                            logger.warning(f"Failed to parse time_limit: {ve}")
                     # Refresh to ensure latest value is displayed
                     assessment.refresh_from_db()
+                    logger.info(
+                        f"Assessment refreshed - current time_limit={assessment.time_limit}"
+                    )
         except Exception as e:
             import logging
 
