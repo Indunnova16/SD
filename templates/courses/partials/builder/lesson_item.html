@@ -254,7 +254,7 @@
                         </label>
                         <input type="number"
                                name="quiz_time_limit"
-                               value="{% if lesson.assessments.first %}{{ lesson.assessments.first.time_limit|default:'' }}{% endif %}"
+                               {% if lesson.assessments.first and lesson.assessments.first.time_limit %}value="{{ lesson.assessments.first.time_limit }}"{% endif %}
                                class="input input-bordered input-sm w-full"
                                min="0"
                                placeholder="Sin límite si está vacío">

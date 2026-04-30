@@ -1240,12 +1240,15 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
             if lesson.lesson_type == "quiz":
                 quiz_time_limit = request.POST.get("quiz_time_limit", "").strip()
                 assessment = lesson.assessments.first()
-                if assessment and quiz_time_limit:
-                    try:
-                        assessment.time_limit = int(quiz_time_limit)
-                        assessment.save(update_fields=["time_limit"])
-                    except (ValueError, TypeError):
-                        pass
+                if assessment:
+                    if quiz_time_limit:
+                        try:
+                            assessment.time_limit = int(quiz_time_limit)
+                            assessment.save(update_fields=["time_limit"])
+                        except (ValueError, TypeError):
+                            pass
+                    # Refresh to ensure latest value is displayed
+                    assessment.refresh_from_db()
         except Exception as e:
             import logging
 
