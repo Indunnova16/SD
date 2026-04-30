@@ -699,15 +699,31 @@ function updateConditionalFields() {
 }
 
 // Initialize on load and when type changes
-document.addEventListener('DOMContentLoaded', updateConditionalFields);
-document.addEventListener('htmx:afterSettle', updateConditionalFields);
+document.addEventListener('DOMContentLoaded', () => {
+    updateConditionalFields();
+    setupVideoPreview();
+});
+document.addEventListener('htmx:afterSettle', () => {
+    updateConditionalFields();
+    setupVideoPreview();
+});
 
 const form = document.querySelector('form[x-data]');
 if (form) {
     const select = form.querySelector('select[name="lesson_type"]');
     if (select) {
-        select.addEventListener('change', updateConditionalFields);
+        select.addEventListener('change', () => {
+            updateConditionalFields();
+            setupVideoPreview();
+        });
     }
+
+    // Ensure all form fields are properly submitted with HTMX
+    // Even if hidden, they should be included in the request
+    select?.addEventListener('htmx:configRequest', (detail) => {
+        // This ensures HTMX includes all form fields
+    });
+}
 
     // Map SCORM and Interactive fields to appropriate model fields before submission
     form.addEventListener('submit', function(e) {
