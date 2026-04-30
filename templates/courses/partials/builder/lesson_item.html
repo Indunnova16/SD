@@ -247,6 +247,18 @@
                                class="file-input file-input-bordered file-input-sm w-full"
                                accept=".pdf,.zip,.mp3,.wav">
                     </div>
+                    <!-- Quiz Time Limit (for quiz lessons) -->
+                    <div class="form-control mt-2" x-show="lessonType === 'quiz'">
+                        <label class="label py-1">
+                            <span class="label-text text-xs">Límite de tiempo (minutos)</span>
+                        </label>
+                        <input type="number"
+                               name="quiz_time_limit"
+                               value="{% if lesson.assessments.first %}{{ lesson.assessments.first.time_limit|default:'' }}{% endif %}"
+                               class="input input-bordered input-sm w-full"
+                               min="0"
+                               placeholder="Sin límite si está vacío">
+                    </div>
                     <!-- Actions -->
                     <div class="flex gap-2 justify-end mt-3">
                         <button type="button"

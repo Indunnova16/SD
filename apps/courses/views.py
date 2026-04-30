@@ -1235,6 +1235,17 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
     if form.is_valid():
         try:
             form.save()
+
+            # Handle quiz time_limit if present
+            if lesson.lesson_type == "quiz":
+                quiz_time_limit = request.POST.get("quiz_time_limit", "").strip()
+                assessment = lesson.assessments.first()
+                if assessment and quiz_time_limit:
+                    try:
+                        assessment.time_limit = int(quiz_time_limit)
+                        assessment.save(update_fields=["time_limit"])
+                    except (ValueError, TypeError):
+                        pass
         except Exception as e:
             import logging
 
