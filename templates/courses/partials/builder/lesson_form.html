@@ -93,8 +93,21 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         <input type="url"
                name="video_url"
                value="{% if not is_new %}{{ lesson.video_url }}{% endif %}"
-               class="input input-bordered input-sm w-full"
-               placeholder="https://youtube.com/...">
+               class="input input-bordered input-sm w-full video-url-input"
+               placeholder="https://youtube.com/watch?v=... o https://youtu.be/...">
+        <!-- Video Preview -->
+        <div class="mt-3 video-preview-container" style="display:none;">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Vista previa:</p>
+            <div class="aspect-video bg-black rounded-lg overflow-hidden">
+                <iframe class="w-full h-full video-preview-iframe"
+                        title="Vista previa de video"
+                        allowfullscreen
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-presentation">
+                </iframe>
+            </div>
+        </div>
     </div>
     <!-- Single file input for video / pdf / scorm / audio -->
     <div class="form-control mt-2 conditional-field"
@@ -595,6 +608,65 @@ const QuizBuilder = {
 };
 
 // ============================================
+// YOUTUBE URL CONVERSION AND PREVIEW
+// ============================================
+function convertYouTubeUrl(url) {
+    if (!url) return '';
+
+    const patterns = [
+        { regex: /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/, replace: (id) => `https://www.youtube.com/embed/${id}` },
+        { regex: /youtu\.be\/([a-zA-Z0-9_-]{11})/, replace: (id) => `https://www.youtube.com/embed/${id}` },
+        { regex: /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/, replace: (id) => `https://www.youtube.com/embed/${id}` },
+        { regex: /youtube-nocookie\.com\/embed\/([a-zA-Z0-9_-]{11})/, replace: (id) => `https://www.youtube-nocookie.com/embed/${id}?modestbranding=1` }
+    ];
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern.regex);
+        if (match) {
+            return pattern.replace(match[1]);
+        }
+    }
+
+    return url;
+}
+
+function setupVideoPreview() {
+    const form = document.querySelector('form[x-data]');
+    if (!form) return;
+
+    const videoUrlInput = form.querySelector('.video-url-input');
+    if (!videoUrlInput) return;
+
+    const previewContainer = form.querySelector('.video-preview-container');
+    const previewIframe = form.querySelector('.video-preview-iframe');
+
+    function updatePreview() {
+        const url = videoUrlInput.value.trim();
+        if (url) {
+            const embedUrl = convertYouTubeUrl(url);
+            if (embedUrl && embedUrl !== url) {
+                previewIframe.src = embedUrl;
+                previewContainer.style.display = 'block';
+            } else if (embedUrl) {
+                previewIframe.src = embedUrl;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        } else {
+            previewContainer.style.display = 'none';
+            previewIframe.src = '';
+        }
+    }
+
+    videoUrlInput.addEventListener('input', updatePreview);
+    videoUrlInput.addEventListener('change', updatePreview);
+
+    // Initialize preview on load if URL exists
+    updatePreview();
+}
+
+// ============================================
 // CONDITIONAL FIELDS
 // ============================================
 function updateConditionalFields() {
@@ -618,6 +690,11 @@ function updateConditionalFields() {
     // Initialize quiz builder if quiz type is selected
     if (selectedType === 'quiz') {
         setTimeout(() => QuizBuilder.init(), 100);
+    }
+
+    // Setup video preview if video type is selected
+    if (selectedType === 'video') {
+        setTimeout(() => setupVideoPreview(), 100);
     }
 }
 

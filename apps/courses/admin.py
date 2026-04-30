@@ -160,6 +160,7 @@ class LessonAdmin(admin.ModelAdmin):
     ]
     search_fields = ["title", "description", "module__title"]
     ordering = ["module", "order"]
+    readonly_fields = ["video_preview"]
 
     fieldsets = [
         (
@@ -171,7 +172,7 @@ class LessonAdmin(admin.ModelAdmin):
         (
             _("Contenido"),
             {
-                "fields": ["content", "content_file", "video_url"],
+                "fields": ["content", "content_file", "video_url", "video_preview"],
             },
         ),
         (
@@ -194,6 +195,22 @@ class LessonAdmin(admin.ModelAdmin):
             },
         ),
     ]
+
+    @admin.display(description=_("Vista previa de video"))
+    def video_preview(self, obj):
+        """Display YouTube video preview in admin."""
+        if obj.lesson_type == "video" and obj.video_url:
+            embed_url = obj.video_url
+            return format_html(
+                '<iframe style="width: 100%; height: 400px; border-radius: 8px;" '
+                'src="{}" title="{}" allowfullscreen loading="lazy" '
+                'referrerpolicy="strict-origin-when-cross-origin" '
+                'sandbox="allow-same-origin allow-scripts allow-popups allow-presentation">'
+                "</iframe>",
+                embed_url,
+                obj.title,
+            )
+        return "-"
 
 
 @admin.register(MediaAsset)
