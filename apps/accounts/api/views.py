@@ -143,5 +143,70 @@ class ImportUsersView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # TODO: Implement CSV/Excel parsing with pandas
-        return Response({"message": "Importación iniciada", "task_id": "pending"})
+        try:
+            import pandas as pd
+            import io
+
+            # Detect file type and read
+            if file.name.endswith(".csv"):
+                df = pd.read_csv(io.StringIO(file.read().decode("utf-8")))
+            elif file.name.endswith((".xlsx", ".xls")):
+                df = pd.read_excel(io.BytesIO(file.read()))
+            else:
+                return Response(
+                    {"error": "Archivo debe ser CSV o Excel (.xlsx, .xls)"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Validate required columns
+            required_cols = {"email"}
+            if not required_cols.issubset(set(df.columns)):
+                return Response(
+                    {"error": f"Columnas requeridas: {', '.join(required_cols)}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Process users
+            created_count = 0
+            updated_count = 0
+            errors = []
+
+            for idx, row in df.iterrows():
+                email = str(row.get("email", "")).strip()
+                if not email:
+                    errors.append(f"Fila {idx + 2}: email vacío")
+                    continue
+
+                user_data = {
+                    "first_name": str(row.get("first_name", ""))[:30],
+                    "last_name": str(row.get("last_name", ""))[:30],
+                    "email": email,
+                }
+
+                user, created = User.objects.get_or_create(email=email, defaults=user_data)
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+
+            return Response(
+                {
+                    "message": "Importación completada",
+                    "created": created_count,
+                    "updated": updated_count,
+                    "errors": errors,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except ImportError:
+            return Response(
+                {"error": "pandas no está instalado. Contactar al administrador."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        except Exception as e:
+            logger.exception("Error importing users")
+            return Response(
+                {"error": f"Error al procesar archivo: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

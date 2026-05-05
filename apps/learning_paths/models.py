@@ -81,7 +81,12 @@ class LearningPath(models.Model):
     @property
     def total_duration(self):
         """Calculate total duration from all courses (in minutes)."""
-        return sum(pc.course.total_duration for pc in self.path_courses.all())
+        from django.db.models import F, Sum
+
+        result = self.path_courses.aggregate(
+            total=Sum(F("course__total_duration"), output_field=models.IntegerField())
+        )
+        return result["total"] or 0
 
 
 class PathCourse(models.Model):

@@ -122,7 +122,10 @@ class Assessment(models.Model):
 
     @property
     def total_points(self):
-        return sum(q.points for q in self.questions.all())
+        from django.db.models import Sum
+
+        result = self.questions.aggregate(total=Sum("points"))
+        return result["total"] or 0
 
 
 class Question(models.Model):

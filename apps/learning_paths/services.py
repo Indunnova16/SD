@@ -56,15 +56,30 @@ class LearningPathService:
         )
 
         # Create course enrollments for all courses in the path
-        for path_course in learning_path.path_courses.filter(is_required=True):
-            Enrollment.objects.get_or_create(
+        path_courses = learning_path.path_courses.filter(is_required=True).select_related("course")
+        course_ids = [pc.course_id for pc in path_courses]
+
+        # Get existing enrollments
+        existing = set(
+            Enrollment.objects.filter(user=user, course_id__in=course_ids).values_list(
+                "course_id", flat=True
+            )
+        )
+
+        # Create missing enrollments in bulk
+        to_create = [
+            Enrollment(
                 user=user,
                 course=path_course.course,
-                defaults={
-                    "assigned_by": assigned_by,
-                    "due_date": due_date,
-                },
+                assigned_by=assigned_by,
+                due_date=due_date,
             )
+            for path_course in path_courses
+            if path_course.course_id not in existing
+        ]
+
+        if to_create:
+            Enrollment.objects.bulk_create(to_create, ignore_conflicts=True)
 
         return assignment
 
@@ -129,17 +144,23 @@ class LearningPathService:
             "unlocked_courses": [],
         }
 
-        for path_course in learning_path.path_courses.all():
+        path_courses = learning_path.path_courses.select_related("course", "unlock_after__course")
+
+        # Get all prerequisite courses in one query
+        prereq_course_ids = [pc.unlock_after.course_id for pc in path_courses if pc.unlock_after]
+        completed_enrollments = set(
+            Enrollment.objects.filter(
+                user=user,
+                course_id__in=prereq_course_ids,
+                status=Enrollment.Status.COMPLETED,
+            ).values_list("course_id", flat=True)
+        )
+
+        for path_course in path_courses:
             # Check if course has a prerequisite in the path
             if path_course.unlock_after:
                 prereq_course = path_course.unlock_after.course
-                enrollment = Enrollment.objects.filter(
-                    user=user,
-                    course=prereq_course,
-                    status=Enrollment.Status.COMPLETED,
-                ).first()
-
-                if not enrollment:
+                if prereq_course.id not in completed_enrollments:
                     result["blocked_courses"].append(
                         {
                             "course": path_course.course.title,
@@ -167,15 +188,14 @@ class LearningPathService:
             return assignment
 
         # Count completed courses
-        completed = 0
-        for path_course in assignment.learning_path.path_courses.filter(is_required=True):
-            enrollment = Enrollment.objects.filter(
-                user=assignment.user,
-                course=path_course.course,
-                status=Enrollment.Status.COMPLETED,
-            ).first()
-            if enrollment:
-                completed += 1
+        path_courses = assignment.learning_path.path_courses.filter(is_required=True)
+        course_ids = list(path_courses.values_list("course_id", flat=True))
+
+        completed = Enrollment.objects.filter(
+            user=assignment.user,
+            course_id__in=course_ids,
+            status=Enrollment.Status.COMPLETED,
+        ).count()
 
         # Calculate progress
         progress = (completed / total_required) * 100

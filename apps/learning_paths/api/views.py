@@ -157,11 +157,15 @@ class LearningPathViewSet(viewsets.ModelViewSet):
 
         # Get course completion status
         courses_progress = []
-        for path_course in path.path_courses.all():
-            enrollment = Enrollment.objects.filter(
-                user=request.user,
-                course=path_course.course,
-            ).first()
+        path_courses = path.path_courses.select_related("course")
+        course_ids = [pc.course.id for pc in path_courses]
+        enrollments_map = {
+            e.course_id: e
+            for e in Enrollment.objects.filter(user=request.user, course_id__in=course_ids)
+        }
+
+        for path_course in path_courses:
+            enrollment = enrollments_map.get(path_course.course.id)
 
             courses_progress.append(
                 {
@@ -251,15 +255,30 @@ class PathAssignmentViewSet(viewsets.ModelViewSet):
 
     def _auto_enroll_courses(self, assignment):
         """Auto-enroll user in all courses of the learning path."""
-        for path_course in assignment.learning_path.path_courses.all():
-            Enrollment.objects.get_or_create(
+        path_courses = assignment.learning_path.path_courses.select_related("course")
+        course_ids = [pc.course_id for pc in path_courses]
+
+        # Get existing enrollments
+        existing = set(
+            Enrollment.objects.filter(user=assignment.user, course_id__in=course_ids).values_list(
+                "course_id", flat=True
+            )
+        )
+
+        # Create missing enrollments in bulk
+        to_create = [
+            Enrollment(
                 user=assignment.user,
                 course=path_course.course,
-                defaults={
-                    "assigned_by": assignment.assigned_by,
-                    "due_date": assignment.due_date,
-                },
+                assigned_by=assignment.assigned_by,
+                due_date=assignment.due_date,
             )
+            for path_course in path_courses
+            if path_course.course_id not in existing
+        ]
+
+        if to_create:
+            Enrollment.objects.bulk_create(to_create, ignore_conflicts=True)
 
 
 class MyLearningPathsView(APIView):
@@ -302,12 +321,29 @@ class JoinLearningPathView(APIView):
 
         if created:
             # Auto-enroll in all courses
-            for path_course in learning_path.path_courses.all():
-                Enrollment.objects.get_or_create(
+            path_courses = learning_path.path_courses.select_related("course")
+            course_ids = [pc.course_id for pc in path_courses]
+
+            # Get existing enrollments
+            existing = set(
+                Enrollment.objects.filter(user=request.user, course_id__in=course_ids).values_list(
+                    "course_id", flat=True
+                )
+            )
+
+            # Create missing enrollments in bulk
+            to_create = [
+                Enrollment(
                     user=request.user,
                     course=path_course.course,
-                    defaults={"assigned_by": request.user},
+                    assigned_by=request.user,
                 )
+                for path_course in path_courses
+                if path_course.course_id not in existing
+            ]
+
+            if to_create:
+                Enrollment.objects.bulk_create(to_create, ignore_conflicts=True)
 
         serializer = PathAssignmentSerializer(assignment)
         return Response(

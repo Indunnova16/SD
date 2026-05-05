@@ -128,12 +128,29 @@ def join_learning_path(request, path_id):
 
     if created:
         # Auto-enroll in all courses
-        for path_course in path.path_courses.all():
-            Enrollment.objects.get_or_create(
+        path_courses = path.path_courses.select_related("course")
+        course_ids = [pc.course_id for pc in path_courses]
+
+        # Get existing enrollments
+        existing = set(
+            Enrollment.objects.filter(user=request.user, course_id__in=course_ids).values_list(
+                "course_id", flat=True
+            )
+        )
+
+        # Create missing enrollments in bulk
+        to_create = [
+            Enrollment(
                 user=request.user,
                 course=path_course.course,
-                defaults={"assigned_by": request.user},
+                assigned_by=request.user,
             )
+            for path_course in path_courses
+            if path_course.course_id not in existing
+        ]
+
+        if to_create:
+            Enrollment.objects.bulk_create(to_create, ignore_conflicts=True)
 
     if request.headers.get("HX-Request"):
         return render(
