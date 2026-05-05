@@ -545,6 +545,7 @@ class AnalyticsService:
         Calculate overall compliance score.
         """
         from apps.courses.models import Course, Enrollment
+        from django.db.models import Count, Q
 
         # Get mandatory courses
         mandatory_courses = Course.objects.filter(
@@ -555,26 +556,24 @@ class AnalyticsService:
         if not mandatory_courses.exists():
             return 100.0
 
-        # Count completed enrollments for mandatory courses
-        total_required = 0
-        total_completed = 0
-
+        # Count completed enrollments for mandatory courses in a single query
         from apps.accounts.models import User
 
-        active_users = User.objects.filter(is_active=True).count()
+        active_users_count = User.objects.filter(is_active=True).count()
+        mandatory_course_ids = mandatory_courses.values_list("id", flat=True)
 
-        for course in mandatory_courses:
-            total_required += active_users
-            completed = Enrollment.objects.filter(
-                course=course,
-                status=Enrollment.Status.COMPLETED,
-            ).count()
-            total_completed += completed
+        # Single query: get count of completed enrollments for mandatory courses
+        completed_count = Enrollment.objects.filter(
+            course_id__in=mandatory_course_ids,
+            status=Enrollment.Status.COMPLETED,
+        ).count()
+
+        total_required = active_users_count * mandatory_courses.count()
 
         if total_required == 0:
             return 100.0
 
-        return (total_completed / total_required) * 100
+        return (completed_count / total_required) * 100
 
     @staticmethod
     def get_assessment_report(

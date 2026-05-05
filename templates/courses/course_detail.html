@@ -23,7 +23,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500 dark:text-gray-400">Módulos</span>
-                        <span class="font-medium text-gray-900 dark:text-white">{{ course.modules.count }}</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ course.modules.all|length }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500 dark:text-gray-400">Tipo</span>
@@ -97,7 +97,7 @@
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                 <div class="absolute bottom-0 left-0 right-0 px-4 py-3 flex justify-between items-center">
                                     <h3 class="font-medium text-white">{{ forloop.counter }}. {{ module.title }}</h3>
-                                    <span class="text-sm text-white/80">{{ module.lessons.count }} lecciones</span>
+                                    <span class="text-sm text-white/80">{{ module.lessons.all|length }} lecciones</span>
                                 </div>
                             </div>
                         {% else %}
@@ -107,7 +107,7 @@
                                     {% if course.theme_color %}style="color: {{ course.theme_color }}"{% endif %}>
                                     {{ forloop.counter }}. {{ module.title }}
                                 </h3>
-                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ module.lessons.count }} lecciones</span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ module.lessons.all|length }} lecciones</span>
                             </div>
                         {% endif %}
                         <ul class="divide-y dark:divide-gray-700">

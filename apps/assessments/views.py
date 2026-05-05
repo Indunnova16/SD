@@ -281,6 +281,20 @@ def submit_attempt(request, attempt_id):
             except (Question.DoesNotExist, json_module.JSONDecodeError):
                 continue
 
+    # Validate completeness
+    total_questions = attempt.assessment.questions.count()
+    answered_questions = attempt.attempt_answers.count()
+
+    if answered_questions < total_questions:
+        unanswered = total_questions - answered_questions
+        messages.warning(
+            request,
+            f"Enviaste tu evaluación con {unanswered} pregunta(s) sin responder.",
+        )
+        if not attempt.metadata:
+            attempt.metadata = {}
+        attempt.metadata["unanswered_count"] = unanswered
+
     # Update attempt
     time_spent = int(request.POST.get("time_spent", 0))
     attempt.time_spent = time_spent

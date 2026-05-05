@@ -46,6 +46,7 @@ def course_list(request):
         Course.objects.filter(status=Course.Status.PUBLISHED)
         .select_related("category", "created_by")
         .prefetch_related("modules")
+        .annotate(modules_count=Count("modules"))
     )
 
     # Filtering
@@ -369,6 +370,7 @@ def my_courses(request):
         existing_course_ids = set(
             Enrollment.objects.filter(user=user).values_list("course_id", flat=True)
         )
+        courses_to_enroll = []
         for course in Course.objects.filter(status=Course.Status.PUBLISHED):
             if (
                 course.target_profiles
@@ -376,11 +378,18 @@ def my_courses(request):
                 and user.job_profile.code in course.target_profiles
                 and course.id not in existing_course_ids
             ):
-                Enrollment.objects.create(
-                    user=user,
-                    course=course,
-                    status=Enrollment.Status.ENROLLED,
+                courses_to_enroll.append(
+                    Enrollment(
+                        user=user,
+                        course=course,
+                        status=Enrollment.Status.ENROLLED,
+                    )
                 )
+        if courses_to_enroll:
+            Enrollment.objects.bulk_create(
+                courses_to_enroll,
+                ignore_conflicts=True,
+            )
 
     enrollments = (
         Enrollment.objects.filter(user=user)
@@ -1902,6 +1911,16 @@ def save_attendance_signature(request, course_id, lesson_id):
                 "ip_address": get_client_ip(request),
             },
         )
+
+        if not created:
+            return JsonResponse(
+                {
+                    "error": "Ya has registrado tu firma en esta lección. Si deseas reemplazarla, por favor contacta al instructor.",
+                    "already_signed": True,
+                    "signed_at": str(signature_obj.signed_at),
+                },
+                status=400,
+            )
 
         filename = f"signature_{lesson.id}_{request.user.id}_{timezone.now().timestamp()}.png"
         signature_obj.signature_image.save(

@@ -64,13 +64,14 @@ def verify_certificate(request, certificate_number=None):
                 certificate_number=cert_num
             )
 
-            # Check validity
+            # Check validity (check REVOKED first, then expiration)
             is_valid = certificate.status == Certificate.Status.ISSUED
-            if certificate.expires_at and certificate.expires_at < timezone.now():
+            if certificate.status == Certificate.Status.REVOKED:
+                is_valid = False
+                verification_result = "revoked"
+            elif certificate.expires_at and certificate.expires_at < timezone.now():
                 is_valid = False
                 verification_result = "expired"
-            elif certificate.status == Certificate.Status.REVOKED:
-                verification_result = "revoked"
             elif is_valid:
                 verification_result = "valid"
 
@@ -104,6 +105,18 @@ def certificate_download(request, certificate_id):
     # Only allow owner or staff
     if certificate.user != request.user and not request.user.is_staff:
         return render(request, "certifications/not_authorized.html", status=403)
+
+    # Validate certificate status
+    if certificate.status != Certificate.Status.ISSUED:
+        context = {
+            "message": f"Este certificado no está disponible para descargar (Estado: {certificate.get_status_display()})."
+        }
+        return render(request, "certifications/not_available.html", context, status=403)
+
+    # Check expiration
+    if certificate.expires_at and certificate.expires_at < timezone.now():
+        context = {"message": "Este certificado ha expirado y no puede ser descargado."}
+        return render(request, "certifications/not_available.html", context, status=403)
 
     if not certificate.certificate_file:
         context = {"message": "El archivo del certificado no está disponible."}
