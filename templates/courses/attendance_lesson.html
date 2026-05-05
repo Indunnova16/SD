@@ -1,0 +1,257 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Asistencia - {{ lesson.title }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div class="max-w-3xl mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center gap-4 mb-4">
+                <a href="{% url 'courses:detail' course.id %}" class="btn btn-ghost btn-sm">
+                    ← Volver al curso
+                </a>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    {{ lesson.title }}
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400">
+                    {{ lesson.description }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Signature Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+            {% if existing_signature %}
+                <div class="alert alert-success mb-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                        <h3 class="font-bold">Ya has firmado esta lección</h3>
+                        <div class="text-sm">Firma registrada: {{ existing_signature.signed_at|date:"d/m/Y H:i" }}</div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <img src="{{ existing_signature.signature_image.url }}"
+                         alt="Tu firma"
+                         class="border border-gray-300 dark:border-gray-600 rounded-lg max-w-xs">
+                </div>
+                <div class="flex gap-2">
+                    <button type="button"
+                            class="btn btn-primary"
+                            onclick="document.getElementById('signature-form').classList.remove('hidden')">
+                        Firmar de nuevo
+                    </button>
+                </div>
+            {% endif %}
+
+            <div id="signature-form" {% if existing_signature %}class="hidden"{% endif %}>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                    {% if is_instructor %}
+                        Firmar como Instructor
+                    {% else %}
+                        Firmar Asistencia
+                    {% endif %}
+                </h2>
+
+                <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                    <p class="text-sm text-blue-800 dark:text-blue-200">
+                        {% if is_instructor %}
+                            Por favor, firma con tu firma de instructor
+                        {% else %}
+                            Por favor, firma para registrar tu asistencia
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Signature Canvas -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Firma
+                    </label>
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <canvas id="signature-canvas"
+                                width="600"
+                                height="200"
+                                class="block w-full bg-white dark:bg-gray-700 cursor-crosshair touch-none"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Dibuja tu firma en el área anterior
+                    </p>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex gap-2 mb-6">
+                    <button type="button"
+                            id="clear-btn"
+                            class="btn btn-outline">
+                        Limpiar
+                    </button>
+                </div>
+
+                <!-- Form -->
+                <form id="attendance-form" method="post" action="{% url 'courses:save_attendance_signature' course.id lesson.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="signature_data" id="signature_data" value="">
+
+                    <div class="flex gap-2">
+                        <button type="submit"
+                                id="submit-btn"
+                                class="btn btn-primary"
+                                disabled>
+                            Guardar Firma
+                        </button>
+                        {% if existing_signature %}
+                            <button type="button"
+                                    class="btn btn-ghost"
+                                    onclick="document.getElementById('signature-form').classList.add('hidden')">
+                                Cancelar
+                            </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('signature-canvas');
+const ctx = canvas.getContext('2d');
+const clearBtn = document.getElementById('clear-btn');
+const submitBtn = document.getElementById('submit-btn');
+const signatureDataInput = document.getElementById('signature_data');
+const attendanceForm = document.getElementById('attendance-form');
+
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+
+function getCanvasCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    let x, y;
+    if (e.touches) {
+        x = (e.touches[0].clientX - rect.left) * scaleX;
+        y = (e.touches[0].clientY - rect.top) * scaleY;
+    } else {
+        x = (e.clientX - rect.left) * scaleX;
+        y = (e.clientY - rect.top) * scaleY;
+    }
+    return { x, y };
+}
+
+function drawLine(fromX, fromY, toX, toY) {
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.closePath();
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    isDrawing = true;
+    const { x, y } = getCanvasCoordinates(e);
+    lastX = x;
+    lastY = y;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    const { x, y } = getCanvasCoordinates(e);
+    drawLine(lastX, lastY, x, y);
+    lastX = x;
+    lastY = y;
+    updateSubmitButton();
+});
+
+canvas.addEventListener('mouseup', () => {
+    isDrawing = false;
+});
+
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isDrawing = true;
+    const { x, y } = getCanvasCoordinates(e);
+    lastX = x;
+    lastY = y;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const { x, y } = getCanvasCoordinates(e);
+    drawLine(lastX, lastY, x, y);
+    lastX = x;
+    lastY = y;
+    updateSubmitButton();
+});
+
+canvas.addEventListener('touchend', () => {
+    isDrawing = false;
+});
+
+clearBtn.addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    updateSubmitButton();
+});
+
+function updateSubmitButton() {
+    const imageData = canvas.toDataURL('image/png');
+    submitBtn.disabled = imageData === 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    if (!submitBtn.disabled) {
+        signatureDataInput.value = imageData;
+    }
+}
+
+attendanceForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    if (!signatureDataInput.value) {
+        alert('Por favor, dibuja tu firma primero');
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+
+    fetch("{% url 'courses:save_attendance_signature' course.id lesson.id %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            signature_data: signatureDataInput.value,
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert(data.error || 'Error al guardar la firma');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+        }
+    })
+    .catch(err => {
+        alert('Error: ' + err);
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+    });
+});
+
+canvas.focus();
+</script>
+{% endblock %}

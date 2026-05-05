@@ -48,6 +48,16 @@ urlpatterns = [
         name="sign_lesson_evidence",
     ),
     path(
+        "<int:course_id>/lessons/<int:lesson_id>/attendance/",
+        views.attendance_lesson_view,
+        name="attendance_lesson",
+    ),
+    path(
+        "<int:course_id>/lessons/<int:lesson_id>/attendance/sign/",
+        views.save_attendance_signature,
+        name="save_attendance_signature",
+    ),
+    path(
         "<int:course_id>/sign-completion/",
         views.sign_course_completion,
         name="sign_course_completion",

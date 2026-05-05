@@ -350,6 +350,7 @@ class Lesson(models.Model):
         QUIZ = "quiz", _("Quiz")
         TEXT = "text", _("Texto")
         PRESENTIAL = "presential", _("Presencial")
+        ATTENDANCE = "attendance", _("Asistencia")
 
     module = models.ForeignKey(
         Module,
@@ -1077,3 +1078,80 @@ class LessonEvidence(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.lesson.title} ({self.get_evidence_type_display()})"
+
+
+class AttendanceSignature(models.Model):
+    """
+    Firma de asistencia para lecciones de tipo "Asistencia".
+    """
+
+    class SignatureType(models.TextChoices):
+        STUDENT = "student", _("Firma de Estudiante")
+        INSTRUCTOR = "instructor", _("Firma del Instructor")
+
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="attendance_signatures",
+        verbose_name=_("Lección"),
+        limit_choices_to={"lesson_type": "attendance"},
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="attendance_signatures",
+        verbose_name=_("Usuario"),
+    )
+    signature_image = models.ImageField(
+        _("Imagen de firma"),
+        upload_to="signatures/%Y/%m/",
+    )
+    signature_type = models.CharField(
+        _("Tipo de firma"),
+        max_length=20,
+        choices=SignatureType.choices,
+        default=SignatureType.STUDENT,
+    )
+    instructor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="instructor_attendances",
+        verbose_name=_("Instructor asignado"),
+    )
+    signed_at = models.DateTimeField(
+        _("Fecha y hora de firma"),
+        auto_now_add=True,
+    )
+    ip_address = models.GenericIPAddressField(
+        _("Dirección IP"),
+        null=True,
+        blank=True,
+    )
+    device_info = models.JSONField(
+        _("Información del dispositivo"),
+        default=dict,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "attendance_signatures"
+        verbose_name = _("Firma de Asistencia")
+        verbose_name_plural = _("Firmas de Asistencia")
+        ordering = ["-signed_at"]
+        indexes = [
+            models.Index(fields=["lesson", "user"]),
+            models.Index(fields=["lesson", "signed_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["lesson", "user"],
+                name="unique_attendance_signature",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.lesson.title} ({self.get_signature_type_display()})"

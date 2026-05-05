@@ -2,8 +2,11 @@
 Web views for courses app.
 """
 
+import base64
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
 from django.db import models, transaction
 from django.db.models import Count, Q
 from django.http import FileResponse, HttpResponse, JsonResponse
@@ -12,6 +15,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import (
+    AttendanceSignatureForm,
     CategoryForm,
     CourseCreateForm,
     CourseEditParamsForm,
@@ -21,8 +25,18 @@ from .forms import (
     ModuleBuilderForm,
     QuickAssessmentForm,
 )
-from .models import Category, Course, Enrollment, JobProfileType, Lesson, LessonProgress, Module
+from .models import (
+    AttendanceSignature,
+    Category,
+    Course,
+    Enrollment,
+    JobProfileType,
+    Lesson,
+    LessonProgress,
+    Module,
+)
 from .services import EnrollmentService
+from .utils import get_client_ip
 
 
 @login_required
@@ -1221,7 +1235,7 @@ def builder_add_lesson(request, course_id, module_id):
 
 
 @login_required
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 def builder_edit_lesson(request, course_id, module_id, lesson_id):
     """Edit a lesson."""
     if err := _staff_required(request):
@@ -1230,78 +1244,94 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
     course = get_object_or_404(Course, id=course_id)
     module = get_object_or_404(Module, id=module_id, course=course)
     lesson = get_object_or_404(Lesson, id=lesson_id, module=module)
-    form = LessonBuilderForm(request.POST, request.FILES, instance=lesson)
 
-    if form.is_valid():
-        try:
-            form.save()
+    if request.method == "POST":
+        form = LessonBuilderForm(request.POST, request.FILES, instance=lesson)
 
-            # Handle quiz time_limit if present
-            if lesson.lesson_type == "quiz":
-                quiz_time_limit = request.POST.get("quiz_time_limit", "").strip()
-                assessment = lesson.assessments.first()
+        if form.is_valid():
+            try:
+                form.save()
 
+                # Handle quiz time_limit if present
+                if lesson.lesson_type == "quiz":
+                    quiz_time_limit = request.POST.get("quiz_time_limit", "").strip()
+                    assessment = lesson.assessments.first()
+
+                    import logging
+
+                    logger = logging.getLogger(__name__)
+                    logger.info(
+                        f"Quiz edit - lesson_id={lesson.id}, quiz_time_limit='{quiz_time_limit}', has_assessment={assessment is not None}"
+                    )
+
+                    if assessment:
+                        if quiz_time_limit:
+                            try:
+                                time_limit_int = int(quiz_time_limit)
+                                logger.info(
+                                    f"Saving time_limit={time_limit_int} to assessment {assessment.id}"
+                                )
+                                assessment.time_limit = time_limit_int
+                                assessment.save(update_fields=["time_limit"])
+                                logger.info(f"Saved successfully")
+                            except (ValueError, TypeError) as ve:
+                                logger.warning(f"Failed to parse time_limit: {ve}")
+                        # Refresh to ensure latest value is displayed
+                        assessment.refresh_from_db()
+                        logger.info(
+                            f"Assessment refreshed - current time_limit={assessment.time_limit}"
+                        )
+
+                messages.success(request, "Lección actualizada correctamente.")
+
+                if request.headers.get("HX-Request"):
+                    lesson.refresh_from_db()
+                    return render(
+                        request,
+                        "courses/partials/builder/lesson_item.html",
+                        {
+                            "lesson": lesson,
+                            "course": course,
+                            "module": module,
+                            "available_assessments": _get_available_assessments(course),
+                        },
+                    )
+                return redirect("courses:course_builder", course_id=course.id)
+            except Exception as e:
                 import logging
 
                 logger = logging.getLogger(__name__)
-                logger.info(
-                    f"Quiz edit - lesson_id={lesson.id}, quiz_time_limit='{quiz_time_limit}', has_assessment={assessment is not None}"
-                )
+                logger.exception("Error saving lesson")
+                form.add_error(None, f"Error al guardar la leccion: {e}")
+                messages.error(request, f"Error al guardar: {e}")
 
-                if assessment:
-                    if quiz_time_limit:
-                        try:
-                            time_limit_int = int(quiz_time_limit)
-                            logger.info(
-                                f"Saving time_limit={time_limit_int} to assessment {assessment.id}"
-                            )
-                            assessment.time_limit = time_limit_int
-                            assessment.save(update_fields=["time_limit"])
-                            logger.info(f"Saved successfully")
-                        except (ValueError, TypeError) as ve:
-                            logger.warning(f"Failed to parse time_limit: {ve}")
-                    # Refresh to ensure latest value is displayed
-                    assessment.refresh_from_db()
-                    logger.info(
-                        f"Assessment refreshed - current time_limit={assessment.time_limit}"
-                    )
-        except Exception as e:
-            import logging
+        if form.errors and request.headers.get("HX-Request"):
+            response = render(
+                request,
+                "courses/partials/builder/lesson_form.html",
+                {
+                    "lesson_form": form,
+                    "course": course,
+                    "module": module,
+                    "lesson": lesson,
+                    "is_new": False,
+                },
+            )
+            response["HX-Retarget"] = "closest form"
+            response["HX-Reswap"] = "outerHTML"
+            return response
 
-            logger = logging.getLogger(__name__)
-            logger.exception("Error saving lesson")
-            form.add_error(None, f"Error al guardar la leccion: {e}")
+    else:
+        form = LessonBuilderForm(instance=lesson)
 
-    if form.errors and request.headers.get("HX-Request"):
-        response = render(
-            request,
-            "courses/partials/builder/lesson_form.html",
-            {
-                "lesson_form": form,
-                "course": course,
-                "module": module,
-                "lesson": lesson,
-                "is_new": False,
-            },
-        )
-        response["HX-Retarget"] = "closest form"
-        response["HX-Reswap"] = "outerHTML"
-        return response
-
-    if request.headers.get("HX-Request"):
-        lesson.refresh_from_db()
-        return render(
-            request,
-            "courses/partials/builder/lesson_item.html",
-            {
-                "lesson": lesson,
-                "course": course,
-                "module": module,
-                "available_assessments": _get_available_assessments(course),
-            },
-        )
-
-    return redirect("courses:course_builder", course_id=course.id)
+    context = {
+        "lesson_form": form,
+        "course": course,
+        "module": module,
+        "lesson": lesson,
+        "is_new": False,
+    }
+    return render(request, "courses/partials/builder/lesson_form.html", context)
 
 
 @login_required
@@ -1801,3 +1831,98 @@ def sign_course_completion(request, course_id):
         return JsonResponse({"success": True, "signed_at": str(enrollment.completion_signed_at)})
 
     return JsonResponse({"success": True, "signed_at": str(enrollment.completion_signed_at)})
+
+
+@login_required
+def attendance_lesson_view(request, course_id, lesson_id):
+    """View for attendance lesson with signature capture."""
+    course = get_object_or_404(Course, pk=course_id)
+    lesson = get_object_or_404(
+        Lesson,
+        pk=lesson_id,
+        module__course=course,
+        lesson_type=Lesson.Type.ATTENDANCE,
+    )
+
+    enrollment = get_object_or_404(Enrollment, course=course, user=request.user)
+
+    existing_signature = AttendanceSignature.objects.filter(
+        lesson=lesson,
+        user=request.user,
+    ).first()
+
+    is_instructor = lesson.metadata.get("instructor_id") == request.user.id
+
+    context = {
+        "course": course,
+        "lesson": lesson,
+        "enrollment": enrollment,
+        "existing_signature": existing_signature,
+        "is_instructor": is_instructor,
+        "form": AttendanceSignatureForm(),
+    }
+    return render(request, "courses/attendance_lesson.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_attendance_signature(request, course_id, lesson_id):
+    """Save attendance signature."""
+    course = get_object_or_404(Course, pk=course_id)
+    lesson = get_object_or_404(
+        Lesson,
+        pk=lesson_id,
+        module__course=course,
+        lesson_type=Lesson.Type.ATTENDANCE,
+    )
+
+    enrollment = get_object_or_404(Enrollment, course=course, user=request.user)
+
+    signature_data = request.POST.get("signature_data")
+    if not signature_data:
+        return JsonResponse({"error": "No signature data provided"}, status=400)
+
+    is_instructor = lesson.metadata.get("instructor_id") == request.user.id
+    signature_type = (
+        AttendanceSignature.SignatureType.INSTRUCTOR
+        if is_instructor
+        else AttendanceSignature.SignatureType.STUDENT
+    )
+
+    try:
+        header, image_data = signature_data.split(",")
+        image_bytes = base64.b64decode(image_data)
+
+        signature_obj, created = AttendanceSignature.objects.get_or_create(
+            lesson=lesson,
+            user=request.user,
+            defaults={
+                "signature_type": signature_type,
+                "instructor_id": lesson.metadata.get("instructor_id"),
+                "ip_address": get_client_ip(request),
+            },
+        )
+
+        filename = f"signature_{lesson.id}_{request.user.id}_{timezone.now().timestamp()}.png"
+        signature_obj.signature_image.save(
+            filename,
+            ContentFile(image_bytes),
+            save=True,
+        )
+
+        LessonProgress.objects.get_or_create(
+            lesson=lesson,
+            enrollment=enrollment,
+            defaults={"is_completed": True, "completed_at": timezone.now()},
+        )
+
+        messages.success(request, "Firma registrada correctamente.")
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Firma guardada correctamente",
+                "signed_at": str(signature_obj.signed_at),
+            }
+        )
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

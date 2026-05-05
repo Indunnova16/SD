@@ -6,7 +6,7 @@ from django import forms
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
-from .models import Category, Course, JobProfileType, Lesson, Module
+from .models import AttendanceSignature, Category, Course, JobProfileType, Lesson, Module
 
 
 def get_profile_choices():
@@ -463,3 +463,14 @@ class QuickAssessmentForm(forms.Form):
         widget=forms.NumberInput(attrs={"class": "input input-bordered w-full", "min": "0"}),
         help_text=_("0 = intentos ilimitados"),
     )
+
+
+class AttendanceSignatureForm(forms.ModelForm):
+    """Form for capturing attendance signatures."""
+
+    class Meta:
+        model = AttendanceSignature
+        fields = ["signature_image"]
+        widgets = {
+            "signature_image": forms.HiddenInput(),
+        }

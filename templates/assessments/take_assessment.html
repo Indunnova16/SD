@@ -20,7 +20,9 @@
                         {% endif %}
                         <button type="submit"
                                 form="assessment-form"
+                                id="submit-header"
                                 class="btn btn-primary"
+                                disabled
                                 aria-label="Enviar evaluacion completa">Enviar Evaluación</button>
                     </div>
                 </div>
@@ -133,12 +135,62 @@
                 <!-- Submit -->
                 <div class="mt-8 flex justify-end">
                     <button type="submit"
+                            id="submit-button"
                             class="btn btn-primary btn-lg"
+                            disabled
                             aria-label="Enviar evaluacion y finalizar">Enviar Evaluación</button>
                 </div>
             </form>
         </div>
     </div>
+    <script>
+(function() {
+    const totalQuestions = {{ questions|length }};
+    const submitButton = document.getElementById('submit-button');
+    const submitHeader = document.getElementById('submit-header');
+    const form = document.getElementById('assessment-form');
+
+    function validateAllAnswered() {
+        let answered = 0;
+        const questionDivs = document.querySelectorAll('[data-question-id]');
+
+        questionDivs.forEach(div => {
+            const questionId = div.dataset.questionId;
+            const radioChecked = div.querySelector(`input[name="question_${questionId}"]:checked`);
+            const checkboxChecked = div.querySelector(`input[name="question_${questionId}"]:checked`);
+            const textarea = div.querySelector(`textarea[name="text_answer_${questionId}"]`);
+            const matchingInput = div.querySelector(`input[name="matching_${questionId}"]`);
+
+            let hasAnswer = false;
+
+            if (radioChecked || checkboxChecked) {
+                hasAnswer = true;
+            } else if (textarea && textarea.value.trim()) {
+                hasAnswer = true;
+            } else if (matchingInput && matchingInput.value && matchingInput.value !== '[]') {
+                try {
+                    const pairs = JSON.parse(matchingInput.value);
+                    hasAnswer = pairs.every(p => p.right && p.right.trim());
+                } catch (e) {
+                    hasAnswer = false;
+                }
+            }
+
+            if (hasAnswer) answered++;
+        });
+
+        const allAnswered = answered === totalQuestions;
+        submitButton.disabled = !allAnswered;
+        submitHeader.disabled = !allAnswered;
+    }
+
+    document.addEventListener('change', validateAllAnswered);
+    document.addEventListener('htmx:afterSwap', validateAllAnswered);
+    form.addEventListener('input', validateAllAnswered);
+
+    validateAllAnswered();
+})();
+    </script>
     {% if time_limit %}
         <script>
 (function() {
