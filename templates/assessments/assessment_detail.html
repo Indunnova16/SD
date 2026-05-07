@@ -19,10 +19,8 @@
                        class="btn btn-warning btn-block mb-2">Continuar Intento</a>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Tienes un intento en progreso</p>
                 {% elif can_start %}
-                    <form method="post" action="{% url 'assessments:start' assessment.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-primary btn-block">Iniciar Evaluación</button>
-                    </form>
+                    <a href="{% url 'assessments:start' assessment.id %}"
+                       class="btn btn-primary btn-block">Iniciar Evaluación</a>
                 {% else %}
                     <button class="btn btn-disabled btn-block" disabled>Sin Intentos Disponibles</button>
                     <p class="text-sm text-error mt-2">Has alcanzado el máximo de {{ assessment.max_attempts }} intentos.</p>

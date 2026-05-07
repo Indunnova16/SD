@@ -118,6 +118,10 @@ LOGGING = {
     },
 }
 
+# ALLOWED_HOSTS - must be configured via environment variable in Cloud Run
+# Example: ALLOWED_HOSTS=sd-lms.example.com,*.example.com
+# If not set, defaults to localhost and 127.0.0.1 (from base.py)
+
 # Axes - reduce lockout for cloud environment
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 10
