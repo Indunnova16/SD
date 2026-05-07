@@ -1315,19 +1315,18 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                 messages.error(request, f"Error al guardar: {e}")
 
         if form.errors and request.headers.get("HX-Request"):
+            lesson.refresh_from_db()
             response = render(
                 request,
-                "courses/partials/builder/lesson_form.html",
+                "courses/partials/builder/lesson_item.html",
                 {
                     "lesson_form": form,
+                    "lesson": lesson,
                     "course": course,
                     "module": module,
-                    "lesson": lesson,
-                    "is_new": False,
+                    "available_assessments": _get_available_assessments(course),
                 },
             )
-            response["HX-Retarget"] = "closest form"
-            response["HX-Reswap"] = "outerHTML"
             return response
 
     else:

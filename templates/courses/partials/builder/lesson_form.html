@@ -702,14 +702,18 @@ function updateConditionalFields() {
 document.addEventListener('DOMContentLoaded', () => {
     updateConditionalFields();
     setupVideoPreview();
+    setupFormSubmitHandler();
 });
 document.addEventListener('htmx:afterSettle', () => {
     updateConditionalFields();
     setupVideoPreview();
+    setupFormSubmitHandler();
 });
 
-const form = document.querySelector('form[x-data]');
-if (form) {
+function setupFormSubmitHandler() {
+    const form = document.querySelector('form[x-data]');
+    if (!form) return;
+
     const select = form.querySelector('select[name="lesson_type"]');
     if (select) {
         select.addEventListener('change', () => {
@@ -718,48 +722,29 @@ if (form) {
         });
     }
 
-    // Ensure all form fields are properly submitted with HTMX
-    // Even if hidden, they should be included in the request
-    select?.addEventListener('htmx:configRequest', (detail) => {
-        // This ensures HTMX includes all form fields
-    });
-}
-
-    // Map SCORM and Interactive fields to appropriate model fields before submission
-    form.addEventListener('submit', function(e) {
+    // Use htmx:beforeSend instead of submit since HTMX is handling form submission
+    form.addEventListener('htmx:beforeSend', function(e) {
         const lessonType = form.querySelector('select[name="lesson_type"]').value;
 
         if (lessonType === 'scorm') {
-            // Store SCORM config in hidden fields
             const scormVersion = form.querySelector('select[name="scorm_version"]')?.value || '1.2';
             const scormUrl = form.querySelector('input[name="scorm_url"]')?.value || '';
-            // Store in content field as JSON metadata
-            const metadata = {
-                scorm_version: scormVersion,
-                scorm_url: scormUrl
-            };
             const hiddenField = form.querySelector('input[name="content_file"]');
             if (hiddenField && hiddenField.files.length === 0) {
-                // Show warning if no file uploaded
                 if (!confirm('¿Seguro que deseas continuar sin archivo SCORM?')) {
-                    e.preventDefault();
+                    e.detail.xhr.abort();
+                    return false;
                 }
             }
         } else if (lessonType === 'interactive') {
-            // Map interactive fields
             const interactiveUrl = form.querySelector('input[name="interactive_url"]')?.value;
             const interactiveCode = form.querySelector('textarea[name="interactive_code"]')?.value;
-            const allowFullscreen = form.querySelector('input[name="interactive_fullscreen"]')?.checked;
-
-            // Store URL in video_url field
             if (interactiveUrl) {
                 const videoUrlInput = form.querySelector('input[name="video_url"]');
                 if (videoUrlInput) {
                     videoUrlInput.value = interactiveUrl;
                 }
             }
-
-            // Store code in content field
             if (interactiveCode) {
                 const contentInput = form.querySelector('textarea[name="content"]');
                 if (contentInput) {
