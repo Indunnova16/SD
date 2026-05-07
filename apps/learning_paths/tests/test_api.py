@@ -31,7 +31,7 @@ class LearningPathAPITests(TestCase):
             last_name="User",
             document_number="12345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
@@ -195,7 +195,7 @@ class PathAssignmentAPITests(TestCase):
             last_name="User",
             document_number="22345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.other_user = User.objects.create_user(
@@ -205,7 +205,7 @@ class PathAssignmentAPITests(TestCase):
             last_name="User",
             document_number="87654321",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)

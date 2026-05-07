@@ -36,7 +36,7 @@ class AssessmentAPITests(TestCase):
             last_name="User",
             document_number="12345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
@@ -190,7 +190,7 @@ class AssessmentAttemptAPITests(TestCase):
             last_name="User",
             document_number="22345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
@@ -337,7 +337,7 @@ class QuestionAPITests(TestCase):
             last_name="User",
             document_number="32345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)

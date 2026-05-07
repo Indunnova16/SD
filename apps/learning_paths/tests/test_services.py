@@ -35,7 +35,7 @@ class LearningPathServiceTest(TestCase):
             last_name="User",
             document_number="987654321",
             job_position="Technician",
-            job_profile="technician",
+            job_profile=None,
             hire_date=date(2021, 6, 15),
         )
 

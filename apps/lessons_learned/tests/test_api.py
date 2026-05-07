@@ -28,7 +28,7 @@ class CategoryAPITests(TestCase):
             last_name="User",
             document_number="12345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
@@ -75,7 +75,7 @@ class LessonLearnedAPITests(TestCase):
             last_name="User",
             document_number="22345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.admin = User.objects.create_user(
@@ -85,7 +85,7 @@ class LessonLearnedAPITests(TestCase):
             last_name="User",
             document_number="32345678",
             job_position="Admin",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
         )

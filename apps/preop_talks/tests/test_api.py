@@ -29,7 +29,7 @@ class TalkTemplateAPITests(TestCase):
             last_name="User",
             document_number="12345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
@@ -96,7 +96,7 @@ class PreopTalkAPITests(TestCase):
             last_name="User",
             document_number="22345678",
             job_position="Developer",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.supervisor = User.objects.create_user(
@@ -106,7 +106,7 @@ class PreopTalkAPITests(TestCase):
             last_name="Visor",
             document_number="32345678",
             job_position="Supervisor",
-            job_profile="LINIERO",
+            job_profile=None,
             hire_date=date(2024, 1, 1),
         )
         self.client.force_authenticate(user=self.user)
