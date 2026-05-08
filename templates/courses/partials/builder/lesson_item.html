@@ -143,7 +143,8 @@
         </div>
         <!-- Edit mode (inline) -->
         <template x-if="editingLesson">
-            <div class="flex-1">
+            <div class="flex-1"
+                 x-init="$nextTick(() => htmx.process(this))">
                 <form hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}"
                       hx-target="closest [data-lesson-id]"
                       hx-swap="outerHTML"
