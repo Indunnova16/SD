@@ -144,11 +144,13 @@
         <!-- Edit mode (inline) -->
         <template x-if="editingLesson">
             <div class="flex-1"
-                 x-init="$nextTick(() => htmx.process(this))">
+                 x-init="$nextTick(() => htmx.process($el))">
                 <form hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}"
                       hx-target="closest [data-lesson-id]"
                       hx-swap="outerHTML"
                       hx-encoding="multipart/form-data"
+                      method="post"
+                      action="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}"
                       x-data="{ lessonType: '{{ lesson.lesson_type }}' }"
                       enctype="multipart/form-data">
                     {% csrf_token %}
