@@ -124,6 +124,7 @@ jobs:
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
+          platforms: linux/amd64
           context: .
           target: production
           push: false
