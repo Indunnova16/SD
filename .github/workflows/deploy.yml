@@ -35,7 +35,7 @@ jobs:
       - name: Build and Push
         run: |
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-          docker build -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest --target production .
+          docker buildx build --platform linux/amd64 --load -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest --target production .
           docker push ${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.IMAGE }}:latest
 
