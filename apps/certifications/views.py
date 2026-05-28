@@ -3,6 +3,7 @@ Web views for certifications app.
 """
 
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
@@ -120,9 +121,24 @@ def certificate_download(request, certificate_id):
 
     if not certificate.certificate_file:
         context = {"message": "El archivo del certificado no está disponible."}
-        return render(request, "certifications/not_available.html", context)
+        return render(request, "certifications/not_available.html", context, status=404)
 
-    # Redirect to file URL (in production would serve directly)
-    from django.http import HttpResponseRedirect
+    # Serve PDF directly via FileResponse (streams + correct content-type + as_attachment)
+    # This avoids relying on a public GCS bucket URL or signed-URL expiration.
+    try:
+        # certificate_file is a FieldFile; .open("rb") returns a file handle that
+        # FileResponse will iterate over and close after streaming.
+        file_handle = certificate.certificate_file.open("rb")
+    except FileNotFoundError:
+        context = {
+            "message": "El archivo del certificado no está disponible (FileNotFound)."
+        }
+        return render(request, "certifications/not_available.html", context, status=404)
 
-    return HttpResponseRedirect(certificate.certificate_file.url)
+    response = FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=f"Certificado_{certificate.certificate_number}.pdf",
+        content_type="application/pdf",
+    )
+    return response
