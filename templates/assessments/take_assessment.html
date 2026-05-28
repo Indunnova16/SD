@@ -67,14 +67,14 @@
                                 {% if question.question_type == 'single_choice' or question.question_type == 'true_false' %}
                                     {% for answer in question.answers.all %}
                                         <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" class="radio radio-primary" aria-describedby="question-title-{{ question.id }}" {% if answer.id in answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %} hx-post="{% url 'assessments:save_answer' attempt.id %}" hx-trigger="change" hx-vals='{"question_id": "{{ question.id }}"}' hx-swap="none">
+                                            <input type="radio" name="question_{{ question.id }}" value="{{ answer.id }}" class="radio radio-primary" aria-describedby="question-title-{{ question.id }}" {% with current=answered|get_item:question.id %}{% if current and answer.id in current.selected %}checked{% endif %}{% endwith %} hx-post="{% url 'assessments:save_answer' attempt.id %}" hx-trigger="change" hx-vals='{"question_id": "{{ question.id }}"}' hx-swap="none">
                                             <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
                                         </label>
                                     {% endfor %}
                                 {% elif question.question_type == 'multiple_choice' %}
                                     {% for answer in question.answers.all %}
                                         <label class="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                            <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}" class="checkbox checkbox-primary" aria-describedby="question-title-{{ question.id }}" {% if answer.id in answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{% if answer.id in current.selected %}checked{% endif %}{% endwith %}{% endif %}>
+                                            <input type="checkbox" name="question_{{ question.id }}" value="{{ answer.id }}" class="checkbox checkbox-primary" aria-describedby="question-title-{{ question.id }}" {% with current=answered|get_item:question.id %}{% if current and answer.id in current.selected %}checked{% endif %}{% endwith %} hx-post="{% url 'assessments:save_answer' attempt.id %}" hx-trigger="change" hx-vals='{"question_id": "{{ question.id }}"}' hx-include="input[name='question_{{ question.id }}']" hx-swap="none">
                                             <span class="text-gray-700 dark:text-gray-300">{{ answer.text }}</span>
                                         </label>
                                     {% endfor %}
@@ -126,7 +126,11 @@
                                               class="textarea textarea-bordered w-full dark:bg-gray-700 dark:text-white"
                                               aria-describedby="question-title-{{ question.id }}"
                                               aria-label="Respuesta a la pregunta {{ forloop.counter }}"
-                                              placeholder="Escribe tu respuesta aquí...">{% if answered|default:"" %}{% with current=answered|default:"{}"|get_item:question.id %}{{ current.text }}{% endwith %}{% endif %}</textarea>
+                                              placeholder="Escribe tu respuesta aquí..."
+                                              hx-post="{% url 'assessments:save_answer' attempt.id %}"
+                                              hx-trigger="keyup changed delay:800ms"
+                                              hx-vals='{"question_id": "{{ question.id }}"}'
+                                              hx-swap="none">{% with current=answered|get_item:question.id %}{% if current %}{{ current.text }}{% endif %}{% endwith %}</textarea>
                                 {% endif %}
                             </fieldset>
                         </div>

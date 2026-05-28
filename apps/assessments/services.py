@@ -606,6 +606,13 @@ class AssessmentService:
         if all_gradeable:
             attempt.status = AssessmentAttempt.Status.GRADED
             attempt.graded_at = timezone.now()
+        elif attempt.status == AssessmentAttempt.Status.SUBMITTED:
+            # Subjetivas (essay/short_answer) requieren calificacion manual.
+            # Logueamos para que el admin pueda detectar y completar la calificacion.
+            logger.info(
+                "Attempt %s requires manual grading (essay/short_answer questions present)",
+                attempt.id,
+            )
 
         attempt.save()
         return attempt
