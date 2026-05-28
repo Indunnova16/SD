@@ -3,6 +3,7 @@ Web views for certifications app.
 """
 
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
@@ -120,9 +121,116 @@ def certificate_download(request, certificate_id):
 
     if not certificate.certificate_file:
         context = {"message": "El archivo del certificado no está disponible."}
-        return render(request, "certifications/not_available.html", context)
+        return render(request, "certifications/not_available.html", context, status=404)
 
-    # Redirect to file URL (in production would serve directly)
-    from django.http import HttpResponseRedirect
+    # Serve PDF directly via FileResponse (streams + correct content-type + as_attachment)
+    # This avoids relying on a public GCS bucket URL or signed-URL expiration.
+    try:
+        # certificate_file is a FieldFile; .open("rb") returns a file handle that
+        # FileResponse will iterate over and close after streaming.
+        file_handle = certificate.certificate_file.open("rb")
+    except FileNotFoundError:
+        context = {
+            "message": "El archivo del certificado no está disponible (FileNotFound)."
+        }
+        return render(request, "certifications/not_available.html", context, status=404)
 
-    return HttpResponseRedirect(certificate.certificate_file.url)
+    response = FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=f"Certificado_{certificate.certificate_number}.pdf",
+        content_type="application/pdf",
+    )
+    return response
+
+
+# ---------------------------------------------------------------------------
+# B2 — Staff admin panel for CertificateTemplate
+# ---------------------------------------------------------------------------
+
+from django.contrib import messages  # noqa: E402
+from django.contrib.auth.decorators import user_passes_test  # noqa: E402
+from django.http import HttpResponse  # noqa: E402
+from django.shortcuts import redirect  # noqa: E402
+from django.views.decorators.http import require_http_methods  # noqa: E402
+
+from .forms import CertificateTemplateForm  # noqa: E402
+from .models import CertificateTemplate  # noqa: E402
+from .services import CertificateTemplateService  # noqa: E402
+
+
+def _staff_required(view):
+    """Decorator: only staff users can access."""
+    return user_passes_test(lambda u: u.is_authenticated and u.is_staff)(view)
+
+
+@_staff_required
+def template_list(request):
+    """List all certificate templates for staff to manage."""
+    templates = CertificateTemplate.objects.all().order_by("-is_active", "name")
+    return render(
+        request,
+        "certifications/admin/template_list.html",
+        {"templates": templates},
+    )
+
+
+@_staff_required
+@require_http_methods(["GET", "POST"])
+def template_create(request):
+    """Create a new certificate template."""
+    if request.method == "POST":
+        form = CertificateTemplateForm(request.POST, request.FILES)
+        if form.is_valid():
+            template = form.save()
+            messages.success(request, f"Plantilla '{template.name}' creada.")
+            return redirect("certifications:template_edit", template_id=template.pk)
+    else:
+        form = CertificateTemplateForm()
+    return render(
+        request,
+        "certifications/admin/template_form.html",
+        {"form": form, "template": None, "action": "create"},
+    )
+
+
+@_staff_required
+@require_http_methods(["GET", "POST"])
+def template_edit(request, template_id):
+    """Edit an existing certificate template."""
+    template = get_object_or_404(CertificateTemplate, pk=template_id)
+    if request.method == "POST":
+        form = CertificateTemplateForm(request.POST, request.FILES, instance=template)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Plantilla actualizada.")
+            return redirect("certifications:template_edit", template_id=template.pk)
+    else:
+        form = CertificateTemplateForm(instance=template)
+    return render(
+        request,
+        "certifications/admin/template_form.html",
+        {"form": form, "template": template, "action": "edit"},
+    )
+
+
+@_staff_required
+def template_preview(request, template_id):
+    """Render a HTML preview of the template with sample data."""
+    template = get_object_or_404(CertificateTemplate, pk=template_id)
+    html = CertificateTemplateService.preview_template(template)
+    return HttpResponse(html)
+
+
+@_staff_required
+@require_http_methods(["POST"])
+def template_toggle_active(request, template_id):
+    """Activate/deactivate a template (HTMX target)."""
+    template = get_object_or_404(CertificateTemplate, pk=template_id)
+    template.is_active = not template.is_active
+    template.save(update_fields=["is_active", "updated_at"])
+    return render(
+        request,
+        "certifications/admin/_template_row.html",
+        {"t": template},
+    )

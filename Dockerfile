@@ -76,10 +76,16 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 FROM python-base as production
 
 # Install runtime dependencies
+# weasyprint deps: pango, cairo, gdk-pixbuf, shared-mime-info
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     libcairo2 \
+    libcairo-gobject2 \
     libglib2.0-0 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    shared-mime-info \
     gettext \
     curl \
     && rm -rf /var/lib/apt/lists/*

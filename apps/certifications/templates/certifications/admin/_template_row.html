@@ -1,0 +1,38 @@
+{% load static %}
+<tr id="tpl-row-{{ t.pk }}">
+    <td>
+        <div class="flex flex-col">
+            <span class="font-medium text-gray-900 dark:text-white">{{ t.name }}</span>
+            {% if t.description %}
+                <span class="text-xs text-gray-500 dark:text-gray-400">{{ t.description|truncatechars:80 }}</span>
+            {% endif %}
+        </div>
+    </td>
+    <td>
+        <div class="flex flex-col">
+            <span class="text-sm">{{ t.signer_name|default:"—" }}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{{ t.signer_title|default:"" }}</span>
+        </div>
+    </td>
+    <td class="text-center">
+        <form hx-post="{% url 'certifications:template_toggle_active' t.pk %}"
+              hx-target="#tpl-row-{{ t.pk }}"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            <button type="submit"
+                    class="badge {% if t.is_active %}badge-success{% else %}badge-ghost{% endif %} cursor-pointer">
+                {% if t.is_active %}Activa{% else %}Inactiva{% endif %}
+            </button>
+        </form>
+    </td>
+    <td class="text-right">
+        <div class="flex justify-end gap-2">
+            <a href="{% url 'certifications:template_preview' t.pk %}"
+               target="_blank"
+               rel="noopener"
+               class="btn btn-ghost btn-xs">Preview</a>
+            <a href="{% url 'certifications:template_edit' t.pk %}"
+               class="btn btn-primary btn-xs">Editar</a>
+        </div>
+    </td>
+</tr>
