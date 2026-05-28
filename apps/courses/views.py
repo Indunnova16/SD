@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import (
+    AssessmentEditForm,
     AttendanceSignatureForm,
     CategoryForm,
     CourseCreateForm,
@@ -1544,6 +1545,64 @@ def builder_create_quiz(request, course_id):
             )
 
     return redirect("courses:course_builder", course_id=course.id)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def builder_edit_assessment(request, course_id, assessment_id):
+    """Edit Assessment properties from the course builder.
+
+    GET  -> renders the inline edit form partial.
+    POST -> validates + persists changes atomically and returns refreshed editor partial.
+    Permission: staff OR Assessment.created_by == request.user.
+    """
+    from apps.assessments.models import Assessment
+
+    course = get_object_or_404(Course, id=course_id)
+    assessment = get_object_or_404(Assessment, id=assessment_id, course=course)
+
+    # Permission: staff OR creator
+    if not (request.user.is_staff or assessment.created_by_id == request.user.id):
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "No autorizado"}, status=403)
+        messages.error(request, "No tiene permisos para editar esta evaluacion.")
+        return redirect("courses:course_builder", course_id=course.id)
+
+    if request.method == "GET":
+        form = AssessmentEditForm(instance=assessment)
+        return render(
+            request,
+            "courses/partials/builder/assessment_properties_form.html",
+            {"course": course, "assessment": assessment, "form": form},
+        )
+
+    # POST
+    form = AssessmentEditForm(request.POST, instance=assessment)
+    if not form.is_valid():
+        return render(
+            request,
+            "courses/partials/builder/assessment_properties_form.html",
+            {"course": course, "assessment": assessment, "form": form},
+            status=400,
+        )
+
+    with transaction.atomic():
+        form.save()
+
+    assessment.refresh_from_db()
+    questions = assessment.questions.prefetch_related("answers").order_by("order")
+    response = render(
+        request,
+        "courses/partials/builder/assessment_editor.html",
+        {
+            "course": course,
+            "assessment": assessment,
+            "questions": questions,
+            "saved": True,
+        },
+    )
+    response["HX-Trigger"] = "assessment-updated"
+    return response
 
 
 # =============================================================================

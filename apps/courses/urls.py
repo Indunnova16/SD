@@ -178,6 +178,11 @@ urlpatterns = [
         name="builder_assessment_editor",
     ),
     path(
+        "admin-courses/<int:course_id>/builder/quiz/<int:assessment_id>/edit/",
+        views.builder_edit_assessment,
+        name="builder_edit_assessment",
+    ),
+    path(
         "admin-courses/<int:course_id>/builder/quiz/<int:assessment_id>/questions/add/",
         views.builder_add_question,
         name="builder_add_question",

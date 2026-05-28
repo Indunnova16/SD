@@ -6,6 +6,8 @@ from django import forms
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
+from apps.assessments.models import Assessment
+
 from .models import AttendanceSignature, Category, Course, JobProfileType, Lesson, Module
 
 
@@ -463,6 +465,80 @@ class QuickAssessmentForm(forms.Form):
         widget=forms.NumberInput(attrs={"class": "input input-bordered w-full", "min": "0"}),
         help_text=_("0 = intentos ilimitados"),
     )
+
+
+class AssessmentEditForm(forms.ModelForm):
+    """Form for editing all properties of an existing Assessment from the course builder."""
+
+    class Meta:
+        model = Assessment
+        fields = [
+            "title",
+            "description",
+            "assessment_type",
+            "passing_score",
+            "time_limit",
+            "max_attempts",
+            "shuffle_questions",
+            "shuffle_answers",
+            "show_correct_answers",
+            "status",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "input input-bordered input-sm w-full", "required": True}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "textarea textarea-bordered textarea-sm w-full",
+                    "rows": 2,
+                }
+            ),
+            "assessment_type": forms.Select(
+                attrs={"class": "select select-bordered select-sm w-full"}
+            ),
+            "passing_score": forms.NumberInput(
+                attrs={
+                    "class": "input input-bordered input-sm w-full",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "time_limit": forms.NumberInput(
+                attrs={
+                    "class": "input input-bordered input-sm w-full",
+                    "min": "1",
+                    "placeholder": "Sin limite",
+                }
+            ),
+            "max_attempts": forms.NumberInput(
+                attrs={"class": "input input-bordered input-sm w-full", "min": "0"}
+            ),
+            "shuffle_questions": forms.CheckboxInput(
+                attrs={"class": "checkbox checkbox-primary checkbox-sm"}
+            ),
+            "shuffle_answers": forms.CheckboxInput(
+                attrs={"class": "checkbox checkbox-primary checkbox-sm"}
+            ),
+            "show_correct_answers": forms.CheckboxInput(
+                attrs={"class": "checkbox checkbox-primary checkbox-sm"}
+            ),
+            "status": forms.Select(
+                attrs={"class": "select select-bordered select-sm w-full"}
+            ),
+        }
+
+    def clean_passing_score(self):
+        value = self.cleaned_data.get("passing_score")
+        if value is None or value < 0 or value > 100:
+            raise forms.ValidationError(_("Debe estar entre 0 y 100."))
+        return value
+
+    def clean_time_limit(self):
+        value = self.cleaned_data.get("time_limit")
+        if value is not None and value < 0:
+            raise forms.ValidationError(_("No puede ser negativo."))
+        return value
 
 
 class AttendanceSignatureForm(forms.ModelForm):
