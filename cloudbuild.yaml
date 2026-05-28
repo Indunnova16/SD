@@ -1,0 +1,46 @@
+# Cloud Build config para SD LMS con cache de capas Docker.
+# Llamado desde .github/workflows/deploy.yml vía:
+#   gcloud builds submit --config=cloudbuild.yaml --substitutions=_IMAGE=...,_SHA=...
+#
+# El cache se obtiene haciendo pull de :latest antes del build y pasando
+# --cache-from al docker build. Reduce builds de ~20min (cold) a ~3-5min
+# cuando solo cambia código de aplicación.
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: '1800s'
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'pull-cache'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker pull ${_IMAGE}:latest || echo "No previous :latest image — first build, cold"
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build \
+          --cache-from ${_IMAGE}:latest \
+          --target production \
+          -t ${_IMAGE}:${_SHA} \
+          -t ${_IMAGE}:latest \
+          .
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-sha'
+    args: ['push', '${_IMAGE}:${_SHA}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args: ['push', '${_IMAGE}:latest']
+
+images:
+  - '${_IMAGE}:${_SHA}'
+  - '${_IMAGE}:latest'
