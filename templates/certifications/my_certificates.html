@@ -1,99 +1,163 @@
 {% extends "base/dashboard.html" %}
+{% load static %}
+
 {% block page_title %}Mis Certificados{% endblock %}
+
 {% block page_description %}
-    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestiona y descarga tus certificados obtenidos</p>
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Consulta, descarga y comparte los certificados que has obtenido al completar tus cursos.
+    </p>
 {% endblock %}
+
 {% block dashboard_content %}
-    <!-- Status Tabs -->
-    <div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
+    <!-- Filter chips by status -->
+    <div class="flex flex-wrap gap-2 mb-6">
         <a href="{% url 'certifications:my_certificates' %}"
-           class="tab {% if not current_status %}tab-active{% endif %}">Todos</a>
+           class="badge badge-lg cursor-pointer {% if not current_status %}badge-primary{% else %}badge-outline{% endif %}">
+            Todos
+        </a>
         {% for value, label in statuses %}
             <a href="{% url 'certifications:my_certificates' %}?status={{ value }}"
-               class="tab {% if current_status == value %}tab-active{% endif %}">{{ label }}</a>
+               class="badge badge-lg cursor-pointer {% if current_status == value %}badge-primary{% else %}badge-outline{% endif %}">
+                {{ label }}
+            </a>
         {% endfor %}
     </div>
-    <!-- Certificates Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for certificate in certificates %}
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <!-- Certificate Header -->
-                <div class="h-32 bg-gradient-to-br from-primary to-secondary flex items-center justify-center relative">
-                    {% if certificate.status == 'issued' %}
-                        <svg class="w-16 h-16 text-white opacity-80"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                        </svg>
-                    {% elif certificate.status == 'revoked' %}
-                        <svg class="w-16 h-16 text-white opacity-50"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                    {% endif %}
-                    <!-- Status Badge -->
-                    <div class="absolute top-2 right-2">
-                        <span class="badge {% if certificate.status == 'issued' %}badge-success {% elif certificate.status == 'revoked' %}badge-error {% elif certificate.status == 'expired' %}badge-warning {% else %}badge-ghost{% endif %}">
-                            {{ certificate.get_status_display }}
-                        </span>
+
+    {% if certificates %}
+        <!-- Certificates Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for certificate in certificates %}
+                <div class="card bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-shadow border border-gray-100 dark:border-gray-700">
+                    <!-- Header -->
+                    <div class="card-body p-5">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-lg text-gray-900 dark:text-white truncate"
+                                    title="{{ certificate.course.title }}">
+                                    {{ certificate.course.title }}
+                                </h3>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1 break-all">
+                                    {{ certificate.certificate_number }}
+                                </p>
+                            </div>
+                            <!-- PDF icon -->
+                            <div class="flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="w-10 h-10 text-primary-500"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor"
+                                     stroke-width="1.5">
+                                    <path stroke-linecap="round"
+                                          stroke-linejoin="round"
+                                          d="M9 12h6m-6 4h6m-6-8h2M9 2h6l5 5v13a2 2 0 01-2 2H9a2 2 0 01-2-2V4a2 2 0 012-2z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Status badge -->
+                        <div class="mb-3">
+                            <span class="badge {% if certificate.status == 'issued' %}badge-success{% elif certificate.status == 'expired' %}badge-warning{% elif certificate.status == 'revoked' %}badge-error{% else %}badge-info{% endif %}">
+                                {{ certificate.get_status_display }}
+                            </span>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="space-y-1 text-sm">
+                            {% if certificate.issued_at %}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500 dark:text-gray-400">Emitido</span>
+                                    <span class="text-gray-900 dark:text-white">
+                                        {{ certificate.issued_at|date:"d M Y" }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if certificate.expires_at %}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500 dark:text-gray-400">Vence</span>
+                                    <span class="text-gray-900 dark:text-white">
+                                        {{ certificate.expires_at|date:"d M Y" }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if certificate.score %}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500 dark:text-gray-400">Puntaje</span>
+                                    <span class="font-semibold text-gray-900 dark:text-white">
+                                        {{ certificate.score|floatformat:0 }}%
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="card-actions justify-end mt-4 flex-wrap gap-2">
+                            <a href="{% url 'certifications:detail' certificate.id %}"
+                               class="btn btn-sm btn-ghost">
+                                Ver detalle
+                            </a>
+                            {% if certificate.certificate_file and certificate.status == 'issued' %}
+                                <a href="{% url 'certifications:download' certificate.id %}"
+                                   class="btn btn-sm btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="w-4 h-4 mr-1"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor"
+                                         stroke-width="2">
+                                        <path stroke-linecap="round"
+                                              stroke-linejoin="round"
+                                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Descargar PDF
+                                </a>
+                            {% endif %}
+                            {% if certificate.verification_url %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline"
+                                        x-data="{ copied: false }"
+                                        @click="navigator.clipboard.writeText('{{ certificate.verification_url|escapejs }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                                        :class="{ 'btn-success': copied }">
+                                    <span x-show="!copied">Compartir verificación</span>
+                                    <span x-show="copied" x-cloak>¡Copiado!</span>
+                                </button>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                <div class="p-4">
-                    <!-- Course Title -->
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-1">{{ certificate.course.title }}</h3>
-                    <!-- Certificate Number -->
-                    <p class="text-sm text-gray-500 dark:text-gray-400 font-mono mb-3">{{ certificate.certificate_number }}</p>
-                    <!-- Details -->
-                    <div class="space-y-2 text-sm">
-                        {% if certificate.issued_at %}
-                            <div class="flex justify-between">
-                                <span class="text-gray-500 dark:text-gray-400">Emitido</span>
-                                <span class="text-gray-900 dark:text-white">{{ certificate.issued_at|date:"d M Y" }}</span>
-                            </div>
-                        {% endif %}
-                        {% if certificate.expires_at %}
-                            <div class="flex justify-between">
-                                <span class="text-gray-500 dark:text-gray-400">Vence</span>
-                                <span class="{% if certificate.expires_at < now %}text-error{% else %}text-gray-900 dark:text-white{% endif %}">
-                                    {{ certificate.expires_at|date:"d M Y" }}
-                                </span>
-                            </div>
-                        {% endif %}
-                        {% if certificate.score %}
-                            <div class="flex justify-between">
-                                <span class="text-gray-500 dark:text-gray-400">Puntaje</span>
-                                <span class="text-gray-900 dark:text-white font-medium">{{ certificate.score|floatformat:0 }}%</span>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <!-- Actions -->
-                    <div class="mt-4 flex gap-2">
-                        <a href="{% url 'certifications:detail' certificate.id %}"
-                           class="btn btn-ghost btn-sm flex-1">Ver Detalles</a>
-                        {% if certificate.certificate_file %}
-                            <a href="{% url 'certifications:download' certificate.id %}"
-                               class="btn btn-primary btn-sm flex-1">Descargar</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        {% empty %}
-            <div class="col-span-full text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400"
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Empty state -->
+        <div class="card bg-white dark:bg-gray-800 shadow border border-gray-100 dark:border-gray-700">
+            <div class="card-body items-center text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-16 h-16 text-gray-400 mb-4"
                      fill="none"
+                     viewBox="0 0 24 24"
                      stroke="currentColor"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                     stroke-width="1.5">
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tienes certificados</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Completa cursos para obtener certificados.</p>
-                <div class="mt-6">
-                    <a href="{% url 'courses:list' %}" class="btn btn-primary">Ver Cursos</a>
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    {% if current_status %}
+                        No tienes certificados con este estado
+                    {% else %}
+                        Aún no tienes certificados
+                    {% endif %}
+                </h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                    Inscríbete a un curso y complétalo al 100% para obtener tu primer certificado.
+                </p>
+                <div class="card-actions mt-4">
+                    <a href="{% url 'courses:list' %}" class="btn btn-primary">
+                        Explorar cursos
+                    </a>
                 </div>
             </div>
-        {% endfor %}
-    </div>
+        </div>
+    {% endif %}
 {% endblock %}
