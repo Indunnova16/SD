@@ -170,9 +170,8 @@ def save_answer(request, attempt_id):
     )
 
     question_id = request.POST.get("question_id")
-    selected_ids = request.POST.getlist("selected_answers")
-    text_answer = request.POST.get("text_answer", "")
-    matching_data = request.POST.get("matching_data", "")
+    if not question_id:
+        return JsonResponse({"error": "question_id requerido"}, status=400)
 
     try:
         question = Question.objects.get(
@@ -182,22 +181,42 @@ def save_answer(request, attempt_id):
     except Question.DoesNotExist:
         return JsonResponse({"error": "Pregunta no válida"}, status=400)
 
+    # Leer respuesta segun tipo de pregunta — el template envia
+    # name="question_<id>" para radios/checkboxes, name="text_answer_<id>"
+    # para textareas, y name="matching_<id>" para el hidden de matching.
+    selected_ids = request.POST.getlist(f"question_{question_id}")
+    text_answer = request.POST.get(f"text_answer_{question_id}", "")
+    matching_data = request.POST.get(f"matching_{question_id}", "")
+
+    # Compatibilidad legacy con el nombre 'selected_answers' (si algun caller
+    # externo / API DRF lo enviara con ese nombre).
+    if not selected_ids:
+        selected_ids = request.POST.getlist("selected_answers")
+    if not text_answer:
+        text_answer = request.POST.get("text_answer", "")
+    if not matching_data:
+        matching_data = request.POST.get("matching_data", "")
+
     # Create or update answer
-    attempt_answer, created = AttemptAnswer.objects.get_or_create(
+    attempt_answer, _created = AttemptAnswer.objects.get_or_create(
         attempt=attempt,
         question=question,
-        defaults={"text_answer": text_answer or matching_data},
     )
 
-    if not created:
-        if matching_data:
-            attempt_answer.text_answer = matching_data
-        elif text_answer:
-            attempt_answer.text_answer = text_answer
-        attempt_answer.save()
+    if matching_data:
+        attempt_answer.text_answer = matching_data
+    elif text_answer:
+        attempt_answer.text_answer = text_answer
 
-    # Set selected answers
-    if selected_ids:
+    attempt_answer.save()
+
+    # Set selected answers — siempre para tipos choice/true_false (permite
+    # limpiar seleccion cuando el usuario deselecciona todos los checkboxes).
+    if selected_ids or question.question_type in (
+        Question.Type.SINGLE_CHOICE,
+        Question.Type.MULTIPLE_CHOICE,
+        Question.Type.TRUE_FALSE,
+    ):
         attempt_answer.selected_answers.set(
             Answer.objects.filter(pk__in=selected_ids, question=question)
         )

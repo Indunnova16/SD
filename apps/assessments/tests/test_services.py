@@ -2,7 +2,9 @@
 Tests for assessment services.
 """
 
+import json
 from datetime import date
+from decimal import Decimal
 
 from django.test import TestCase
 
@@ -293,6 +295,123 @@ class AssessmentServiceTest(TestCase):
         self.assertEqual(stats["total_attempts"], 3)
         self.assertEqual(stats["average_score"], 100)
         self.assertEqual(stats["pass_rate"], 100)
+
+    def test_submit_short_answer_no_autograde(self):
+        """Short answer questions are NOT auto-graded; remain pending manual grading."""
+        q_short = Question.objects.create(
+            assessment=self.assessment,
+            question_type=Question.Type.SHORT_ANSWER,
+            text="Describe X",
+            points=5,
+            order=4,
+        )
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        answer = AssessmentService.submit_answer(
+            attempt=attempt,
+            question=q_short,
+            text_answer="Mi respuesta",
+        )
+        self.assertEqual(answer.text_answer, "Mi respuesta")
+        self.assertIsNone(answer.is_correct)
+        self.assertIsNone(answer.points_awarded)
+
+    def test_submit_essay_no_autograde(self):
+        """Essay questions are NOT auto-graded; remain pending manual grading."""
+        q_essay = Question.objects.create(
+            assessment=self.assessment,
+            question_type=Question.Type.ESSAY,
+            text="Explica",
+            points=20,
+            order=5,
+        )
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        answer = AssessmentService.submit_answer(
+            attempt=attempt,
+            question=q_essay,
+            text_answer="Mi ensayo largo",
+        )
+        self.assertEqual(answer.text_answer, "Mi ensayo largo")
+        self.assertIsNone(answer.is_correct)
+        self.assertIsNone(answer.points_awarded)
+
+    def test_manual_grade_essay(self):
+        """Essay can be manually graded via grade_essay_answer."""
+        q_essay = Question.objects.create(
+            assessment=self.assessment,
+            question_type=Question.Type.ESSAY,
+            text="Explica",
+            points=20,
+            order=5,
+        )
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        answer = AssessmentService.submit_answer(
+            attempt=attempt,
+            question=q_essay,
+            text_answer="Mi ensayo",
+        )
+        graded = AssessmentService.grade_essay_answer(
+            answer,
+            points=Decimal("15"),
+            feedback="Buen trabajo",
+            grader=self.admin,
+        )
+        self.assertEqual(graded.points_awarded, Decimal("15"))
+        # 15 < 20 (max points), por lo tanto NO es full puntos => is_correct False
+        self.assertFalse(graded.is_correct)
+
+    def test_submit_matching_answer(self):
+        """Matching questions grade against metadata pairs."""
+        q_match = Question.objects.create(
+            assessment=self.assessment,
+            question_type=Question.Type.MATCHING,
+            text="Empareja",
+            points=10,
+            order=6,
+            metadata={
+                "match_pairs": [
+                    {"left": "A", "right": "1"},
+                    {"left": "B", "right": "2"},
+                ]
+            },
+        )
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        user_pairs = json.dumps(
+            [{"left": "A", "right": "1"}, {"left": "B", "right": "2"}]
+        )
+        answer = AssessmentService.submit_answer(
+            attempt=attempt,
+            question=q_match,
+            text_answer=user_pairs,
+        )
+        self.assertTrue(answer.is_correct)
+        self.assertEqual(answer.points_awarded, 10)
+
+    def test_submit_matching_wrong(self):
+        """Matching with wrong pairing is incorrect."""
+        q_match = Question.objects.create(
+            assessment=self.assessment,
+            question_type=Question.Type.MATCHING,
+            text="Empareja",
+            points=10,
+            order=6,
+            metadata={
+                "match_pairs": [
+                    {"left": "A", "right": "1"},
+                    {"left": "B", "right": "2"},
+                ]
+            },
+        )
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        user_pairs = json.dumps(
+            [{"left": "A", "right": "2"}, {"left": "B", "right": "1"}]
+        )
+        answer = AssessmentService.submit_answer(
+            attempt=attempt,
+            question=q_match,
+            text_answer=user_pairs,
+        )
+        self.assertFalse(answer.is_correct)
+        self.assertEqual(answer.points_awarded, 0)
 
 
 class QuestionBankServiceTest(TestCase):
