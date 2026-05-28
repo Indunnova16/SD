@@ -1,0 +1,55 @@
+{% extends "base/dashboard.html" %}
+{% block title %}Plantillas de certificado · SD LMS{% endblock %}
+{% block page_title %}Plantillas de certificado{% endblock %}
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Gestiona las plantillas usadas para emitir certificados. La plantilla activa más reciente se usa por defecto.
+    </p>
+{% endblock %}
+{% block dashboard_content %}
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ templates|length }} plantilla{{ templates|length|pluralize }}
+        </h2>
+        <a href="{% url 'certifications:template_create' %}" class="btn btn-primary btn-sm">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-4 w-4"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 4v16m8-8H4" />
+            </svg>
+            Nueva plantilla
+        </a>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="table table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Firmante</th>
+                        <th class="text-center">Activa</th>
+                        <th class="text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="templates-tbody">
+                    {% for t in templates %}
+                        {% include "certifications/admin/_template_row.html" with t=t %}
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-12 text-gray-500 dark:text-gray-400">
+                                Aún no hay plantillas creadas.
+                                <a href="{% url 'certifications:template_create' %}"
+                                   class="link link-primary">Crear la primera</a>.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

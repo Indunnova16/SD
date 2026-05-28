@@ -1,0 +1,163 @@
+{% extends "base/dashboard.html" %}
+{% block title %}
+    {% if template %}Editar plantilla{% else %}Nueva plantilla{% endif %} · SD LMS
+{% endblock %}
+{% block page_title %}
+    {% if template %}
+        Editar plantilla: {{ template.name }}
+    {% else %}
+        Nueva plantilla de certificado
+    {% endif %}
+{% endblock %}
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Parametriza el formato, imágenes y firma de la plantilla. La vista previa usa datos de ejemplo.
+    </p>
+    <p class="mt-2">
+        <a href="{% url 'certifications:template_list' %}"
+           class="link link-primary text-sm">← Volver a la lista</a>
+    </p>
+{% endblock %}
+{% block dashboard_content %}
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Columna izquierda: datos básicos -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                    Datos básicos
+                </h3>
+                <div class="form-control">
+                    <label class="label" for="{{ form.name.id_for_label }}">
+                        <span class="label-text">Nombre <span class="text-error">*</span></span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<p class="text-error text-xs mt-1">{{ form.name.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-control">
+                    <label class="label" for="{{ form.description.id_for_label }}">
+                        <span class="label-text">Descripción</span>
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.description.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label" for="{{ form.signer_name.id_for_label }}">
+                            <span class="label-text">Nombre del firmante</span>
+                        </label>
+                        {{ form.signer_name }}
+                        {% if form.signer_name.errors %}
+                            <p class="text-error text-xs mt-1">{{ form.signer_name.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="{{ form.signer_title.id_for_label }}">
+                            <span class="label-text">Cargo del firmante</span>
+                        </label>
+                        {{ form.signer_title }}
+                        {% if form.signer_title.errors %}
+                            <p class="text-error text-xs mt-1">{{ form.signer_title.errors|join:", " }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="form-control">
+                    <label class="label cursor-pointer justify-start gap-3">
+                        {{ form.is_active }}
+                        <span class="label-text">Plantilla activa</span>
+                    </label>
+                    {% if form.is_active.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.is_active.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Columna derecha: archivos e imágenes -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                    Archivos e imágenes
+                </h3>
+                <div class="form-control">
+                    <label class="label" for="{{ form.template_file.id_for_label }}">
+                        <span class="label-text">Archivo de plantilla (HTML)</span>
+                    </label>
+                    {{ form.template_file }}
+                    {% if template and template.template_file %}
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Actual: <code>{{ template.template_file.name }}</code>
+                        </p>
+                    {% endif %}
+                    {% if form.template_file.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.template_file.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div class="form-control">
+                    <label class="label" for="{{ form.background_image.id_for_label }}">
+                        <span class="label-text">Imagen de fondo</span>
+                    </label>
+                    {{ form.background_image }}
+                    {% if template and template.background_image %}
+                        <img src="{{ template.background_image.url }}"
+                             alt="fondo"
+                             class="mt-2 h-16 rounded border border-gray-200 dark:border-gray-700">
+                    {% endif %}
+                    {% if form.background_image.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.background_image.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+                <div class="form-control">
+                    <label class="label" for="{{ form.logo.id_for_label }}">
+                        <span class="label-text">Logo</span>
+                    </label>
+                    {{ form.logo }}
+                    {% if template and template.logo %}
+                        <img src="{{ template.logo.url }}"
+                             alt="logo"
+                             class="mt-2 h-16 rounded border border-gray-200 dark:border-gray-700">
+                    {% endif %}
+                    {% if form.logo.errors %}<p class="text-error text-xs mt-1">{{ form.logo.errors|join:", " }}</p>{% endif %}
+                </div>
+                <div class="form-control">
+                    <label class="label" for="{{ form.signature_image.id_for_label }}">
+                        <span class="label-text">Imagen de firma</span>
+                    </label>
+                    {{ form.signature_image }}
+                    {% if template and template.signature_image %}
+                        <img src="{{ template.signature_image.url }}"
+                             alt="firma"
+                             class="mt-2 h-16 rounded border border-gray-200 dark:border-gray-700">
+                    {% endif %}
+                    {% if form.signature_image.errors %}
+                        <p class="text-error text-xs mt-1">{{ form.signature_image.errors|join:", " }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Vista previa (solo en modo edit, ya hay PK) -->
+        {% if template %}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">Vista previa</h3>
+                    <a href="{% url 'certifications:template_preview' template.pk %}"
+                       target="_blank"
+                       rel="noopener"
+                       class="btn btn-ghost btn-sm">Abrir en pestaña nueva ↗</a>
+                </div>
+                <iframe src="{% url 'certifications:template_preview' template.pk %}"
+                        class="w-full h-[480px] border border-gray-200 dark:border-gray-700 rounded bg-white"
+                        title="Vista previa de plantilla"></iframe>
+            </div>
+        {% endif %}
+        <!-- Acciones -->
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'certifications:template_list' %}" class="btn btn-ghost">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if template %}Guardar cambios{% else %}Crear plantilla{% endif %}
+            </button>
+        </div>
+    </form>
+{% endblock %}
