@@ -170,6 +170,21 @@ class BulkUploadForm(forms.Form):
 class UserCreateForm(forms.ModelForm):
     """Form for creating new users (admin only). Password auto-generated."""
 
+    # Override hire_date to force ISO format on render AND parse.
+    # HTML5 <input type="date"> only accepts/emits YYYY-MM-DD in its `value`
+    # attribute. The default DateInput widget renders the initial value using
+    # the first DATE_INPUT_FORMATS of the active locale (es-co → "%d/%m/%Y"),
+    # which the browser silently rejects → datepicker shows empty → POST sends
+    # blank → ValidationError → user perceives "no persiste". See SD#41.
+    hire_date = forms.DateField(
+        label=_("Fecha de ingreso"),
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={"class": "input input-bordered w-full", "type": "date"},
+        ),
+    )
+
     class Meta:
         model = User
         fields = [
@@ -195,9 +210,7 @@ class UserCreateForm(forms.ModelForm):
             "job_position": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
             "job_profile": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "employment_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
-            "hire_date": forms.DateInput(
-                attrs={"class": "input input-bordered w-full", "type": "date"}
-            ),
+            # hire_date widget controlled by class-level field override above
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
 
@@ -238,6 +251,21 @@ class UserCreateForm(forms.ModelForm):
 class UserEditForm(forms.ModelForm):
     """Form for editing existing users (admin only)."""
 
+    # Override hire_date to force ISO format on render AND parse.
+    # See UserCreateForm for the full rationale; this is the form where the
+    # bug actually manifested: editing an existing user with a populated
+    # hire_date rendered "15/01/2024" in the value attribute, which HTML5
+    # <input type="date"> rejects, so the field appeared empty and any
+    # subsequent save failed validation. See SD#41.
+    hire_date = forms.DateField(
+        label=_("Fecha de ingreso"),
+        input_formats=["%Y-%m-%d"],
+        widget=forms.DateInput(
+            format="%Y-%m-%d",
+            attrs={"class": "input input-bordered w-full", "type": "date"},
+        ),
+    )
+
     class Meta:
         model = User
         fields = [
@@ -265,9 +293,7 @@ class UserEditForm(forms.ModelForm):
             "job_position": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
             "job_profile": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "employment_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
-            "hire_date": forms.DateInput(
-                attrs={"class": "input input-bordered w-full", "type": "date"}
-            ),
+            # hire_date widget controlled by class-level field override above
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
             "is_staff": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
