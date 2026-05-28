@@ -4,6 +4,14 @@ Context: course, assessment, questions
 {% endcomment %}
 <div class="mt-4 border border-base-300 rounded-lg p-4"
      x-data="{ showAddQuestion: false }">
+    {% if saved %}
+        <div class="alert alert-success text-xs mb-3"
+             x-data="{ show: true }"
+             x-show="show"
+             x-init="setTimeout(() => show = false, 4000)">
+            Propiedades actualizadas correctamente.
+        </div>
+    {% endif %}
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
         <div>
@@ -14,17 +22,33 @@ Context: course, assessment, questions
                 <span class="badge badge-xs badge-primary">Min: {{ assessment.passing_score }}%</span>
             </div>
         </div>
-        <button class="btn btn-primary btn-xs"
-                @click="showAddQuestion = !showAddQuestion">
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 class="h-3 w-3"
-                 fill="none"
-                 viewBox="0 0 24 24"
-                 stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            Agregar Pregunta
-        </button>
+        <div class="flex gap-2">
+            <button class="btn btn-ghost btn-xs"
+                    hx-get="{% url 'courses:builder_edit_assessment' course.id assessment.id %}"
+                    hx-target="#question-editor-{{ assessment.lesson_id|default:assessment.id }}"
+                    hx-swap="innerHTML"
+                    title="Editar propiedades de la evaluacion">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-3 w-3"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Editar propiedades
+            </button>
+            <button class="btn btn-primary btn-xs"
+                    @click="showAddQuestion = !showAddQuestion">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-3 w-3"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Agregar Pregunta
+            </button>
+        </div>
     </div>
     <!-- Add Question Form -->
     <div x-show="showAddQuestion" x-cloak x-transition class="mb-4">
