@@ -32,12 +32,18 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
-      - name: Build and Push
+      - name: Build and Push (Cloud Build, nativo amd64)
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-          docker buildx build --platform linux/amd64 --load -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest --target production .
-          docker push ${{ env.IMAGE }}:${{ github.sha }}
-          docker push ${{ env.IMAGE }}:latest
+          gcloud builds submit \
+            --tag ${{ env.IMAGE }}:${{ github.sha }} \
+            --machine-type=e2-highcpu-8 \
+            --timeout=1200s \
+            --project=${{ env.PROJECT_ID }} \
+            .
+          gcloud artifacts docker tags add \
+            ${{ env.IMAGE }}:${{ github.sha }} \
+            ${{ env.IMAGE }}:latest \
+            --quiet
 
       - name: Deploy
         run: |
