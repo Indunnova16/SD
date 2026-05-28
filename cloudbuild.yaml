@@ -8,6 +8,11 @@
 
 options:
   machineType: 'E2_HIGHCPU_8'
+  # Send logs ONLY to Cloud Logging so SA can stream via roles/logging.viewer.
+  # Default GCS logs bucket requires roles/viewer (basic role) which the
+  # github-actions-deploy SA does not have, causing gcloud builds submit
+  # to exit 1 even when the build itself succeeds.
+  logging: CLOUD_LOGGING_ONLY
 
 timeout: '1800s'
 
