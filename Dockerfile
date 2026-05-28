@@ -55,6 +55,8 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Install development dependencies
+# Need base.txt because local.txt has `-r base.txt`
+COPY requirements/base.txt requirements/base.txt
 COPY requirements/local.txt requirements/local.txt
 RUN pip install -r requirements/local.txt
 
