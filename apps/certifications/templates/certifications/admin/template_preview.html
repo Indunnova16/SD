@@ -1,0 +1,13 @@
+{# Wrapper opcional. La vista `template_preview` devuelve directamente el HTML #}
+{# generado por `CertificateTemplateService.preview_template`, así que este    #}
+{# archivo solo se usa si se decide envolver el preview en chrome de admin.    #}
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Vista previa de plantilla</title>
+    </head>
+    <body>
+        {{ preview_html|safe }}
+    </body>
+</html>

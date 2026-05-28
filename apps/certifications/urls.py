@@ -17,4 +17,22 @@ urlpatterns = [
     path("<int:certificate_id>/download/", views.certificate_download, name="download"),
     path("verify/", views.verify_certificate, name="verify"),
     path("verify/<str:certificate_number>/", views.verify_certificate, name="verify_number"),
+    # Staff admin panel (B2)
+    path("admin/templates/", views.template_list, name="template_list"),
+    path("admin/templates/new/", views.template_create, name="template_create"),
+    path(
+        "admin/templates/<int:template_id>/edit/",
+        views.template_edit,
+        name="template_edit",
+    ),
+    path(
+        "admin/templates/<int:template_id>/preview/",
+        views.template_preview,
+        name="template_preview",
+    ),
+    path(
+        "admin/templates/<int:template_id>/toggle/",
+        views.template_toggle_active,
+        name="template_toggle_active",
+    ),
 ]
