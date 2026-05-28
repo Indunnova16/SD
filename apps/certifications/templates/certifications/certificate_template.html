@@ -1,132 +1,204 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <title>Certificado - {{ certificate.certificate_number }}</title>
-        <style>
+<head>
+    <meta charset="UTF-8">
+    <title>Certificado {{ certificate_number }}</title>
+    <style>
         @page {
-            size: landscape;
+            size: A4 landscape;
             margin: 0;
+        }
+        * {
+            box-sizing: border-box;
         }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             margin: 0;
-            padding: 40px;
-            background: #fff;
+            padding: 0;
+            background: #ffffff;
+            color: #222;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
-        .certificate {
-            border: 8px double #1a365d;
-            padding: 40px;
-            text-align: center;
-            min-height: 500px;
+        .page {
             position: relative;
+            width: 297mm;
+            height: 210mm;
+            background: #ffffff;
+            overflow: hidden;
         }
-        .header {
-            margin-bottom: 30px;
+        /* Triangulo rojo superior izquierdo */
+        .triangle-tl {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-top: 110mm solid #E50019;
+            border-right: 110mm solid transparent;
         }
-        .title {
-            font-size: 48px;
+        /* Triangulo rojo inferior derecho */
+        .triangle-br {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-bottom: 110mm solid #E50019;
+            border-left: 110mm solid transparent;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            padding: 18mm 30mm;
+            text-align: center;
+            height: 100%;
+        }
+        .logo {
+            margin-bottom: 6mm;
+        }
+        .logo img {
+            max-height: 22mm;
+            max-width: 60mm;
+        }
+        .logo-fallback {
+            font-size: 32pt;
             font-weight: bold;
-            color: #1a365d;
-            margin-bottom: 10px;
+            color: #E50019;
+            letter-spacing: 4pt;
+        }
+        h1.title {
+            font-size: 48pt;
+            font-weight: bold;
+            color: #222;
+            margin: 4mm 0 2mm 0;
+            letter-spacing: 6pt;
             text-transform: uppercase;
         }
-        .subtitle {
-            font-size: 18px;
-            color: #666;
+        .reconoce {
+            font-size: 11pt;
+            color: #555;
+            letter-spacing: 4pt;
+            margin: 4mm 0 6mm 0;
+            text-transform: uppercase;
         }
         .recipient {
-            font-size: 32px;
+            font-size: 30pt;
             font-weight: bold;
-            color: #2d3748;
-            margin: 30px 0;
-            border-bottom: 2px solid #1a365d;
+            color: #E50019;
+            margin: 4mm 0 6mm 0;
+            text-transform: uppercase;
+            letter-spacing: 2pt;
+        }
+        .body-text {
+            font-size: 13pt;
+            color: #333;
+            line-height: 1.6;
+            max-width: 200mm;
+            margin: 0 auto 8mm auto;
+        }
+        .body-text strong {
+            color: #111;
+        }
+        .signature-block {
+            margin-top: 6mm;
             display: inline-block;
-            padding-bottom: 10px;
-        }
-        .course-title {
-            font-size: 24px;
-            color: #4a5568;
-            margin: 20px 0;
-        }
-        .details {
-            font-size: 16px;
-            color: #718096;
-            margin: 20px 0;
-        }
-        .footer {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-        .signature {
             text-align: center;
+            min-width: 70mm;
+        }
+        .signature-img {
+            height: 16mm;
+            margin-bottom: 1mm;
         }
         .signature-line {
-            border-top: 1px solid #000;
-            width: 200px;
-            margin: 10px auto 5px;
+            border-top: 1px solid #333;
+            width: 70mm;
+            margin: 0 auto 2mm auto;
         }
-        .qr-code {
-            text-align: right;
+        .signer-name {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #222;
         }
-        .cert-number {
-            font-size: 12px;
-            color: #a0aec0;
+        .signer-title {
+            font-size: 10pt;
+            color: #555;
+        }
+        .footer {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 6mm;
+            left: 0;
+            right: 0;
+            padding: 0 18mm;
+            font-size: 8pt;
+            color: #666;
+            z-index: 3;
+            display: table;
+            width: 100%;
         }
-        </style>
-    </head>
-    <body>
-        <div class="certificate">
-            <div class="header">
-                <div class="title">Certificado</div>
-                <div class="subtitle">S.D. S.A.S. - Sistema de Gestión de Aprendizaje</div>
-            </div>
-            <p>Se certifica que</p>
-            <div class="recipient">{{ user.get_full_name }}</div>
-            <p>ha completado satisfactoriamente el curso</p>
-            <div class="course-title">{{ course.title }}</div>
-            <div class="details">
-                {% if certificate.score %}
-                    <p>Puntaje: {{ certificate.score }}%</p>
+        .footer-text {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: left;
+        }
+        .footer-qr {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: right;
+            width: 22mm;
+        }
+        .footer-qr img {
+            width: 18mm;
+            height: 18mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="triangle-tl"></div>
+        <div class="triangle-br"></div>
+        <div class="content">
+            <div class="logo">
+                {% if template and template.logo %}
+                    <img src="{{ template.logo.url }}" alt="SD">
+                {% else %}
+                    <div class="logo-fallback">SD</div>
                 {% endif %}
-                <p>Fecha de emisión: {{ issued_date|date:"d \d\e F \d\e Y" }}</p>
-                {% if expires_date %}<p>Fecha de vencimiento: {{ expires_date|date:"d \d\e F \d\e Y" }}</p>{% endif %}
             </div>
-            <div class="footer">
-                <div class="signature">
-                    {% if template and template.signature_image %}
-                        <img src="{{ template.signature_image.url }}"
-                             alt="Firma"
-                             style="height: 60px">
-                    {% endif %}
-                    <div class="signature-line"></div>
-                    <div>
-                        {% if template %}{{ template.signer_name }}{% endif %}
-                    </div>
-                    <div>
-                        {% if template %}{{ template.signer_title }}{% endif %}
-                    </div>
-                </div>
-                <div class="qr-code">
-                    {% if certificate.qr_code %}
-                        <img src="{{ certificate.qr_code.url }}"
-                             alt="QR"
-                             style="width: 100px;
-                                    height: 100px">
-                    {% endif %}
-                </div>
+            <h1 class="title">Certificado</h1>
+            <div class="reconoce">Salom&oacute;n Dur&aacute;n reconoce a:</div>
+            <div class="recipient">{{ user.get_full_name|upper }}</div>
+            <div class="body-text">
+                Por haber culminado satisfactoriamente el curso de
+                <strong>{{ course.title }}</strong>
+                con una duraci&oacute;n de
+                <strong>{{ course.estimated_duration|default:"N/A" }} horas</strong>
+                a la fecha de
+                <strong>{{ issued_date|date:"d \d\e F \d\e Y" }}</strong>.
             </div>
-            <div class="cert-number">
-                Certificado No: {{ certificate_number }}
-                <br>
-                Verificar en: {{ verification_url }}
+            <div class="signature-block">
+                {% if template and template.signature_image %}
+                    <img src="{{ template.signature_image.url }}" alt="Firma" class="signature-img">
+                {% endif %}
+                <div class="signature-line"></div>
+                <div class="signer-name">
+                    {% if template and template.signer_name %}{{ template.signer_name }}{% else %}Directora HSEQ{% endif %}
+                </div>
+                <div class="signer-title">
+                    {% if template and template.signer_title %}{{ template.signer_title }}{% endif %}
+                </div>
             </div>
         </div>
-    </body>
+        <div class="footer">
+            <div class="footer-text">
+                Certificado N&deg; {{ certificate_number }} &middot; Verificar en {{ verification_url }}
+            </div>
+            <div class="footer-qr">
+                {% if certificate and certificate.qr_code %}
+                    <img src="{{ certificate.qr_code.url }}" alt="QR">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
 </html>

@@ -42,6 +42,9 @@ django-allauth>=0.63.1
 # Storage
 django-storages>=1.14.2
 Pillow>=10.3.0,<11
+weasyprint>=62.0,<63
+qrcode[pil]>=7.4,<8
+reportlab>=4.2,<5
 
 # Cache
 django-redis>=5.4.0
