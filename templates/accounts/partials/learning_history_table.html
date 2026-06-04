@@ -9,6 +9,7 @@
                     <th>Progreso</th>
                     <th>Fecha inscripción</th>
                     <th>Fecha completado</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,6 +35,18 @@
                         </td>
                         <td class="text-sm">{{ enrollment.created_at|date:"d/m/Y" }}</td>
                         <td class="text-sm">{{ enrollment.completed_at|date:"d/m/Y"|default:"-" }}</td>
+                        <td>
+                            <form method="post"
+                                  action="{% url 'accounts:reassign_enrollment' user_obj.pk enrollment.pk %}"
+                                  onsubmit="return confirm('¿Reasignar el curso «{{ enrollment.course.title|escapejs }}»? El progreso actual se reiniciará.');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        data-enrollment-id="{{ enrollment.pk }}"
+                                        class="btn btn-xs btn-warning">
+                                    Reasignar
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

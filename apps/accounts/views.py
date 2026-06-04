@@ -519,6 +519,63 @@ def user_learning_history(request, user_id):
 
 
 @login_required
+@require_POST
+def reassign_enrollment(request, user_id, enrollment_id):
+    """Reassign a course from a user's learning history (admin/staff only).
+
+    Resets the enrollment back to ENROLLED (progress 0, dates cleared) so the
+    user can take the course again, regardless of its current status. A
+    permanent CompletionRecord is kept for audit when there was prior progress.
+    Mirrors the reset logic of courses.reenable_course but is staff-driven and
+    applies to any status (not only EXPIRED).
+    """
+    if not request.user.is_staff:
+        messages.error(request, "No tiene permisos para realizar esta acción.")
+        return redirect("accounts:dashboard")
+
+    from apps.courses.models import CompletionRecord, Enrollment, LessonProgress
+
+    enrollment = get_object_or_404(
+        Enrollment.objects.select_related("course"),
+        pk=enrollment_id,
+        user_id=user_id,
+    )
+    course = enrollment.course
+
+    # Preserve a permanent audit record before resetting.
+    if enrollment.progress > 0:
+        CompletionRecord.objects.create(
+            user=enrollment.user,
+            course=course,
+            completed_at=enrollment.completed_at or enrollment.updated_at,
+            progress=enrollment.progress,
+            reset_reason="Reasignación por administrador",
+        )
+
+    # Reset the enrollment so the course is available again.
+    enrollment.status = Enrollment.Status.ENROLLED
+    enrollment.progress = 0
+    enrollment.started_at = None
+    enrollment.completed_at = None
+    enrollment.assigned_by = request.user
+    enrollment.save()
+
+    # Reset per-lesson progress.
+    LessonProgress.objects.filter(enrollment=enrollment).update(
+        is_completed=False,
+        progress_percent=0,
+        time_spent=0,
+        completed_at=None,
+    )
+
+    messages.success(
+        request,
+        f"Curso '{course.title}' reasignado correctamente.",
+    )
+    return redirect("accounts:user_learning_history", user_id=user_id)
+
+
+@login_required
 @require_GET
 def user_export_pdf(request, user_id):
     """Export user profile and learning history as PDF (admin/staff only)."""
