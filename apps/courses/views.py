@@ -1489,45 +1489,6 @@ def builder_reorder_lessons(request, course_id, module_id):
 
 @login_required
 @require_http_methods(["POST"])
-def builder_assign_quiz(request, course_id, module_id, lesson_id):
-    """Assign an existing assessment to a lesson."""
-    if err := _staff_required(request):
-        return err
-
-    from apps.assessments.models import Assessment
-
-    course = get_object_or_404(Course, id=course_id)
-    module = get_object_or_404(Module, id=module_id, course=course)
-    lesson = get_object_or_404(Lesson, id=lesson_id, module=module)
-
-    assessment_id = request.POST.get("assessment_id")
-
-    if assessment_id:
-        assessment = get_object_or_404(Assessment, id=assessment_id)
-        assessment.course = course
-        assessment.lesson = lesson
-        assessment.save(update_fields=["course", "lesson"])
-    else:
-        # Unassign: remove lesson link from any assessment assigned to this lesson
-        Assessment.objects.filter(lesson=lesson).update(lesson=None)
-
-    if request.headers.get("HX-Request"):
-        return render(
-            request,
-            "courses/partials/builder/lesson_item.html",
-            {
-                "lesson": lesson,
-                "course": course,
-                "module": module,
-                "available_assessments": _get_available_assessments(course),
-            },
-        )
-
-    return redirect("courses:course_builder", course_id=course.id)
-
-
-@login_required
-@require_http_methods(["POST"])
 def builder_create_quiz(request, course_id):
     """Create a new assessment from the builder."""
     if err := _staff_required(request):
