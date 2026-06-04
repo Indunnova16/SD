@@ -35,11 +35,11 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500 dark:text-gray-400">Puntos totales</span>
-                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_points }}</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.total_points|floatformat:"-2u" }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-500 dark:text-gray-400">Para aprobar</span>
-                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
+                        <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score|floatformat:"-2u" }}%</span>
                     </div>
                     {% if assessment.time_limit %}
                         <div class="flex justify-between">
@@ -65,7 +65,7 @@
                     <h4 class="font-medium text-gray-900 dark:text-white mb-2">Tu mejor resultado</h4>
                     <div class="flex items-center gap-3">
                         <div class="radial-progress {% if best_attempt.passed %}text-success{% else %}text-error{% endif %}"
-                             style="--value:{{ best_attempt.score }};
+                             style="--value:{{ best_attempt.score|floatformat:'0u' }};
                                     --size:3rem;
                                     --thickness:4px">
                             <span class="text-xs font-bold">{{ best_attempt.score|floatformat:0 }}%</span>
@@ -101,7 +101,7 @@
                 {% if assessment.time_limit %}
                     <li>Tienes {{ assessment.time_limit }} minutos para completar la evaluación.</li>
                 {% endif %}
-                <li>Necesitas {{ assessment.passing_score }}% para aprobar.</li>
+                <li>Necesitas {{ assessment.passing_score|floatformat:"-2u" }}% para aprobar.</li>
                 {% if assessment.shuffle_questions %}<li>Las preguntas se presentarán en orden aleatorio.</li>{% endif %}
                 {% if assessment.shuffle_answers %}<li>Las respuestas se mostrarán en orden aleatorio.</li>{% endif %}
                 {% if assessment.show_correct_answers %}<li>Podrás ver las respuestas correctas al finalizar.</li>{% endif %}

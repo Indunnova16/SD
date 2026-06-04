@@ -24,7 +24,7 @@ Context: question, course, assessment
                     <span class="badge badge-xs {% if question.question_type == 'single_choice' %}badge-primary {% elif question.question_type == 'multiple_choice' %}badge-secondary {% elif question.question_type == 'true_false' %}badge-accent {% elif question.question_type == 'matching' %}badge-info {% else %}badge-ghost{% endif %}">
                         {{ question.get_question_type_display }}
                     </span>
-                    <span class="text-xs text-gray-400">{{ question.points }} pt{{ question.points|pluralize:"s" }}</span>
+                    <span class="text-xs text-gray-400">{{ question.points|floatformat:"-2u" }} pt{{ question.points|pluralize:"s" }}</span>
                 </div>
                 <p class="text-sm font-medium">{{ question.text }}</p>
                 <!-- Answers preview -->

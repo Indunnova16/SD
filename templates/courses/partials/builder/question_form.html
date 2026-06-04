@@ -1,3 +1,4 @@
+{% load l10n %}
 {% comment %}
 Dynamic question form for adding/editing questions in the assessment builder.
 Context: course, assessment, is_edit (bool), question (optional, for editing)
@@ -10,7 +11,7 @@ Context: course, assessment, is_edit (bool), question (optional, for editing)
     {% endif %}
     ', text: '', explanation: '', points:
     {% if is_edit %}
-        {{ question.points }}
+        {% localize off %}{{ question.points }}{% endlocalize %}
     {% else %}
         1
     {% endif %}
@@ -76,8 +77,9 @@ Context: course, assessment, is_edit (bool), question (optional, for editing)
                 <input type="number"
                        name="points"
                        x-model="points"
-                       min="1"
+                       min="0"
                        max="100"
+                       step="0.01"
                        class="input input-bordered input-xs w-full">
             </div>
             <div></div>

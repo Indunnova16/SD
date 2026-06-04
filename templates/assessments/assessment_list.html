@@ -41,7 +41,7 @@
                     <!-- Stats -->
                     <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
                         <span>{{ assessment.total_questions }} preguntas</span>
-                        <span>{{ assessment.passing_score }}% para aprobar</span>
+                        <span>{{ assessment.passing_score|floatformat:"-2u" }}% para aprobar</span>
                     </div>
                     <!-- Course Link -->
                     {% if assessment.course %}
