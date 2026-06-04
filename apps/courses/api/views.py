@@ -66,16 +66,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Category.objects.filter(is_active=True)
 
-        # Filter only root categories (no parent)
-        root_only = self.request.query_params.get("root_only")
-        if root_only and root_only.lower() == "true":
-            queryset = queryset.filter(parent__isnull=True)
-
-        # Filter by parent category
-        parent_id = self.request.query_params.get("parent")
-        if parent_id:
-            queryset = queryset.filter(parent_id=parent_id)
-
         return queryset.annotate(
             course_count=Count("courses", filter=Q(courses__status="published"))
         ).order_by("order", "name")

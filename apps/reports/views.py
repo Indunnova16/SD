@@ -21,21 +21,15 @@ def _get_filter_params(request):
     """Extract dashboard filter parameters from request."""
     return {
         "category": request.GET.get("category", ""),
-        "subcategory": request.GET.get("subcategory", ""),
         "job_profile": request.GET.get("job_profile", ""),
     }
 
 
 def _apply_category_filter(qs, filters, course_field="course__category"):
-    """Apply category/subcategory filter to a queryset."""
-    subcategory = filters["subcategory"]
+    """Apply category filter to a queryset."""
     category = filters["category"]
-    if subcategory:
-        qs = qs.filter(**{f"{course_field}_id": subcategory})
-    elif category:
-        qs = qs.filter(
-            Q(**{f"{course_field}_id": category}) | Q(**{f"{course_field}__parent_id": category})
-        )
+    if category:
+        qs = qs.filter(**{f"{course_field}_id": category})
     return qs
 
 
@@ -52,7 +46,7 @@ def admin_dashboard(request):
     """Main admin dashboard view."""
     from apps.courses.models import JobProfileType
 
-    categories = Category.objects.filter(parent__isnull=True, is_active=True).order_by(
+    categories = Category.objects.filter(is_active=True).order_by(
         "order", "name"
     )
     context = {
@@ -60,23 +54,6 @@ def admin_dashboard(request):
         "job_profiles": JobProfileType.objects.filter(is_active=True).values_list("code", "name"),
     }
     return render(request, "dashboard/admin.html", context)
-
-
-@login_required
-@require_GET
-def dashboard_subcategories(request):
-    """Return subcategory options for a given parent category (HTMX)."""
-    category_id = request.GET.get("category", "")
-    subcategories = []
-    if category_id:
-        subcategories = Category.objects.filter(parent_id=category_id, is_active=True).order_by(
-            "order", "name"
-        )
-    return render(
-        request,
-        "dashboard/partials/subcategory_options.html",
-        {"subcategories": subcategories},
-    )
 
 
 @login_required
@@ -454,14 +431,9 @@ def assessment_performance(request):
     assessments_qs = Assessment.objects.all()
 
     # Filter by course category
-    subcategory = filters["subcategory"]
     category = filters["category"]
-    if subcategory:
-        assessments_qs = assessments_qs.filter(course__category_id=subcategory)
-    elif category:
-        assessments_qs = assessments_qs.filter(
-            Q(course__category_id=category) | Q(course__category__parent_id=category)
-        )
+    if category:
+        assessments_qs = assessments_qs.filter(course__category_id=category)
 
     # Build attempt filter for profile
     attempt_filter = Q(attempts__status=AssessmentAttempt.Status.GRADED)

@@ -51,11 +51,10 @@ class CategoryAPITests(TestCase):
             description="Cursos de seguridad",
             color="#FF0000",
         )
-        self.subcategory = Category.objects.create(
+        self.second_category = Category.objects.create(
             name="Trabajo en Altura",
             slug="trabajo-altura",
             description="Cursos de trabajo en altura",
-            parent=self.category,
         )
 
     def test_list_categories(self):
@@ -68,16 +67,6 @@ class CategoryAPITests(TestCase):
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         self.assertEqual(len(results), 2)
 
-    def test_list_root_categories_only(self):
-        """Test listing only root categories."""
-        url = reverse("courses_api:category-list")
-        response = self.client.get(url, {"root_only": "true"})
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data["results"] if isinstance(response.data, dict) else response.data
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["name"], "Seguridad")
-
     def test_get_category_detail(self):
         """Test getting category detail."""
         url = reverse("courses_api:category-detail", args=[self.category.id])
@@ -85,7 +74,7 @@ class CategoryAPITests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Seguridad")
-        self.assertEqual(len(response.data["children"]), 1)
+        self.assertNotIn("children", response.data)
 
     def test_create_category(self):
         """Test creating a new category."""

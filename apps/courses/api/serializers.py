@@ -22,7 +22,6 @@ from apps.courses.models import (
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for Category model."""
 
-    children = serializers.SerializerMethodField()
     course_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,17 +33,11 @@ class CategorySerializer(serializers.ModelSerializer):
             "description",
             "icon",
             "color",
-            "parent",
             "order",
             "is_active",
-            "children",
             "course_count",
         ]
         read_only_fields = ["id"]
-
-    def get_children(self, obj):
-        children = obj.children.filter(is_active=True)
-        return CategoryListSerializer(children, many=True).data
 
     def get_course_count(self, obj):
         return obj.courses.filter(status="published").count()

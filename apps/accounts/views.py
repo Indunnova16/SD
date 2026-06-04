@@ -100,7 +100,7 @@ def dashboard(request):
     """Main dashboard."""
     from apps.courses.models import Category
 
-    categories = Category.objects.filter(parent__isnull=True, is_active=True).order_by(
+    categories = Category.objects.filter(is_active=True).order_by(
         "order", "name"
     )
     from apps.courses.models import JobProfileType

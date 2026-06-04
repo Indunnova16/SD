@@ -53,16 +53,9 @@ def course_list(request):
 
     # Filtering
     category_slug = request.GET.get("category")
-    subcategory_slug = request.GET.get("subcategory")
 
     if category_slug:
-        if subcategory_slug:
-            courses = courses.filter(category__slug=subcategory_slug)
-        else:
-            # Include courses in the parent category and its subcategories
-            courses = courses.filter(
-                Q(category__slug=category_slug) | Q(category__parent__slug=category_slug)
-            )
+        courses = courses.filter(category__slug=category_slug)
 
     course_type = request.GET.get("type")
     if course_type:
@@ -73,18 +66,9 @@ def course_list(request):
         courses = courses.filter(Q(title__icontains=search) | Q(description__icontains=search))
 
     # Get categories for filter
-    categories = Category.objects.filter(is_active=True, parent__isnull=True).annotate(
+    categories = Category.objects.filter(is_active=True).annotate(
         course_count=Count("courses", filter=Q(courses__status="published"))
     )
-
-    # Get subcategories for the selected category
-    subcategories = Category.objects.none()
-    if category_slug:
-        subcategories = (
-            Category.objects.filter(is_active=True, parent__slug=category_slug)
-            .annotate(course_count=Count("courses", filter=Q(courses__status="published")))
-            .order_by("order", "name")
-        )
 
     # Get user's enrollments
     user_enrollments = set(
@@ -94,10 +78,8 @@ def course_list(request):
     context = {
         "courses": courses,
         "categories": categories,
-        "subcategories": subcategories,
         "user_enrollments": user_enrollments,
         "current_category": category_slug,
-        "current_subcategory": subcategory_slug,
         "current_type": course_type,
         "search_query": search,
     }
@@ -513,11 +495,8 @@ def category_list(request):
         messages.error(request, "No tiene permisos para acceder a esta página.")
         return redirect("courses:list")
 
-    # Get root categories with children prefetched
     categories = (
-        Category.objects.filter(parent__isnull=True)
-        .prefetch_related("children")
-        .annotate(course_count=Count("courses"))
+        Category.objects.annotate(course_count=Count("courses"))
         .order_by("order", "name")
     )
 
@@ -597,14 +576,6 @@ def category_delete(request, category_id):
         )
         return redirect("courses:category_list")
 
-    # Check if category has children
-    if category.children.exists():
-        messages.error(
-            request,
-            f"No se puede eliminar la categoría '{category.name}' porque tiene subcategorías.",
-        )
-        return redirect("courses:category_list")
-
     name = category.name
     category.delete()
     messages.success(request, f"Categoría '{name}' eliminada exitosamente.")
@@ -670,9 +641,7 @@ def parametrizacion_hub(request):
     # Data for tabs
     courses = Course.objects.select_related("category", "created_by").order_by("title")
     categories = (
-        Category.objects.filter(parent__isnull=True)
-        .prefetch_related("children")
-        .annotate(course_count=Count("courses"))
+        Category.objects.annotate(course_count=Count("courses"))
         .order_by("order", "name")
     )
     all_categories = Category.objects.filter(is_active=True).order_by("name")
