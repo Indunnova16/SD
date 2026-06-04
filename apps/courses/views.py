@@ -3,6 +3,7 @@ Web views for courses app.
 """
 
 import base64
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -956,6 +957,18 @@ def profile_type_toggle_active(request, profile_id):
 # =============================================================================
 
 
+def _parse_points(raw, default="1"):
+    """Parse a points value from request data into a Decimal.
+
+    Returns a Decimal quantized to 2 decimal places. Raises InvalidOperation
+    for unparseable input so callers can return a 400.
+    """
+    value = Decimal(str(raw if raw not in (None, "") else default))
+    if value < 0:
+        raise InvalidOperation("Los puntos no pueden ser negativos")
+    return value.quantize(Decimal("0.01"))
+
+
 def _staff_required(request):
     """Check if user is staff, return error response or None."""
     if not request.user.is_staff:
@@ -1184,12 +1197,16 @@ def builder_add_lesson(request, course_id, module_id):
                         quiz_questions = []
 
                     for i, qdata in enumerate(quiz_questions):
+                        try:
+                            q_points = _parse_points(qdata.get("points", "1"))
+                        except InvalidOperation:
+                            q_points = Decimal("1.00")
                         question = Question.objects.create(
                             assessment=assessment,
                             question_type=qdata.get("type", "single_choice"),
                             text=qdata.get("text", ""),
                             explanation=qdata.get("explanation", ""),
-                            points=int(qdata.get("points", 1)),
+                            points=q_points,
                             order=i,
                         )
                         q_type = qdata.get("type", "single_choice")
@@ -1646,7 +1663,10 @@ def builder_add_question(request, course_id, assessment_id):
     question_type = request.POST.get("question_type", "single_choice")
     text = request.POST.get("text", "").strip()
     explanation = request.POST.get("explanation", "").strip()
-    points = int(request.POST.get("points", 1))
+    try:
+        points = _parse_points(request.POST.get("points", "1"))
+    except InvalidOperation:
+        return JsonResponse({"error": "Puntos inválido"}, status=400)
 
     if not text:
         return JsonResponse({"error": "La pregunta es requerida"}, status=400)
@@ -1723,7 +1743,10 @@ def builder_edit_question(request, course_id, assessment_id, question_id):
     question_type = request.POST.get("question_type", question.question_type)
     text = request.POST.get("text", "").strip()
     explanation = request.POST.get("explanation", "").strip()
-    points = int(request.POST.get("points", 1))
+    try:
+        points = _parse_points(request.POST.get("points", "1"))
+    except InvalidOperation:
+        return JsonResponse({"error": "Puntos inválido"}, status=400)
 
     if not text:
         return JsonResponse({"error": "La pregunta es requerida"}, status=400)
