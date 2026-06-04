@@ -104,6 +104,14 @@
                                 <li>
                                     <a href="{% url 'lessons_learned:list' %}">💡 Lecciones Aprendidas</a>
                                 </li>
+                                {% if user.is_staff %}
+                                    <li>
+                                        <a href="{% url 'attendance:mobile_face_qr' %}">📷 Asistencia facial (QR)</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'attendance:face_event_list' %}">🪪 Eventos de asistencia</a>
+                                    </li>
+                                {% endif %}
                             </ul>
                         </details>
                     </li>
@@ -286,6 +294,12 @@
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💬 Charlas Pre-Op</a>
                 <a href="{% url 'lessons_learned:list' %}"
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💡 Lecciones Aprendidas</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'attendance:mobile_face_qr' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📷 Asistencia facial (QR)</a>
+                    <a href="{% url 'attendance:face_event_list' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🪪 Eventos de asistencia</a>
+                {% endif %}
                 <!-- Gamificacion -->
                 <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Gamificación
