@@ -387,6 +387,12 @@ class Lesson(models.Model):
         default=False,
         help_text=_("Si la lección requiere asistencia presencial"),
     )
+    scheduled_date = models.DateTimeField(
+        _("Fecha y hora agendada"),
+        null=True,
+        blank=True,
+        help_text=_("Solo para lecciones de Asistencia"),
+    )
     metadata = models.JSONField(_("Metadatos"), default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

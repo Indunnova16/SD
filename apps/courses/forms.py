@@ -378,6 +378,7 @@ class LessonBuilderForm(forms.ModelForm):
             "video_url",
             "duration",
             "is_mandatory",
+            "scheduled_date",
         ]
         widgets = {
             "title": forms.TextInput(
@@ -418,7 +419,43 @@ class LessonBuilderForm(forms.ModelForm):
                 }
             ),
             "is_mandatory": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+            # datetime-local sends "YYYY-MM-DDTHH:MM"; format keeps the value
+            # populated when editing an existing lesson.
+            "scheduled_date": forms.DateTimeInput(
+                attrs={
+                    "type": "datetime-local",
+                    "class": "input input-bordered input-sm w-full",
+                },
+                format="%Y-%m-%dT%H:%M",
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # The browser datetime-local widget submits "YYYY-MM-DDTHH:MM"; the
+        # default DateTimeField input_formats do NOT include the "T" separator,
+        # so without this the field silently invalidates in production
+        # (gotcha analogous to <input type="month">).
+        self.fields["scheduled_date"].input_formats = [
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%S",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+        ]
+        # scheduled_date is only meaningful for attendance lessons; it is not
+        # required at the DB level (legacy lessons have none).
+        self.fields["scheduled_date"].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        lesson_type = cleaned_data.get("lesson_type")
+        scheduled_date = cleaned_data.get("scheduled_date")
+        if lesson_type == Lesson.Type.ATTENDANCE and not scheduled_date:
+            self.add_error(
+                "scheduled_date",
+                _("La fecha y hora agendada es obligatoria para lecciones de Asistencia."),
+            )
+        return cleaned_data
 
 
 class QuickAssessmentForm(forms.Form):

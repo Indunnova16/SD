@@ -1981,6 +1981,21 @@ def attendance_lesson_view(request, course_id, lesson_id):
         "is_instructor": is_instructor,
         "form": AttendanceSignatureForm(),
     }
+
+    # Admin attendance summary (SD#40): staff see the per-session roster with
+    # derived Presente/Ausente status, totals and attendance percentage.
+    if request.user.is_staff:
+        summary = _build_attendance_summary(course, lesson)
+        context.update(
+            {
+                "attendance_summary": summary["rows"],
+                "total_inscritos": summary["total_inscritos"],
+                "total_presentes": summary["total_presentes"],
+                "total_ausentes": summary["total_ausentes"],
+                "porcentaje_asistencia": summary["porcentaje_asistencia"],
+            }
+        )
+
     return render(request, "courses/attendance_lesson.html", context)
 
 
@@ -2056,3 +2071,123 @@ def save_attendance_signature(request, course_id, lesson_id):
         )
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+
+def _build_attendance_summary(course, lesson):
+    """Build the attendance summary for an attendance lesson.
+
+    Returns a dict with:
+      - rows: list of per-enrollee dicts {user, full_name, document_number,
+        estado ("Presente"/"Ausente"), presente (bool), signed_at,
+        signature_image_url}
+      - total_inscritos, total_presentes, total_ausentes
+      - porcentaje_asistencia: presentes / inscritos * 100, rounded to 1
+        decimal (0 if there are no enrollees -> no ZeroDivisionError)
+
+    Shared by ``attendance_lesson_view`` (admin summary, SD#40) and
+    ``export_attendance_pdf`` (SD#33) so both surfaces stay consistent.
+    The "Presente"/"Ausente" status is derived: an enrollee with an
+    ``AttendanceSignature`` for this lesson is Presente, otherwise Ausente.
+    """
+    enrollments = (
+        Enrollment.objects.filter(course=course)
+        .select_related("user")
+        .order_by("user__first_name", "user__last_name", "user__document_number")
+    )
+
+    signatures = AttendanceSignature.objects.filter(lesson=lesson).select_related("user")
+    signatures_by_user = {sig.user_id: sig for sig in signatures}
+
+    rows = []
+    total_presentes = 0
+    for enrollment in enrollments:
+        user = enrollment.user
+        sig = signatures_by_user.get(user.id)
+        presente = sig is not None
+        if presente:
+            total_presentes += 1
+        signature_image_url = ""
+        if sig and sig.signature_image:
+            try:
+                signature_image_url = sig.signature_image.url
+            except Exception:
+                signature_image_url = ""
+        rows.append(
+            {
+                "user": user,
+                "full_name": user.get_full_name() or user.document_number,
+                "document_number": user.document_number,
+                "presente": presente,
+                "estado": "Presente" if presente else "Ausente",
+                "signed_at": sig.signed_at if sig else None,
+                "signature_image_url": signature_image_url,
+            }
+        )
+
+    total_inscritos = len(rows)
+    total_ausentes = total_inscritos - total_presentes
+    if total_inscritos:
+        porcentaje_asistencia = round(total_presentes / total_inscritos * 100, 1)
+    else:
+        porcentaje_asistencia = 0.0
+
+    return {
+        "rows": rows,
+        "total_inscritos": total_inscritos,
+        "total_presentes": total_presentes,
+        "total_ausentes": total_ausentes,
+        "porcentaje_asistencia": porcentaje_asistencia,
+    }
+
+
+@login_required
+def export_attendance_pdf(request, course_id, lesson_id):
+    """Export the attendance list of an attendance lesson as PDF (staff only).
+
+    Includes, per enrollee: full name, document number (cédula), status
+    (Presente/Ausente), signature timestamp and the signature image, plus
+    totals and the attendance percentage for the session (SD#33 + SD#40).
+    """
+    if err := _staff_required(request):
+        return err
+
+    from io import BytesIO
+
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+
+    course = get_object_or_404(Course, pk=course_id)
+    lesson = get_object_or_404(
+        Lesson,
+        pk=lesson_id,
+        module__course=course,
+        lesson_type=Lesson.Type.ATTENDANCE,
+    )
+
+    summary = _build_attendance_summary(course, lesson)
+
+    context = {
+        "course": course,
+        "lesson": lesson,
+        "rows": summary["rows"],
+        "total_inscritos": summary["total_inscritos"],
+        "total_presentes": summary["total_presentes"],
+        "total_ausentes": summary["total_ausentes"],
+        "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+    }
+
+    html_string = render_to_string("courses/attendance_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF de asistencia.")
+        return redirect("courses:attendance_lesson", course_id=course.id, lesson_id=lesson.id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = f"asistencia_{lesson.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
