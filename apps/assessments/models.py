@@ -2,6 +2,8 @@
 Assessment models for SD LMS.
 """
 
+from decimal import Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -61,9 +63,11 @@ class Assessment(models.Model):
         null=True,
         blank=True,
     )
-    passing_score = models.PositiveIntegerField(
+    passing_score = models.DecimalField(
         _("Puntaje mínimo (%)"),
-        default=80,
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("80.00"),
         help_text=_("Porcentaje mínimo para aprobar"),
         validators=[validate_percentage],
     )
@@ -125,7 +129,7 @@ class Assessment(models.Model):
         from django.db.models import Sum
 
         result = self.questions.aggregate(total=Sum("points"))
-        return result["total"] or 0
+        return result["total"] or Decimal("0.00")
 
 
 class Question(models.Model):
@@ -160,7 +164,12 @@ class Question(models.Model):
         blank=True,
         help_text=_("Explicación de la respuesta correcta"),
     )
-    points = models.PositiveIntegerField(_("Puntos"), default=1)
+    points = models.DecimalField(
+        _("Puntos"),
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("1.00"),
+    )
     order = models.PositiveIntegerField(_("Orden"), default=0)
     image = models.ImageField(
         _("Imagen"),
@@ -252,9 +261,11 @@ class AssessmentAttempt(models.Model):
         null=True,
         blank=True,
     )
-    points_earned = models.PositiveIntegerField(
+    points_earned = models.DecimalField(
         _("Puntos obtenidos"),
-        default=0,
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal("0.00"),
     )
     passed = models.BooleanField(_("Aprobado"), null=True, blank=True)
     time_spent = models.PositiveIntegerField(
