@@ -7,6 +7,7 @@ from datetime import date
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -189,3 +190,184 @@ class LogoutViewTests(TestCase):
         self.client.login(username="12345678", password="testpassword123")
         response = self.client.post(self.logout_url)
         self.assertRedirects(response, reverse("accounts:login"))
+
+
+class ReassignEnrollmentViewTests(TestCase):
+    """Tests for the staff-driven course reassignment endpoint (SD#42)."""
+
+    def setUp(self):
+        from apps.courses.models import Course, Enrollment
+
+        self.client = Client()
+
+        # Staff admin who performs the reassignment.
+        self.admin = User.objects.create_user(
+            email="admin@example.com",
+            password="adminpass123",
+            first_name="Admin",
+            last_name="User",
+            document_type="CC",
+            document_number="99999999",
+            hire_date=date(2024, 1, 1),
+            is_staff=True,
+        )
+        # Regular (non-staff) user.
+        self.worker = User.objects.create_user(
+            email="worker@example.com",
+            password="workerpass123",
+            first_name="Worker",
+            last_name="User",
+            document_type="CC",
+            document_number="11111111",
+            hire_date=date(2024, 1, 1),
+        )
+        # Target user whose enrollment will be reassigned.
+        self.learner = User.objects.create_user(
+            email="learner@example.com",
+            password="learnerpass123",
+            first_name="Learner",
+            last_name="User",
+            document_type="CC",
+            document_number="22222222",
+            hire_date=date(2024, 1, 1),
+        )
+
+        self.course = Course.objects.create(
+            code="SD42-COURSE",
+            title="Curso de Prueba SD42",
+            description="Curso para validar la reasignación.",
+            created_by=self.admin,
+            status=Course.Status.PUBLISHED,
+        )
+        # Completed enrollment with prior progress (representative legacy-like row).
+        self.enrollment = Enrollment.objects.create(
+            user=self.learner,
+            course=self.course,
+            status=Enrollment.Status.COMPLETED,
+            progress=75,
+            started_at=timezone.now(),
+            completed_at=timezone.now(),
+        )
+        self.url = reverse(
+            "accounts:reassign_enrollment",
+            kwargs={"user_id": self.learner.pk, "enrollment_id": self.enrollment.pk},
+        )
+
+    def test_reassign_requires_staff(self):
+        """Non-staff users are redirected and the enrollment is untouched."""
+        self.client.login(username="11111111", password="workerpass123")
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("accounts:dashboard"))
+        self.enrollment.refresh_from_db()
+        # Status unchanged.
+        self.assertEqual(self.enrollment.status, "completed")
+        self.assertEqual(self.enrollment.progress, 75)
+
+    def test_reassign_get_not_allowed(self):
+        """GET is rejected by require_POST."""
+        self.client.login(username="99999999", password="adminpass123")
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_reassign_resets_enrollment(self):
+        """Staff POST resets the enrollment back to ENROLLED with cleared dates."""
+        from apps.courses.models import Enrollment
+
+        self.client.login(username="99999999", password="adminpass123")
+        response = self.client.post(self.url)
+        self.assertRedirects(
+            response,
+            reverse(
+                "accounts:user_learning_history",
+                kwargs={"user_id": self.learner.pk},
+            ),
+        )
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.enrollment.status, Enrollment.Status.ENROLLED)
+        self.assertEqual(self.enrollment.progress, 0)
+        self.assertIsNone(self.enrollment.started_at)
+        self.assertIsNone(self.enrollment.completed_at)
+        self.assertEqual(self.enrollment.assigned_by, self.admin)
+
+    def test_reassign_success_message_contains_reasignado(self):
+        """Success message must contain the substring asserted by the E2E journey."""
+        self.client.login(username="99999999", password="adminpass123")
+        response = self.client.post(self.url, follow=True)
+        self.assertContains(response, "reasignado")
+
+    def test_reassign_creates_completion_record_when_progress(self):
+        """A CompletionRecord is kept for audit when there was prior progress."""
+        from apps.courses.models import CompletionRecord
+
+        self.client.login(username="99999999", password="adminpass123")
+        self.client.post(self.url)
+        records = CompletionRecord.objects.filter(user=self.learner, course=self.course)
+        self.assertEqual(records.count(), 1)
+        record = records.first()
+        self.assertEqual(record.progress, 75)
+        self.assertEqual(record.reset_reason, "Reasignación por administrador")
+        self.assertIsNotNone(record.completed_at)
+
+    def test_reassign_no_record_when_zero_progress(self):
+        """No CompletionRecord is created when there was no progress."""
+        from apps.courses.models import CompletionRecord, Enrollment
+
+        # Fresh enrollment with zero progress.
+        zero_enrollment = Enrollment.objects.create(
+            user=self.learner,
+            course=Course_create_helper(self),
+            status=Enrollment.Status.ENROLLED,
+            progress=0,
+        )
+        url = reverse(
+            "accounts:reassign_enrollment",
+            kwargs={"user_id": self.learner.pk, "enrollment_id": zero_enrollment.pk},
+        )
+        self.client.login(username="99999999", password="adminpass123")
+        self.client.post(url)
+        self.assertEqual(
+            CompletionRecord.objects.filter(
+                user=self.learner, course=zero_enrollment.course
+            ).count(),
+            0,
+        )
+
+    def test_reassign_resets_lesson_progress(self):
+        """LessonProgress rows tied to the enrollment are reset (legacy data path)."""
+        from apps.courses.models import Lesson, LessonProgress, Module
+
+        module = Module.objects.create(course=self.course, title="Modulo 1", order=1)
+        lesson = Lesson.objects.create(
+            module=module,
+            title="Leccion 1",
+            lesson_type=Lesson.Type.TEXT,
+            order=1,
+        )
+        lp = LessonProgress.objects.create(
+            enrollment=self.enrollment,
+            lesson=lesson,
+            is_completed=True,
+            progress_percent=100,
+            time_spent=600,
+            completed_at=timezone.now(),
+        )
+        self.client.login(username="99999999", password="adminpass123")
+        self.client.post(self.url)
+        lp.refresh_from_db()
+        self.assertFalse(lp.is_completed)
+        self.assertEqual(lp.progress_percent, 0)
+        self.assertEqual(lp.time_spent, 0)
+        self.assertIsNone(lp.completed_at)
+
+
+def Course_create_helper(test_case):
+    """Create a second published course for tests needing a distinct course."""
+    from apps.courses.models import Course
+
+    return Course.objects.create(
+        code="SD42-COURSE-2",
+        title="Curso de Prueba SD42 #2",
+        description="Segundo curso para validar reasignación sin progreso.",
+        created_by=test_case.admin,
+        status=Course.Status.PUBLISHED,
+    )

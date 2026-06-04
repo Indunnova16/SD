@@ -41,6 +41,11 @@ urlpatterns = [
         name="user_learning_history",
     ),
     path(
+        "users/<int:user_id>/enrollments/<int:enrollment_id>/reassign/",
+        views.reassign_enrollment,
+        name="reassign_enrollment",
+    ),
+    path(
         "users/<int:user_id>/reset-password/",
         views.admin_reset_password,
         name="admin_reset_password",
