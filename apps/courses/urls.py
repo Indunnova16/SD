@@ -58,6 +58,11 @@ urlpatterns = [
         name="save_attendance_signature",
     ),
     path(
+        "<int:course_id>/lessons/<int:lesson_id>/attendance/export-pdf/",
+        views.export_attendance_pdf,
+        name="export_attendance_pdf",
+    ),
+    path(
         "<int:course_id>/sign-completion/",
         views.sign_course_completion,
         name="sign_course_completion",

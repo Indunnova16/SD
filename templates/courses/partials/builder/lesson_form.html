@@ -49,6 +49,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <option value="interactive">Interactivo</option>
                 <option value="audio">Audio</option>
                 <option value="presential">Presencial</option>
+                <option value="attendance">Asistencia</option>
             </select>
         </div>
         <!-- Duration (hide for quiz) -->
@@ -85,6 +86,17 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                   placeholder="Descripcion de la leccion (opcional)">{% if not is_new %}{{ lesson.description }}{% endif %}</textarea>
     </div>
     <!-- Conditional fields based on lesson type -->
+    <!-- Attendance: scheduled date/time -->
+    <div class="form-control mt-2 conditional-field" data-show-for="attendance" style="display:none;">
+        <label class="label py-1">
+            <span class="label-text text-xs">Fecha y hora agendada <span class="text-error">*</span></span>
+        </label>
+        <input type="datetime-local"
+               name="scheduled_date"
+               value="{% if not is_new and lesson.scheduled_date %}{{ lesson.scheduled_date|date:'Y-m-d\TH:i' }}{% endif %}"
+               class="input input-bordered input-sm w-full">
+        <span class="text-xs text-gray-400 mt-1">Define cuándo se realiza la sesión de asistencia.</span>
+    </div>
     <!-- Video: URL -->
     <div class="form-control mt-2 conditional-field" data-show-for="video" style="display:none;">
         <label class="label py-1">
