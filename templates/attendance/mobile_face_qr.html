@@ -1,0 +1,40 @@
+{% extends "base/base.html" %}
+{% block title %}QR Marcación Móvil · SD{% endblock %}
+
+{% block extra_css %}
+<style>
+    #qr-canvas { width: 320px; height: 320px; display: block; margin: 0 auto; }
+    @media print {
+        body * { visibility: hidden; }
+        #print-area, #print-area * { visibility: visible; }
+        #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        .no-print { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="flex justify-between items-center mb-6 no-print">
+        <h1 class="text-2xl font-bold">QR de Marcación Móvil</h1>
+        <button onclick="window.print()" class="btn btn-primary btn-sm">Imprimir</button>
+    </div>
+
+    <div id="print-area" class="card bg-base-100 shadow-md p-6 text-center">
+        <h2 class="text-lg font-semibold mb-1">Marcación de Asistencia</h2>
+        <p class="text-sm text-base-content/60 mb-4">Escanea para registrar entrada/salida</p>
+        <canvas id="qr-canvas"></canvas>
+        <p class="text-xs text-base-content/50 mt-4 break-all">{{ checkin_url }}</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+(function() {
+    var url = "{{ checkin_url|escapejs }}";
+    QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 320, margin: 1 }, function(err) {
+        if (err) console.error(err);
+    });
+})();
+</script>
+{% endblock %}

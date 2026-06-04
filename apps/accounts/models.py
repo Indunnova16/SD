@@ -134,6 +134,19 @@ class User(AbstractUser):
         default=Status.ACTIVE,
     )
 
+    # Reconocimiento facial (asistencia con AWS Rekognition)
+    aws_face_id = models.CharField(
+        _("AWS face ID"),
+        max_length=64,
+        blank=True,
+        help_text=_("Identificador asignado por AWS Rekognition al indexar la foto."),
+    )
+    face_indexed_at = models.DateTimeField(
+        _("Rostro indexado en"),
+        null=True,
+        blank=True,
+    )
+
     # Metadata
     created_at = models.DateTimeField(_("Fecha de creación"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Fecha de actualización"), auto_now=True)
