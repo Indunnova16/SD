@@ -7,6 +7,8 @@ Vistas de asistencia con reconocimiento facial.
 - `reindex_user_face`    : (re)indexa la foto de un usuario en Rekognition (staff).
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
@@ -21,6 +23,7 @@ from .models import FaceCheckEvent
 from .services import AttendanceService
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 def _staff_required(view):
@@ -95,6 +98,7 @@ def mobile_face_checkin(request):
             status=200,
         )
     except RekognitionError as exc:
+        logger.warning("Rekognition error en marcación: %s", exc)
         event.status = FaceCheckEvent.STATUS_ERROR
         event.error_message = str(exc)[:255]
         event.save()

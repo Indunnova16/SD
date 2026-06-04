@@ -186,6 +186,14 @@ class RekognitionService:
             )
         except client.exceptions.InvalidParameterException as exc:
             raise NoFaceDetectedError(str(exc)) from exc
+        except client.exceptions.ResourceNotFoundException:
+            # La collection aún no existe (nadie inscrito todavía). No es un error
+            # del servicio: equivale a "sin coincidencia".
+            logger.warning(
+                "Collection %s no existe aún; tratando búsqueda como sin coincidencia.",
+                settings.REKOGNITION_COLLECTION_ID,
+            )
+            return SearchResult(user=None, similarity=0.0, aws_face_id="", matched=False)
         except (BotoCoreError, ClientError) as exc:
             raise RekognitionError(f"Error AWS: {exc}") from exc
 

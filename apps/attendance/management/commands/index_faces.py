@@ -39,8 +39,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"  - {u} (id={u.id})")
             return
 
-        if total:
-            RekognitionService.ensure_collection()
+        # Crear la collection siempre (aunque no haya usuarios con foto), para que
+        # el kiosko pueda buscar sin error apenas exista la primera foto.
+        RekognitionService.ensure_collection()
 
         ok = failed = 0
         for u in qs:
