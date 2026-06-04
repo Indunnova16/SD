@@ -29,10 +29,11 @@ class Migration(migrations.Migration):
         ("courses", "0017_lesson_scheduled_date"),
     ]
 
+    # Solo la limpieza de datos (DELETE de subcategorías). El RemoveField del
+    # campo `parent` va en una migración separada (0020) para que el DELETE
+    # commitee y se resuelvan sus trigger events de FK antes del ALTER TABLE.
+    # Si van juntos en la misma transacción, Postgres lanza:
+    #   "cannot ALTER TABLE because it has pending trigger events".
     operations = [
         migrations.RunPython(remove_subcategories, noop_reverse),
-        migrations.RemoveField(
-            model_name="category",
-            name="parent",
-        ),
     ]
