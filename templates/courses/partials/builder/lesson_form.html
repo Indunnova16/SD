@@ -44,7 +44,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <option value="video">Video</option>
                 <option value="pdf">PDF</option>
                 <option value="text">Texto</option>
-                <option value="quiz">Quiz</option>
+                <option value="quiz">Evaluación</option>
                 <option value="scorm">SCORM</option>
                 <option value="interactive">Interactivo</option>
                 <option value="audio">Audio</option>
@@ -238,7 +238,7 @@ o código embed HTML">{% if not is_new %}{{ lesson.content }}{% endif %}</textar
                     @click="editingLesson = false">Cancelar</button>
         {% endif %}
         <button type="submit" class="btn btn-primary btn-xs">
-            <span x-show="lessonType === 'quiz'" x-cloak>Crear Quiz</span>
+            <span x-show="lessonType === 'quiz'" x-cloak>Crear Evaluación</span>
             <span x-show="lessonType !== 'quiz'">
                 {% if is_new %}
                     Agregar
@@ -544,7 +544,7 @@ const QuizBuilder = {
         list.innerHTML = '';
 
         if (this.questions.length === 0) {
-            list.innerHTML = '<p class="text-center py-4 text-gray-400">Agrega preguntas a tu quiz</p>';
+            list.innerHTML = '<p class="text-center py-4 text-gray-400">Agrega preguntas a tu evaluación</p>';
             return;
         }
 

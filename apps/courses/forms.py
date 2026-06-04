@@ -474,7 +474,7 @@ class QuickAssessmentForm(forms.Form):
     assessment_type = forms.ChoiceField(
         label=_("Tipo"),
         choices=[
-            ("quiz", _("Quiz")),
+            ("quiz", _("Evaluación")),
             ("exam", _("Examen")),
             ("practice", _("Practica")),
         ],

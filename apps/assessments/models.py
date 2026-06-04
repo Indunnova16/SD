@@ -29,7 +29,7 @@ class Assessment(models.Model):
     """
 
     class Type(models.TextChoices):
-        QUIZ = "quiz", _("Quiz")
+        QUIZ = "quiz", _("Evaluación")
         EXAM = "exam", _("Examen")
         PRACTICE = "practice", _("Práctica")
         SURVEY = "survey", _("Encuesta")

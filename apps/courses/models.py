@@ -347,7 +347,7 @@ class Lesson(models.Model):
         SCORM = "scorm", _("SCORM")
         INTERACTIVE = "interactive", _("Interactivo")
         AUDIO = "audio", _("Audio")
-        QUIZ = "quiz", _("Quiz")
+        QUIZ = "quiz", _("Evaluación")
         TEXT = "text", _("Texto")
         PRESENTIAL = "presential", _("Presencial")
         ATTENDANCE = "attendance", _("Asistencia")
