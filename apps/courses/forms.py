@@ -2,6 +2,8 @@
 Forms for courses app.
 """
 
+from decimal import Decimal
+
 from django import forms
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -441,13 +443,21 @@ class QuickAssessmentForm(forms.Form):
         ],
         widget=forms.Select(attrs={"class": "select select-bordered w-full"}),
     )
-    passing_score = forms.IntegerField(
+    passing_score = forms.DecimalField(
         label=_("Puntaje minimo (%)"),
-        initial=80,
-        min_value=0,
-        max_value=100,
+        initial=Decimal("80.00"),
+        min_value=Decimal("0"),
+        max_value=Decimal("100"),
+        max_digits=5,
+        decimal_places=2,
+        localize=False,  # es-CO: evitar coma decimal que vacia el input number
         widget=forms.NumberInput(
-            attrs={"class": "input input-bordered w-full", "min": "0", "max": "100"}
+            attrs={
+                "class": "input input-bordered w-full",
+                "min": "0",
+                "max": "100",
+                "step": "0.01",
+            }
         ),
     )
     time_limit = forms.IntegerField(
@@ -469,6 +479,25 @@ class QuickAssessmentForm(forms.Form):
 
 class AssessmentEditForm(forms.ModelForm):
     """Form for editing all properties of an existing Assessment from the course builder."""
+
+    # Override the auto-generated field to disable es-CO localization
+    # (Decimal con coma "80,00" vacia el <input type=number> en el navegador).
+    passing_score = forms.DecimalField(
+        label=_("Puntaje minimo (%)"),
+        min_value=Decimal("0"),
+        max_value=Decimal("100"),
+        max_digits=5,
+        decimal_places=2,
+        localize=False,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "input input-bordered input-sm w-full",
+                "min": "0",
+                "max": "100",
+                "step": "0.01",
+            }
+        ),
+    )
 
     class Meta:
         model = Assessment
@@ -497,13 +526,6 @@ class AssessmentEditForm(forms.ModelForm):
             "assessment_type": forms.Select(
                 attrs={"class": "select select-bordered select-sm w-full"}
             ),
-            "passing_score": forms.NumberInput(
-                attrs={
-                    "class": "input input-bordered input-sm w-full",
-                    "min": "0",
-                    "max": "100",
-                }
-            ),
             "time_limit": forms.NumberInput(
                 attrs={
                     "class": "input input-bordered input-sm w-full",
@@ -523,9 +545,7 @@ class AssessmentEditForm(forms.ModelForm):
             "show_correct_answers": forms.CheckboxInput(
                 attrs={"class": "checkbox checkbox-primary checkbox-sm"}
             ),
-            "status": forms.Select(
-                attrs={"class": "select select-bordered select-sm w-full"}
-            ),
+            "status": forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
         }
 
     def clean_passing_score(self):

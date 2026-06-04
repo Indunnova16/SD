@@ -20,13 +20,13 @@
             <!-- Score -->
             <div class="text-center mb-4">
                 <div class="radial-progress {% if attempt.passed %}text-success{% else %}text-error{% endif %} mx-auto"
-                     style="--value:{{ attempt.score }};
+                     style="--value:{{ attempt.score|floatformat:'0u' }};
                             --size:8rem;
                             --thickness:8px">
                     <span class="text-2xl font-bold">{{ attempt.score|floatformat:0 }}%</span>
                 </div>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    {{ attempt.points_earned }}/{{ assessment.total_points }} puntos
+                    {{ attempt.points_earned|floatformat:"-2u" }}/{{ assessment.total_points|floatformat:"-2u" }} puntos
                 </p>
             </div>
             <!-- Stats -->
@@ -41,7 +41,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500 dark:text-gray-400">Mínimo para aprobar</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score }}%</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score|floatformat:"-2u" }}%</span>
                 </div>
             </div>
             <!-- Actions -->
@@ -85,7 +85,7 @@
                                     <div class="flex-1">
                                         <p class="font-medium text-gray-900 dark:text-white">{{ question.text }}</p>
                                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                            {{ question.get_question_type_display }} - {{ question.points }} punto{{ question.points|pluralize:"s" }}
+                                            {{ question.get_question_type_display }} - {{ question.points|floatformat:"-2u" }} punto{{ question.points|pluralize:"s" }}
                                         </p>
                                     </div>
                                 </div>

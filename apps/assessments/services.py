@@ -249,7 +249,7 @@ class AssessmentService:
         if attempt_answer.is_correct:
             attempt_answer.points_awarded = question.points
         else:
-            attempt_answer.points_awarded = 0
+            attempt_answer.points_awarded = Decimal("0.00")
 
         attempt_answer.save()
 
@@ -296,19 +296,21 @@ class AssessmentService:
         """
         total_points = attempt.assessment.total_points
 
+        total_points = Decimal(str(total_points))
+
         if total_points == 0:
-            attempt.score = Decimal("0")
-            attempt.points_earned = 0
+            attempt.score = Decimal("0.00")
+            attempt.points_earned = Decimal("0.00")
             attempt.passed = False
         else:
             # Sum up points from all answers
             points_earned = Decimal("0")
             for attempt_answer in attempt.attempt_answers.all():
                 if attempt_answer.points_awarded is not None:
-                    points_earned += attempt_answer.points_awarded
+                    points_earned += Decimal(str(attempt_answer.points_awarded))
 
-            attempt.points_earned = int(points_earned)
-            attempt.score = (points_earned / total_points) * 100
+            attempt.points_earned = points_earned.quantize(Decimal("0.01"))
+            attempt.score = ((points_earned / total_points) * 100).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
 
         attempt.status = AssessmentAttempt.Status.GRADED
@@ -330,6 +332,7 @@ class AssessmentService:
         Grade a subjective (essay/short answer) response.
         """
         max_points = attempt_answer.question.points
+        points = Decimal(str(points))
 
         if points > max_points:
             raise ValueError(f"Los puntos no pueden exceder {max_points}")
@@ -532,8 +535,8 @@ class AssessmentService:
         Returns:
             The updated AssessmentAttempt instance.
         """
-        total_points = 0
-        earned_points = 0
+        total_points = Decimal("0")
+        earned_points = Decimal("0")
         all_gradeable = True
 
         for attempt_answer in attempt.attempt_answers.all():
@@ -550,7 +553,7 @@ class AssessmentService:
                     # Use the unified grading method for matching
                     AssessmentService._grade_objective_answer(attempt_answer)
                     is_correct = attempt_answer.is_correct
-                    points_awarded = int(attempt_answer.points_awarded or 0)
+                    points_awarded = Decimal(str(attempt_answer.points_awarded or 0))
                 else:
                     # Get correct answers
                     correct_answers = set(
@@ -561,7 +564,7 @@ class AssessmentService:
                     )
 
                     is_correct = correct_answers == selected_answers
-                    points_awarded = question.points if is_correct else 0
+                    points_awarded = question.points if is_correct else Decimal("0.00")
 
                     attempt_answer.is_correct = is_correct
                     attempt_answer.points_awarded = points_awarded
@@ -591,16 +594,16 @@ class AssessmentService:
                     attempt=attempt,
                     question=question,
                     is_correct=False,
-                    points_awarded=0,
+                    points_awarded=Decimal("0.00"),
                 )
 
-        attempt.points_earned = earned_points
+        attempt.points_earned = earned_points.quantize(Decimal("0.01"))
 
         if total_points > 0:
-            attempt.score = Decimal(str((earned_points / total_points) * 100))
+            attempt.score = ((earned_points / total_points) * 100).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
         else:
-            attempt.score = Decimal("0")
+            attempt.score = Decimal("0.00")
             attempt.passed = False
 
         if all_gradeable:
@@ -631,16 +634,23 @@ class AssessmentService:
         Returns:
             The updated AssessmentAttempt instance.
         """
-        total_points = attempt.assessment.total_points
-        earned_points = sum((aa.points_awarded or 0) for aa in attempt.attempt_answers.all())
+        total_points = Decimal(str(attempt.assessment.total_points))
+        earned_points = sum(
+            (
+                Decimal(str(aa.points_awarded))
+                for aa in attempt.attempt_answers.all()
+                if aa.points_awarded is not None
+            ),
+            Decimal("0"),
+        )
 
-        attempt.points_earned = earned_points
+        attempt.points_earned = earned_points.quantize(Decimal("0.01"))
 
         if total_points > 0:
-            attempt.score = Decimal(str((earned_points / total_points) * 100))
+            attempt.score = ((earned_points / total_points) * 100).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
         else:
-            attempt.score = Decimal("0")
+            attempt.score = Decimal("0.00")
             attempt.passed = False
 
         attempt.save()
