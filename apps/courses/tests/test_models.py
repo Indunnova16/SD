@@ -61,7 +61,6 @@ from apps.courses.tests.factories import (
     ScormAttemptFactory,
     ScormLessonFactory,
     ScormPackageFactory,
-    SubCategoryFactory,
     TextLessonFactory,
     UserFactory,
     VideoAssetFactory,
@@ -86,23 +85,15 @@ class TestCategory:
         category = CategoryFactory(name="Seguridad Industrial")
         assert str(category) == "Seguridad Industrial"
 
-    def test_category_str_with_parent(self):
-        """Test category string representation with parent."""
-        parent = CategoryFactory(name="Seguridad")
-        child = CategoryFactory(name="Trabajo en Altura", parent=parent)
-        assert str(child) == "Seguridad > Trabajo en Altura"
-
     def test_category_full_path(self):
-        """Test full_path property."""
-        grandparent = CategoryFactory(name="Capacitaciones")
-        parent = CategoryFactory(name="Seguridad", parent=grandparent)
-        child = CategoryFactory(name="Trabajo en Altura", parent=parent)
-        assert child.full_path == "Capacitaciones > Seguridad > Trabajo en Altura"
-
-    def test_category_full_path_root(self):
-        """Test full_path for root category."""
+        """Test full_path property returns the category name (flat categories)."""
         category = CategoryFactory(name="Root Category")
         assert category.full_path == "Root Category"
+
+    def test_category_has_no_parent_field(self):
+        """Category model no longer exposes a self-referential parent FK."""
+        category = CategoryFactory()
+        assert not hasattr(category, "parent")
 
     def test_category_slug_unique(self):
         """Test that category slug must be unique."""
@@ -122,22 +113,6 @@ class TestCategory:
         assert categories[0] == cat1
         assert categories[1] == cat2
         assert categories[2] == cat3
-
-    def test_category_children_relationship(self):
-        """Test parent-children relationship."""
-        parent = CategoryFactory()
-        child1 = CategoryFactory(parent=parent)
-        child2 = CategoryFactory(parent=parent)
-
-        assert parent.children.count() == 2
-        assert child1 in parent.children.all()
-        assert child2 in parent.children.all()
-
-    def test_subcategory_creation(self):
-        """Test creating subcategories with factory."""
-        subcategory = SubCategoryFactory()
-        assert subcategory.parent is not None
-        assert subcategory in subcategory.parent.children.all()
 
     def test_category_default_color(self):
         """Test category default color."""
@@ -970,15 +945,6 @@ class TestEdgeCases:
         """Test module with no lessons."""
         module = ModuleFactory()
         assert module.lessons.count() == 0
-
-    def test_category_deep_nesting(self):
-        """Test deeply nested categories."""
-        level1 = CategoryFactory(name="Level 1")
-        level2 = CategoryFactory(name="Level 2", parent=level1)
-        level3 = CategoryFactory(name="Level 3", parent=level2)
-        level4 = CategoryFactory(name="Level 4", parent=level3)
-
-        assert level4.full_path == "Level 1 > Level 2 > Level 3 > Level 4"
 
     def test_course_self_referential_prerequisites(self):
         """Test that a course can have prerequisites."""

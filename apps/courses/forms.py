@@ -25,21 +25,6 @@ def get_profile_choices():
 class CategoryForm(forms.ModelForm):
     """Form for creating and editing categories."""
 
-    subcategories_text = forms.CharField(
-        label=_("Subcategorias"),
-        widget=forms.Textarea(
-            attrs={
-                "class": "textarea textarea-bordered w-full",
-                "rows": 4,
-                "placeholder": "Ingrese una subcategoria por linea, ej:\nSeguridad Electrica\nTrabajo en Alturas\nPrimeros Auxilios",
-            }
-        ),
-        required=False,
-        help_text=_(
-            "Ingrese una subcategoria por linea. Las existentes se conservan, las nuevas se crean automaticamente."
-        ),
-    )
-
     class Meta:
         model = Category
         fields = ["name", "description", "icon", "color", "order", "is_active"]
@@ -56,18 +41,10 @@ class CategoryForm(forms.ModelForm):
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance.pk:
-            # Pre-populate subcategories field with existing children
-            children = self.instance.children.order_by("order", "name")
-            if children.exists():
-                self.initial["subcategories_text"] = "\n".join(child.name for child in children)
-
     def clean_name(self):
         name = self.cleaned_data.get("name")
-        # Check for duplicate name at root level
-        qs = Category.objects.filter(name=name, parent__isnull=True)
+        # Check for duplicate name
+        qs = Category.objects.filter(name=name)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
@@ -87,50 +64,7 @@ class CategoryForm(forms.ModelForm):
             instance.slug = slug
         if commit:
             instance.save()
-            self._save_subcategories(instance)
         return instance
-
-    def _save_subcategories(self, instance):
-        """Create/update subcategories from the text field."""
-        text = self.cleaned_data.get("subcategories_text", "")
-        new_names = [line.strip() for line in text.splitlines() if line.strip()]
-
-        existing_children = {child.name: child for child in instance.children.all()}
-
-        # Remove children that are no longer in the list
-        for name, child in existing_children.items():
-            if name not in new_names:
-                # Only unlink (set parent=None), don't delete if it has courses
-                if child.courses.exists():
-                    child.parent = None
-                    child.save(update_fields=["parent"])
-                else:
-                    child.delete()
-
-        # Create or keep subcategories
-        for order, name in enumerate(new_names):
-            if name in existing_children:
-                # Update order if needed
-                child = existing_children[name]
-                if child.order != order:
-                    child.order = order
-                    child.save(update_fields=["order"])
-            else:
-                # Create new subcategory
-                base_slug = slugify(name)
-                slug = base_slug
-                counter = 1
-                while Category.objects.filter(slug=slug).exists():
-                    slug = f"{base_slug}-{counter}"
-                    counter += 1
-                Category.objects.create(
-                    name=name,
-                    slug=slug,
-                    parent=instance,
-                    order=order,
-                    is_active=True,
-                    color=instance.color,
-                )
 
 
 class CourseCreateForm(forms.ModelForm):
@@ -474,7 +408,7 @@ class QuickAssessmentForm(forms.Form):
     assessment_type = forms.ChoiceField(
         label=_("Tipo"),
         choices=[
-            ("quiz", _("Quiz")),
+            ("quiz", _("Evaluación")),
             ("exam", _("Examen")),
             ("practice", _("Practica")),
         ],

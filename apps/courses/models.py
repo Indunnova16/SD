@@ -137,14 +137,6 @@ class Category(models.Model):
         help_text=_("Color en formato hexadecimal"),
         validators=[validate_hex_color],
     )
-    parent = models.ForeignKey(
-        "self",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="children",
-        verbose_name=_("Categoría padre"),
-    )
     order = models.PositiveIntegerField(_("Orden"), default=0)
     is_active = models.BooleanField(_("Activa"), default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -157,15 +149,11 @@ class Category(models.Model):
         ordering = ["order", "name"]
 
     def __str__(self):
-        if self.parent:
-            return f"{self.parent.name} > {self.name}"
         return self.name
 
     @property
     def full_path(self):
         """Get full category path."""
-        if self.parent:
-            return f"{self.parent.full_path} > {self.name}"
         return self.name
 
 
@@ -347,7 +335,7 @@ class Lesson(models.Model):
         SCORM = "scorm", _("SCORM")
         INTERACTIVE = "interactive", _("Interactivo")
         AUDIO = "audio", _("Audio")
-        QUIZ = "quiz", _("Quiz")
+        QUIZ = "quiz", _("Evaluación")
         TEXT = "text", _("Texto")
         PRESENTIAL = "presential", _("Presencial")
         ATTENDANCE = "attendance", _("Asistencia")

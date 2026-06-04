@@ -2,31 +2,16 @@
 <div class="card bg-base-100 shadow mb-6">
     <div class="card-body py-4">
         <form id="dashboard-filters"
-              class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <!-- Categoría -->
             <div class="form-control">
                 <label class="label py-1">
                     <span class="label-text font-medium">Categoría</span>
                 </label>
                 <select name="category"
-                        class="select select-bordered select-sm w-full"
-                        hx-get="{% url 'reports:dashboard-subcategories' %}"
-                        hx-trigger="change"
-                        hx-target="#subcategory-select"
-                        hx-swap="innerHTML">
-                    <option value="">Todas</option>
-                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <!-- Subcategoría -->
-            <div class="form-control">
-                <label class="label py-1">
-                    <span class="label-text font-medium">Subcategoría</span>
-                </label>
-                <select name="subcategory"
-                        id="subcategory-select"
                         class="select select-bordered select-sm w-full">
                     <option value="">Todas</option>
+                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
             <!-- Perfil Ocupacional -->

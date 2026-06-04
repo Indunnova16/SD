@@ -21,7 +21,6 @@ urlpatterns = [
     path("scheduled/<int:schedule_id>/toggle/", views.schedule_toggle, name="schedule-toggle"),
     # Dashboard views
     path("dashboard/", views.admin_dashboard, name="dashboard"),
-    path("dashboard/subcategories/", views.dashboard_subcategories, name="dashboard-subcategories"),
     path("dashboard/stats/", views.dashboard_stats, name="dashboard-stats"),
     path("dashboard/compliance-chart/", views.compliance_chart, name="dashboard-compliance-chart"),
     path("dashboard/training-trend/", views.training_trend, name="dashboard-training-trend"),

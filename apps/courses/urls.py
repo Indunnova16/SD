@@ -167,11 +167,6 @@ urlpatterns = [
         name="builder_reorder_lessons",
     ),
     path(
-        "admin-courses/<int:course_id>/builder/modules/<int:module_id>/lessons/<int:lesson_id>/assign-quiz/",
-        views.builder_assign_quiz,
-        name="builder_assign_quiz",
-    ),
-    path(
         "admin-courses/<int:course_id>/builder/quiz/create/",
         views.builder_create_quiz,
         name="builder_create_quiz",

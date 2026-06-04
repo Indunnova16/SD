@@ -93,17 +93,8 @@ class CategoryFactory(DjangoModelFactory):
     description = factory.Faker("paragraph", locale="es_ES")
     icon = "heroicon-folder"
     color = factory.Faker("hex_color")
-    parent = None
     order = factory.Sequence(lambda n: n)
     is_active = True
-
-
-class SubCategoryFactory(CategoryFactory):
-    """Factory for subcategories."""
-
-    name = factory.Sequence(lambda n: f"Subcategory {n}")
-    slug = factory.Sequence(lambda n: f"subcategory-{n}")
-    parent = factory.SubFactory(CategoryFactory)
 
 
 class CourseFactory(DjangoModelFactory):
