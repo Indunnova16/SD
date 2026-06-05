@@ -43,6 +43,11 @@ django-allauth>=0.63.1
 django-storages>=1.14.2
 Pillow>=10.3.0,<11
 weasyprint>=62.0,<63
+# pydyf debe quedar pinned: weasyprint 62 NO es compatible con pydyf>=0.12
+# (pydyf 0.12 cambió la API de Stream -> AttributeError 'super' object has no
+# attribute 'transform' al write_pdf()). Sin pin, pip resuelve el último pydyf
+# (0.12.x) y la generación de certificados PDF se rompe en silencio en prod.
+pydyf>=0.10.0,<0.12
 qrcode[pil]>=7.4,<8
 reportlab>=4.2,<5
 
