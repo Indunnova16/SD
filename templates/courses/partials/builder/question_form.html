@@ -3,19 +3,7 @@
 Dynamic question form for adding/editing questions in the assessment builder.
 Context: course, assessment, is_edit (bool), question (optional, for editing)
 {% endcomment %}
-<div x-data="{ questionType: '
-    {% if is_edit %}
-        {{ question.question_type }}
-    {% else %}
-        single_choice
-    {% endif %}
-    ', text: '', explanation: '', points:
-    {% if is_edit %}
-        {% localize off %}{{ question.points }}{% endlocalize %}
-    {% else %}
-        1
-    {% endif %}
-    , trueFalseCorrect: 'true', answers: [
+<div x-data="{ questionType: '{% if is_edit %}{{ question.question_type }}{% else %}single_choice{% endif %}', text: '', explanation: '', points: {% if is_edit %}{% localize off %}{{ question.points }}{% endlocalize %}{% else %}1{% endif %}, trueFalseCorrect: 'true', answers: [
     {% if is_edit and question.question_type == 'single_choice' or is_edit and question.question_type == 'multiple_choice' %}
         {% for answer in question.answers.all %}
             { text: '{{ answer.text|escapejs }}', is_correct: {{ answer.is_correct|yesno:'true,false' }} },
