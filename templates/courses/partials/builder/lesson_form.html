@@ -3,7 +3,7 @@ Lesson form partial for the course builder.
 Used for both adding new lessons and editing existing ones.
 Context: lesson_form (for new), lesson (for edit), course, module, is_new
 {% endcomment %}
-<form {% if is_new %} hx-post="{% url 'courses:builder_add_lesson' course.id module.id %}" hx-target="previous [data-lesson-list]" hx-swap="beforeend" hx-encoding="multipart/form-data" @htmx:after-request="if(event.detail.successful) { showAddLesson = false; }" {% else %} hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}" hx-target="closest [data-lesson-id]" hx-swap="outerHTML" hx-encoding="multipart/form-data" {% endif %} x-data="{ lessonType: '{% if is_new %}video{% else %}{{ lesson.lesson_type }}{% endif %}', questions: [], qType: 'single_choice', qText: '', qExplanation: '', qPoints: 1, qTrueFalseCorrect: 'true', qAnswers: [{text:'', is_correct:false}, {text:'', is_correct:false}], qMatchPairs: [{left:'', right:''}, {left:'', right:''}], showQuestionForm: false, editingIndex: -1,  addAnswer() { this.qAnswers.push({text:'', is_correct:false}); }, removeAnswer(i) { this.qAnswers.splice(i, 1); }, setSingleCorrect(i) { this.qAnswers.forEach((a,idx) => a.is_correct = (idx===i)); }, addMatchPair() { this.qMatchPairs.push({left:'', right:''}); }, removeMatchPair(i) { this.qMatchPairs.splice(i, 1); },  resetQuestionForm() { this.qType = 'single_choice'; this.qText = ''; this.qExplanation = ''; this.qPoints = 1; this.qTrueFalseCorrect = 'true'; this.qAnswers = [{text:'', is_correct:false}, {text:'', is_correct:false}]; this.qMatchPairs = [{left:'', right:''}, {left:'', right:''}]; this.editingIndex = -1; },  saveQuestion() { if (!this.qText.trim()) return; let q = { type: this.qType, text: this.qText, explanation: this.qExplanation, points: this.qPoints, }; if (this.qType === 'single_choice' || this.qType === 'multiple_choice') { q.answers = JSON.parse(JSON.stringify(this.qAnswers.filter(a => a.text.trim()))); } else if (this.qType === 'true_false') { q.trueFalseCorrect = this.qTrueFalseCorrect; } else if (this.qType === 'matching') { q.matchPairs = JSON.parse(JSON.stringify(this.qMatchPairs.filter(p => p.left.trim() && p.right.trim()))); } if (this.editingIndex >= 0) { this.questions[this.editingIndex] = q; } else { this.questions.push(q); } this.resetQuestionForm(); this.showQuestionForm = false; },  editQuestion(i) { let q = this.questions[i]; this.qType = q.type; this.qText = q.text; this.qExplanation = q.explanation || ''; this.qPoints = q.points || 1; if (q.type === 'single_choice' || q.type === 'multiple_choice') { this.qAnswers = JSON.parse(JSON.stringify(q.answers || [])); if (this.qAnswers.length < 2) while (this.qAnswers.length < 2) this.qAnswers.push({text:'', is_correct:false}); } else if (q.type === 'true_false') { this.qTrueFalseCorrect = q.trueFalseCorrect || 'true'; } else if (q.type === 'matching') { this.qMatchPairs = JSON.parse(JSON.stringify(q.matchPairs || [])); if (this.qMatchPairs.length < 2) while (this.qMatchPairs.length < 2) this.qMatchPairs.push({left:'', right:''}); } this.editingIndex = i; this.showQuestionForm = true; },  removeQuestion(i) { this.questions.splice(i, 1); },  questionTypeLabel(t) { const labels = {single_choice:'Seleccion unica', multiple_choice:'Seleccion multiple', true_false:'V/F', matching:'Emparejamiento'}; return labels[t] || t; } }" enctype="multipart/form-data">
+<form {% if is_new %} hx-post="{% url 'courses:builder_add_lesson' course.id module.id %}" hx-target="previous [data-lesson-list]" hx-swap="beforeend" hx-encoding="multipart/form-data" @htmx:after-request="if(event.detail.successful) { showAddLesson = false; }" {% else %} hx-post="{% url 'courses:builder_edit_lesson' course.id module.id lesson.id %}" hx-target="closest [data-lesson-id]" hx-swap="outerHTML" hx-encoding="multipart/form-data" {% endif %} x-data="{ lessonType: '{% if is_new %}video{% else %}{{ lesson.lesson_type }}{% endif %}', questions: [], qType: 'single_choice', qText: '', qExplanation: '', qPoints: 1, qTrueFalseCorrect: 'true', qAnswers: [{text:'', is_correct:false}, {text:'', is_correct:false}], qMatchPairs: [{left:'', right:''}, {left:'', right:''}], showQuestionForm: false, editingIndex: -1,  addAnswer() { this.qAnswers.push({text:'', is_correct:false}); }, removeAnswer(i) { this.qAnswers.splice(i, 1); }, setSingleCorrect(i) { this.qAnswers.forEach((a,idx) => a.is_correct = (idx===i)); }, addMatchPair() { this.qMatchPairs.push({left:'', right:''}); }, removeMatchPair(i) { this.qMatchPairs.splice(i, 1); },  resetQuestionForm() { this.qType = 'single_choice'; this.qText = ''; this.qExplanation = ''; this.qPoints = 1; this.qTrueFalseCorrect = 'true'; this.qAnswers = [{text:'', is_correct:false}, {text:'', is_correct:false}]; this.qMatchPairs = [{left:'', right:''}, {left:'', right:''}]; this.editingIndex = -1; },  saveQuestion() { if (!this.qText.trim()) return; let q = { type: this.qType, text: this.qText, explanation: this.qExplanation, points: this.qPoints, }; if (this.qType === 'single_choice' || this.qType === 'multiple_choice') { q.answers = JSON.parse(JSON.stringify(this.qAnswers.filter(a => a.text.trim()))); } else if (this.qType === 'true_false') { q.trueFalseCorrect = this.qTrueFalseCorrect; } else if (this.qType === 'matching') { q.matchPairs = JSON.parse(JSON.stringify(this.qMatchPairs.filter(p => p.left.trim() && p.right.trim()))); } if (this.editingIndex >= 0) { this.questions[this.editingIndex] = q; } else { this.questions.push(q); } this.resetQuestionForm(); this.showQuestionForm = false; },  editQuestion(i) { let q = this.questions[i]; this.qType = q.type; this.qText = q.text; this.qExplanation = q.explanation || ''; this.qPoints = q.points || 1; if (q.type === 'single_choice' || q.type === 'multiple_choice') { this.qAnswers = JSON.parse(JSON.stringify(q.answers || [])); if (this.qAnswers.length < 2) while (this.qAnswers.length < 2) this.qAnswers.push({text:'', is_correct:false}); } else if (q.type === 'true_false') { this.qTrueFalseCorrect = q.trueFalseCorrect || 'true'; } else if (q.type === 'matching') { this.qMatchPairs = JSON.parse(JSON.stringify(q.matchPairs || [])); if (this.qMatchPairs.length < 2) while (this.qMatchPairs.length < 2) this.qMatchPairs.push({left:'', right:''}); } this.editingIndex = i; this.showQuestionForm = true; },  removeQuestion(i) { this.questions.splice(i, 1); },  questionTypeLabel(t) { const labels = {single_choice:'Seleccion unica', multiple_choice:'Seleccion multiple', true_false:'V/F', matching:'Emparejamiento'}; return labels[t] || t; } }" enctype="multipart/form-data" x-init="$watch('lessonType', t => { if (t === 'quiz') { setTimeout(() => QuizBuilder.init($el), 50); } else if (t === 'video') { setTimeout(() => setupVideoPreview($el), 50); } }); $nextTick(() => { if (lessonType === 'quiz') QuizBuilder.init($el); else if (lessonType === 'video') setupVideoPreview($el); });">
     {% csrf_token %}
     {% if lesson_form.errors %}
         <div class="alert alert-error text-xs mb-3 py-2">
@@ -47,7 +47,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
             </select>
         </div>
         <!-- Duration (hide for quiz) -->
-        <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential">
+        <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential"
+             x-cloak x-show="['video','pdf','text','scorm','audio','interactive','presential'].includes(lessonType)">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
@@ -70,7 +71,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         </div>
     </div>
     <!-- Description (hide for quiz) -->
-    <div class="form-control mt-2 conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential">
+    <div class="form-control mt-2 conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential"
+         x-cloak x-show="['video','pdf','text','scorm','audio','interactive','presential'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">Descripcion</span>
         </label>
@@ -81,7 +83,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
     <!-- Conditional fields based on lesson type -->
     <!-- Attendance: scheduled date/time -->
-    <div class="form-control mt-2 conditional-field" data-show-for="attendance" style="display:none;">
+    <div class="form-control mt-2 conditional-field" data-show-for="attendance"
+         x-cloak x-show="['attendance'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">Fecha y hora agendada <span class="text-error">*</span></span>
         </label>
@@ -92,7 +95,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         <span class="text-xs text-gray-400 mt-1">Define cuándo se realiza la sesión de asistencia.</span>
     </div>
     <!-- Video: URL -->
-    <div class="form-control mt-2 conditional-field" data-show-for="video" style="display:none;">
+    <div class="form-control mt-2 conditional-field" data-show-for="video"
+         x-cloak x-show="['video'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">URL del Video (YouTube, Vimeo, etc.)</span>
         </label>
@@ -118,7 +122,7 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     <!-- Single file input for video / pdf / scorm / audio -->
     <div class="form-control mt-2 conditional-field"
          data-show-for="video,pdf,scorm,audio"
-         style="display:none;">
+         x-cloak x-show="['video','pdf','scorm','audio'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs"
                   x-text="lessonType === 'video' ? 'Archivo multimedia (o sube en vez de URL)' : 'Archivo'"></span>
@@ -132,7 +136,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         {% endif %}
     </div>
     <!-- Content Text (for text type) -->
-    <div class="form-control mt-2 conditional-field" data-show-for="text" style="display:none;">
+    <div class="form-control mt-2 conditional-field" data-show-for="text"
+         x-cloak x-show="['text'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">Contenido</span>
         </label>
@@ -143,7 +148,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 
     <!-- SCORM Configuration -->
-    <div class="form-control mt-2 conditional-field" data-show-for="scorm" style="display:none;">
+    <div class="form-control mt-2 conditional-field" data-show-for="scorm"
+         x-cloak x-show="['scorm'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">Configuración SCORM</span>
         </label>
@@ -175,7 +181,8 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
     </div>
 
     <!-- Interactive Content -->
-    <div class="form-control mt-2 conditional-field" data-show-for="interactive" style="display:none;">
+    <div class="form-control mt-2 conditional-field" data-show-for="interactive"
+         x-cloak x-show="['interactive'].includes(lessonType)">
         <label class="label py-1">
             <span class="label-text text-xs">Contenido Interactivo</span>
         </label>
@@ -213,7 +220,8 @@ o código embed HTML">{% if not is_new %}{{ lesson.content }}{% endif %}</textar
     <!-- ============================================================= -->
     <!-- QUIZ BUILDER (for quiz type) -->
     <!-- ============================================================= -->
-    <div class="mt-3 conditional-field" data-show-for="quiz" style="display:none;" id="quizBuilder">
+    <div class="mt-3 conditional-field" data-show-for="quiz"
+         x-cloak x-show="['quiz'].includes(lessonType)" id="quizBuilder">
         <input type="hidden"
                name="quiz_questions"
                id="quizQuestionsInput"
@@ -253,8 +261,9 @@ const QuizBuilder = {
     editingIndex: -1,
     currentForm: null,
 
-    init() {
-        this.currentForm = document.querySelector('form[x-data]');
+    init(formEl) {
+        // Prefer the form Alpine handed us ($el); fall back to global lookup.
+        this.currentForm = formEl || document.querySelector('form[x-data]');
         if (!this.currentForm) return;
 
         this.setupQuizUI();
@@ -262,7 +271,8 @@ const QuizBuilder = {
     },
 
     setupQuizUI() {
-        const quizBuilder = document.getElementById('quizBuilder');
+        const scope = this.currentForm || document;
+        const quizBuilder = scope.querySelector('#quizBuilder');
         if (!quizBuilder) return;
 
         // Clear existing content
@@ -602,7 +612,8 @@ const QuizBuilder = {
     },
 
     loadQuestionsFromInput() {
-        const input = document.getElementById('quizQuestionsInput');
+        const scope = this.currentForm || document;
+        const input = scope.querySelector('#quizQuestionsInput');
         try {
             this.questions = JSON.parse(input.value || '[]');
         } catch {
@@ -636,8 +647,8 @@ function convertYouTubeUrl(url) {
     return url;
 }
 
-function setupVideoPreview() {
-    const form = document.querySelector('form[x-data]');
+function setupVideoPreview(formEl) {
+    const form = formEl || document.querySelector('form[x-data]');
     if (!form) return;
 
     const videoUrlInput = form.querySelector('.video-url-input');
@@ -675,58 +686,23 @@ function setupVideoPreview() {
 // ============================================
 // CONDITIONAL FIELDS
 // ============================================
-function updateConditionalFields() {
-    const form = document.querySelector('form[x-data]');
+// NOTE: conditional-field VISIBILITY is now owned by Alpine `x-show` bound to
+// `lessonType` (x-model), scoped per-<form>. This avoids the SD#33 bug where
+// `document.querySelector('form[x-data]')` matched the FIRST x-data form in the
+// builder (e.g. an inline edit form of an existing lesson) instead of the form
+// the user is interacting with, so picking "Asistencia" never revealed the
+// required `scheduled_date` field -> the lesson could not be saved.
+//
+// The quiz/video side-effects are driven by an Alpine `x-init` $watch on the
+// form itself (scoped to $el), so we no longer toggle display here.
+
+// htmx:beforeSend handler must be attached per swapped-in form. We bind it to
+// the form that contains the changed/submitted node, NOT a global lookup.
+function setupFormSubmitHandler(formEl) {
+    const form = formEl || document.querySelector('form[x-data]');
     if (!form) return;
-
-    const lessonTypeSelect = form.querySelector('select[name="lesson_type"]');
-    if (!lessonTypeSelect) return;
-
-    const selectedType = lessonTypeSelect.value;
-
-    // Show/hide conditional fields
-    form.querySelectorAll('.conditional-field').forEach(field => {
-        const showFor = field.getAttribute('data-show-for');
-        if (showFor) {
-            const types = showFor.split(',');
-            field.style.display = types.includes(selectedType) ? 'block' : 'none';
-        }
-    });
-
-    // Initialize quiz builder if quiz type is selected
-    if (selectedType === 'quiz') {
-        setTimeout(() => QuizBuilder.init(), 100);
-    }
-
-    // Setup video preview if video type is selected
-    if (selectedType === 'video') {
-        setTimeout(() => setupVideoPreview(), 100);
-    }
-}
-
-// Initialize on load and when type changes
-document.addEventListener('DOMContentLoaded', () => {
-    updateConditionalFields();
-    setupVideoPreview();
-    setupFormSubmitHandler();
-});
-document.addEventListener('htmx:afterSettle', () => {
-    updateConditionalFields();
-    setupVideoPreview();
-    setupFormSubmitHandler();
-});
-
-function setupFormSubmitHandler() {
-    const form = document.querySelector('form[x-data]');
-    if (!form) return;
-
-    const select = form.querySelector('select[name="lesson_type"]');
-    if (select) {
-        select.addEventListener('change', () => {
-            updateConditionalFields();
-            setupVideoPreview();
-        });
-    }
+    if (form.dataset.submitHandlerBound === '1') return;
+    form.dataset.submitHandlerBound = '1';
 
     // Use htmx:beforeSend instead of submit since HTMX is handling form submission
     form.addEventListener('htmx:beforeSend', function(e) {
@@ -760,4 +736,30 @@ function setupFormSubmitHandler() {
         }
     });
 }
+
+// ============================================
+// WIRE-UP (scoped per form, htmx-swap safe)
+// ============================================
+// Bind the submit handler to every builder lesson form present now and to any
+// that get swapped in by HTMX. We scope to the specific <form> (via the event
+// target / detail.elt) instead of a global document.querySelector, so multiple
+// forms in the builder each get their own correctly-scoped handler.
+function _bindLessonForms(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    // If root IS a form, handle it directly.
+    if (root && root.matches && root.matches('form[x-data]')) {
+        setupFormSubmitHandler(root);
+    }
+    scope.querySelectorAll && scope.querySelectorAll('form[x-data]').forEach(f => {
+        if (f.querySelector('select[name="lesson_type"]')) {
+            setupFormSubmitHandler(f);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => _bindLessonForms(document));
+// htmx:load fires for the swapped-in content; detail.elt is the new node.
+document.body && document.body.addEventListener('htmx:load', (e) => {
+    _bindLessonForms(e.detail && e.detail.elt ? e.detail.elt : document);
+});
 </script>

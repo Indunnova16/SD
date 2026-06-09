@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from apps.accounts.models import User
 from apps.assessments.models import Assessment
-from apps.courses.models import Category, Course
+from apps.courses.models import Category, Course, Lesson, Module
 
 
 class BuilderEditAssessmentViewTests(TestCase):
@@ -194,3 +194,144 @@ class BuilderEditAssessmentViewTests(TestCase):
         )
         self.assessment.refresh_from_db()
         self.assertEqual(self.assessment.created_by_id, original_creator_id)
+
+
+class BuilderAddAttendanceLessonViewTests(TestCase):
+    """Reproduce SD#33: creating an "Asistencia" lesson from the course builder.
+
+    Client (anasofiamc1-cpu) report: "El tipo de lección no permite guardar, si
+    selecciono Asistencia... no queda guardada la nueva lección de asistencia."
+
+    Root cause (bounce 1, FIX_INCOMPLETO): the required ``scheduled_date`` field
+    was hidden by a JS toggle scoped to ``document.querySelector('form[x-data]')``
+    (the FIRST x-data form). When the module ALREADY had a lesson, that lookup hit
+    the wrong form, so picking "Asistencia" never revealed ``scheduled_date`` and
+    ``LessonBuilderForm.clean()`` rejected the POST. The visual fix is template/JS
+    (Alpine x-show, validated by the E2E journey); these view tests pin the
+    server-side contract and the legacy-data case (module not empty).
+    """
+
+    def setUp(self):
+        self.client = Client()
+
+        self.staff = User.objects.create_user(
+            email="staff_att@test.com",
+            password="testpass123",
+            first_name="Staff",
+            last_name="Att",
+            document_number="33000001",
+            job_position="Admin",
+            job_profile=None,
+            hire_date=date(2024, 1, 1),
+            is_staff=True,
+        )
+        self.category = Category.objects.create(
+            name="Cat SD33",
+            slug="cat-sd33",
+            description="cat",
+            color="#00AA00",
+        )
+        self.course = Course.objects.create(
+            code="COURSE-SD33-1",
+            title="Curso SD33",
+            description="desc",
+            objectives="obj",
+            course_type=Course.Type.MANDATORY,
+            status=Course.Status.DRAFT,
+            category=self.category,
+            created_by=self.staff,
+        )
+        self.module = Module.objects.create(
+            course=self.course, title="Modulo SD33", description="m", order=1
+        )
+        # Legacy data: the module already has a prior lesson (mirrors the
+        # client's screenshot where the module had an EVALUACION_PT lesson).
+        self.legacy_lesson = Lesson.objects.create(
+            module=self.module,
+            title="EVALUACION_PT legacy",
+            description="leccion previa",
+            lesson_type=Lesson.Type.QUIZ,
+            order=0,
+        )
+        self.url = reverse(
+            "courses:builder_add_lesson",
+            kwargs={"course_id": self.course.id, "module_id": self.module.id},
+        )
+
+    def test_attendance_without_scheduled_date_is_rejected(self):
+        """Reproduce: POST attendance WITHOUT scheduled_date -> no lesson created."""
+        self.client.force_login(self.staff)
+        before = Lesson.objects.filter(
+            module=self.module, lesson_type=Lesson.Type.ATTENDANCE
+        ).count()
+        resp = self.client.post(
+            self.url,
+            data={
+                "title": "Asistencia sin fecha",
+                "lesson_type": "attendance",
+                "is_mandatory": "on",
+                "duration": "0",
+                # scheduled_date intentionally omitted -> clean() must reject
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        # The view re-renders the form (does not raise) and creates nothing.
+        self.assertEqual(resp.status_code, 200)
+        after = Lesson.objects.filter(
+            module=self.module, lesson_type=Lesson.Type.ATTENDANCE
+        ).count()
+        self.assertEqual(after, before)
+        self.assertFalse(
+            Lesson.objects.filter(module=self.module, title="Asistencia sin fecha").exists()
+        )
+
+    def test_attendance_with_scheduled_date_is_created(self):
+        """Happy path: attendance + scheduled_date persists with type attendance."""
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            self.url,
+            data={
+                "title": "QA_E2E_M33 Asistencia OK",
+                "lesson_type": "attendance",
+                "is_mandatory": "on",
+                "duration": "0",
+                "scheduled_date": "2030-01-15T09:30",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(resp.status_code, 200)
+        lesson = Lesson.objects.get(module=self.module, title="QA_E2E_M33 Asistencia OK")
+        self.assertEqual(lesson.lesson_type, Lesson.Type.ATTENDANCE)
+        self.assertIsNotNone(lesson.scheduled_date)
+        self.assertEqual(lesson.scheduled_date.year, 2030)
+        self.assertEqual(lesson.scheduled_date.month, 1)
+        self.assertEqual(lesson.scheduled_date.day, 15)
+        # Badge text comes from get_lesson_type_display -> "Asistencia".
+        self.assertEqual(lesson.get_lesson_type_display(), "Asistencia")
+
+    def test_attendance_created_even_when_module_not_empty(self):
+        """Legacy-data case: the module already has a prior lesson (the bug
+        condition). Creating the attendance lesson must still work."""
+        self.client.force_login(self.staff)
+        self.assertTrue(
+            Lesson.objects.filter(module=self.module, pk=self.legacy_lesson.pk).exists()
+        )
+        resp = self.client.post(
+            self.url,
+            data={
+                "title": "QA_E2E_M33 Asistencia con legacy",
+                "lesson_type": "attendance",
+                "is_mandatory": "on",
+                "duration": "0",
+                "scheduled_date": "2030-02-20T14:00",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(resp.status_code, 200)
+        lesson = Lesson.objects.get(module=self.module, title="QA_E2E_M33 Asistencia con legacy")
+        self.assertEqual(lesson.lesson_type, Lesson.Type.ATTENDANCE)
+        self.assertIsNotNone(lesson.scheduled_date)
+        # The legacy lesson is untouched and both coexist in the module.
+        self.legacy_lesson.refresh_from_db()
+        self.assertEqual(self.legacy_lesson.lesson_type, Lesson.Type.QUIZ)
+        self.assertEqual(self.module.lessons.count(), 2)
