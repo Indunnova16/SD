@@ -7,6 +7,11 @@ name: Deploy
 on:
 
   workflow_dispatch:
+    inputs:
+      no_traffic:
+        description: "Canary: deploy SIN promover trafico (el orquestador promueve tras E2E verde con --promote-on-green)"
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -42,6 +47,14 @@ jobs:
 
       - name: Deploy
         run: |
+          # Canary opt-in (Fase 2): si no_traffic=true, la revision nace a 0%
+          # trafico con tag 'candidate'; el orquestador la valida (E2E contra el
+          # tag) y promueve con run_e2e_or_die --promote-on-green. Default: legacy.
+          TRAFFIC_FLAGS=""
+          if [ "${{ github.event.inputs.no_traffic }}" = "true" ]; then
+            TRAFFIC_FLAGS="--no-traffic --tag candidate"
+            echo "Canary: deploy SIN promover trafico (tag=candidate)"
+          fi
           gcloud run deploy ${{ env.SERVICE_NAME }} \
             --image ${{ env.IMAGE }}:${{ github.sha }} \
             --region ${{ env.REGION }} \
@@ -50,7 +63,8 @@ jobs:
             --add-cloudsql-instances ${{ env.CLOUDSQL }} \
             --cpu-boost \
             --set-env-vars "DJANGO_SETTINGS_MODULE=config.settings.cloudrun,DB_NAME=sd_lms,DB_USER=postgres,DB_HOST=/cloudsql/${{ env.CLOUDSQL }},GS_BUCKET_NAME=sd-lms-media,ALLOWED_HOSTS=*,CSRF_TRUSTED_ORIGINS=https://sd-lms-rvfp6uj2va-uc.a.run.app,AWS_REGION=us-east-1,REKOGNITION_COLLECTION_ID=sd-lms-employees,REKOGNITION_MATCH_THRESHOLD=90" \
-            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest,AWS_ACCESS_KEY_ID=sd-lms-aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=sd-lms-aws-secret-access-key:latest"
+            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest,AWS_ACCESS_KEY_ID=sd-lms-aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=sd-lms-aws-secret-access-key:latest" \
+            $TRAFFIC_FLAGS
 
       - name: Run Migrations
         run: |
