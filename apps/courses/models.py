@@ -285,6 +285,22 @@ class Course(models.Model):
         result = self.modules.aggregate(total=Sum("lessons__duration"))
         return result["total"] or 0
 
+    @property
+    def duration_hours(self):
+        """Total course duration in hours (rounded to 1 decimal).
+
+        `total_duration` (Lesson.duration, PositiveIntegerField) is stored in
+        MINUTES, not seconds: confirmed by the "min" labels rendered in
+        templates/courses/course_list.html:115 and course_detail.html:22/166,
+        the lesson form's "Minutos" placeholder (apps/courses/forms.py:352),
+        and templates/courses/lesson_view.html:483
+        (`{{ lesson.duration }} * 60 // Convert minutes to seconds`). This is
+        the value certificate templates should use (SD#43: the template
+        previously referenced `course.estimated_duration`, an attribute
+        removed from this model, which silently rendered blank).
+        """
+        return round(self.total_duration / 60, 1)
+
 
 class Module(models.Model):
     """
