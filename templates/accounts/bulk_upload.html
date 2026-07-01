@@ -116,7 +116,7 @@
                                                 <td>{{ user.get_full_name }}</td>
                                                 <td>{{ user.document_number }}</td>
                                                 <td>
-                                                    <code>{{ user.document_number }}{{ user.first_name|lower|slice:":3" }}</code>
+                                                    <code>{{ user.document_number }}{{ user.first_name|upper|slice:":3" }}</code>
                                                 </td>
                                                 <td>{{ user.job_profile.name }}</td>
                                             </tr>
