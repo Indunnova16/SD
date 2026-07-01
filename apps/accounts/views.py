@@ -2,6 +2,7 @@
 Web views for accounts app (HTMX-powered).
 """
 
+import base64
 import logging
 
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
+from django.core.files.base import ContentFile
 from django.core.mail import send_mail
 from django.db import models
 from django.http import HttpResponse
@@ -381,10 +383,32 @@ def user_edit(request, user_id):
     old_profile = user.job_profile
     old_employment_type = user.employment_type
 
-    form = UserEditForm(request.POST or None, instance=user)
+    # Bug preexistente (SD#51): request.FILES no se pasaba al form, por lo que
+    # ninguna subida de archivo (foto, y ahora firma) llegaba a validarse ni a
+    # guardarse — se corrige de paso al agregar el campo `signature`.
+    form = UserEditForm(request.POST or None, request.FILES or None, instance=user)
 
     if request.method == "POST" and form.is_valid():
-        updated_user = form.save()
+        updated_user = form.save(commit=False)
+
+        # Firma dibujada a mano en el canvas (base64), alternativa a subir un
+        # archivo — mismo patrón que save_attendance_signature
+        # (apps/courses/views.py). Si no viene ni archivo ni canvas data, el
+        # campo `signature` queda intacto (no se pisa una firma existente).
+        signature_canvas_data = request.POST.get("signature_canvas_data")
+        if signature_canvas_data:
+            try:
+                _header, image_data = signature_canvas_data.split(",", 1)
+                image_bytes = base64.b64decode(image_data)
+                filename = f"signature_{updated_user.pk}_{timezone.now().timestamp()}.png"
+                updated_user.signature.save(filename, ContentFile(image_bytes), save=False)
+            except Exception:
+                logger.warning(
+                    f"signature_canvas_data inválido para usuario {updated_user.pk}, se ignora"
+                )
+
+        updated_user.save()
+        form.save_m2m()
 
         # Check if job-related fields changed and create history record
         position_changed = old_position != updated_user.job_position

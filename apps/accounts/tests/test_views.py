@@ -2,14 +2,30 @@
 Tests for accounts views.
 """
 
+import base64
 from datetime import date
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 User = get_user_model()
+
+# Minimal valid 2x2 PNG that passes PIL's full verify() (Django's form-level
+# ImageField.clean() calls Image.open(...).verify(), stricter than the
+# model-level FileField.save() used elsewhere in the codebase — this fixture
+# must survive that check, unlike a hand-truncated placeholder).
+_PNG_BYTES = bytes.fromhex(
+    "89504e470d0a1a0a0000000d4948445200000002000000020802000000fdd49a73"
+    "0000001649444154789c63fccfc0c0c0c0c0c4c0c0c0c0c000000d1d01036ac29be"
+    "90000000049454e44ae426082"
+)
+
+
+def _png_file(name="signature.png"):
+    return SimpleUploadedFile(name, _PNG_BYTES, content_type="image/png")
 
 
 class LoginViewTests(TestCase):
@@ -371,3 +387,114 @@ def Course_create_helper(test_case):
         created_by=test_case.admin,
         status=Course.Status.PUBLISHED,
     )
+
+
+class UserEditSignatureTests(TestCase):
+    """Tests for `signature` en /accounts/users/<id>/edit/ (SD#51, A2).
+
+    Covers: subida de archivo (input[name=signature]) persiste, firma
+    dibujada en canvas (signature_canvas_data base64) persiste, y guardar
+    el form sin tocar la firma NO borra una firma existente (edge case
+    explícitamente pedido por el plan).
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            email="admin_sig@example.com",
+            password="adminpass123",
+            first_name="Admin",
+            last_name="Sig",
+            document_type="CC",
+            document_number="990000001",
+            hire_date=date(2024, 1, 1),
+            is_staff=True,
+            job_position="Coordinador HSEQ",
+        )
+        self.target = User.objects.create_user(
+            email="target_sig@example.com",
+            password="targetpass123",
+            first_name="Target",
+            last_name="Sig",
+            document_type="CC",
+            document_number="990000002",
+            hire_date=date(2024, 1, 1),
+            job_position="Liniero",
+        )
+        self.url = reverse("accounts:user_edit", kwargs={"user_id": self.target.pk})
+        self.client.login(username="990000001", password="adminpass123")
+
+    def _base_post_data(self, **overrides):
+        data = {
+            "email": self.target.email,
+            "first_name": self.target.first_name,
+            "last_name": self.target.last_name,
+            "document_type": self.target.document_type,
+            "document_number": self.target.document_number,
+            "phone": "",
+            "job_position": self.target.job_position,
+            "employment_type": "direct",
+            "hire_date": "2024-01-01",
+            "status": "active",
+        }
+        data.update(overrides)
+        return data
+
+    def test_upload_file_persists_signature(self):
+        """Subir un archivo por input[name=signature] persiste en users.signature."""
+        data = self._base_post_data()
+        response = self.client.post(self.url, data={**data, "signature": _png_file()})
+        self.assertEqual(response.status_code, 302)
+
+        self.target.refresh_from_db()
+        self.assertTrue(self.target.signature)
+        self.assertIn("users/signatures/", self.target.signature.name)
+
+    def test_canvas_base64_persists_signature(self):
+        """Firma dibujada en canvas (signature_canvas_data base64) persiste."""
+        b64 = base64.b64encode(_PNG_BYTES).decode("ascii")
+        data_url = f"data:image/png;base64,{b64}"
+
+        data = self._base_post_data(signature_canvas_data=data_url)
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.target.refresh_from_db()
+        self.assertTrue(self.target.signature)
+        self.assertIn("users/signatures/", self.target.signature.name)
+
+    def test_saving_without_touching_signature_does_not_wipe_existing(self):
+        """Edge case obligatorio del plan: guardar otros campos SIN tocar la
+        firma no debe borrar una firma existente.
+
+        Cambia `phone` (no `job_position`): un cambio de cargo dispara la
+        creación de un JobHistory que, en este repo, ya falla hoy con
+        job_profile=None (previous_profile NOT NULL) — bug preexistente
+        ajeno a SD#51/A2, no forma parte de este scope.
+        """
+        self.target.signature.save("existing.png", _png_file(), save=True)
+        self.target.refresh_from_db()
+        self.assertTrue(self.target.signature)
+        existing_name = self.target.signature.name
+
+        data = self._base_post_data(phone="+57 300 999 8888")
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.target.refresh_from_db()
+        self.assertTrue(self.target.signature)
+        self.assertEqual(self.target.signature.name, existing_name)
+        self.assertEqual(self.target.phone, "+57 300 999 8888")
+
+    def test_invalid_canvas_data_does_not_break_save(self):
+        """Edge case: signature_canvas_data mal formado no rompe el guardado
+        (se ignora, el resto del form se guarda igual)."""
+        data = self._base_post_data(
+            phone="+57 300 999 8888", signature_canvas_data="not-a-valid-data-url"
+        )
+        response = self.client.post(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        self.target.refresh_from_db()
+        self.assertFalse(self.target.signature)
+        self.assertEqual(self.target.phone, "+57 300 999 8888")

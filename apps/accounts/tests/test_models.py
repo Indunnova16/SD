@@ -17,11 +17,12 @@ from django.test import TestCase
 
 User = get_user_model()
 
-# Minimal valid 1x1 transparent PNG, so ImageField validation passes.
+# Minimal valid 2x2 PNG (passes PIL's full verify(), not just a truncated
+# placeholder) — see apps/accounts/tests/test_views.py for the rationale.
 _PNG_BYTES = bytes.fromhex(
-    "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
-    "890000000a49444154789c6360000002000154a24f000000004945454e44ae42"
-    "6082"
+    "89504e470d0a1a0a0000000d4948445200000002000000020802000000fdd49a73"
+    "0000001649444154789c63fccfc0c0c0c0c0c4c0c0c0c0c000000d1d01036ac29be"
+    "90000000049454e44ae426082"
 )
 
 

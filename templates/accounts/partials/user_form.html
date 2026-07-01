@@ -181,6 +181,66 @@
                 {% endif %}
             </div>
         </div>
+        {% if form.signature %}
+            <div class="divider"></div>
+            <!-- Firma del responsable (SD#51) -->
+            <div>
+                <h3 class="text-lg font-semibold mb-4">Firma del responsable</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Firma actual</span>
+                        </label>
+                        {% if user_obj.signature %}
+                            <img src="{{ user_obj.signature.url }}"
+                                 alt="Firma actual de {{ user_obj.get_full_name }}"
+                                 class="border rounded-lg bg-white p-2 max-h-24 object-contain">
+                        {% else %}
+                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                Este usuario aún no tiene una firma registrada.
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">O subir una imagen</span>
+                        </label>
+                        {{ form.signature }}
+                        {% if form.signature.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.signature.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                        <label class="label">
+                            <span class="label-text-alt">
+                                Deje en blanco para conservar la firma actual.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- O dibujar la firma en un canvas -->
+                <div class="mt-4">
+                    <label class="label">
+                        <span class="label-text">O dibujar la firma</span>
+                    </label>
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <canvas id="user-signature-canvas"
+                                width="600"
+                                height="200"
+                                class="block w-full bg-white cursor-crosshair touch-none"></canvas>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button"
+                                id="user-signature-clear-btn"
+                                class="btn btn-outline btn-sm">
+                            Limpiar
+                        </button>
+                    </div>
+                    <input type="hidden" name="signature_canvas_data" id="signature_canvas_data" value="">
+                </div>
+            </div>
+        {% endif %}
         {% if form.password1 %}
             <div class="divider"></div>
             <!-- Password (only for create) -->
@@ -228,3 +288,109 @@
         </div>
     </div>
 </form>
+
+{% if form.signature %}
+<script>
+(function () {
+    // Firma del responsable (SD#51) — dibujo a mano en canvas, mismo patrón
+    // que templates/courses/attendance_lesson.html: se serializa a base64 en
+    // un input hidden (signature_canvas_data) que el form ya envía en su
+    // POST normal (no fetch aparte).
+    const canvas = document.getElementById('user-signature-canvas');
+    if (!canvas) {
+        return;
+    }
+    const ctx = canvas.getContext('2d');
+    const clearBtn = document.getElementById('user-signature-clear-btn');
+    const canvasDataInput = document.getElementById('signature_canvas_data');
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let hasDrawn = false;
+
+    function getCanvasCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+
+        let x, y;
+        if (e.touches) {
+            x = (e.touches[0].clientX - rect.left) * scaleX;
+            y = (e.touches[0].clientY - rect.top) * scaleY;
+        } else {
+            x = (e.clientX - rect.left) * scaleX;
+            y = (e.clientY - rect.top) * scaleY;
+        }
+        return { x, y };
+    }
+
+    function drawLine(fromX, fromY, toX, toY) {
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.strokeStyle = '#1F2937';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function updateCanvasDataInput() {
+        hasDrawn = true;
+        canvasDataInput.value = canvas.toDataURL('image/png');
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        const { x, y } = getCanvasCoordinates(e);
+        lastX = x;
+        lastY = y;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const { x, y } = getCanvasCoordinates(e);
+        drawLine(lastX, lastY, x, y);
+        lastX = x;
+        lastY = y;
+        updateCanvasDataInput();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isDrawing = false;
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const { x, y } = getCanvasCoordinates(e);
+        lastX = x;
+        lastY = y;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isDrawing) return;
+        const { x, y } = getCanvasCoordinates(e);
+        drawLine(lastX, lastY, x, y);
+        lastX = x;
+        lastY = y;
+        updateCanvasDataInput();
+    });
+
+    canvas.addEventListener('touchend', () => {
+        isDrawing = false;
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasDrawn = false;
+            canvasDataInput.value = '';
+        });
+    }
+})();
+</script>
+{% endif %}

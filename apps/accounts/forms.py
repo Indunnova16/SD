@@ -282,6 +282,7 @@ class UserEditForm(forms.ModelForm):
             "status",
             "is_active",
             "is_staff",
+            "signature",
         ]
         widgets = {
             "email": forms.EmailInput(attrs={"class": "input input-bordered w-full"}),
@@ -297,6 +298,12 @@ class UserEditForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "is_active": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
             "is_staff": forms.CheckboxInput(attrs={"class": "checkbox checkbox-primary"}),
+            "signature": forms.FileInput(
+                attrs={
+                    "class": "file-input file-input-bordered w-full",
+                    "accept": "image/*",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
