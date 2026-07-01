@@ -19,6 +19,7 @@ from apps.courses.models import (
     Course,
     CourseVersion,
     Enrollment,
+    JobProfileType,
     Lesson,
     LessonProgress,
     MediaAsset,
@@ -29,6 +30,25 @@ from apps.courses.models import (
 )
 
 User = get_user_model()
+
+
+class JobProfileTypeFactory(DjangoModelFactory):
+    """Factory for JobProfileType model (FK target of User.job_profile).
+
+    Uses ``django_get_or_create`` on ``code`` so it reuses the rows already
+    seeded by the ``0008_seed_job_profile_types`` data migration instead of
+    creating duplicates when the test DB already has migrations applied.
+    """
+
+    class Meta:
+        model = JobProfileType
+        django_get_or_create = ("code",)
+
+    code = "LINIERO"
+    name = "Liniero"
+    description = "Personal operativo - Liniero"
+    is_active = True
+    order = 1
 
 
 class UserFactory(DjangoModelFactory):
@@ -45,7 +65,7 @@ class UserFactory(DjangoModelFactory):
     document_type = "CC"
     document_number = factory.Sequence(lambda n: f"{10000000 + n}")
     job_position = "Technician"
-    job_profile = "LINIERO"
+    job_profile = factory.SubFactory(JobProfileTypeFactory)
     hire_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     is_active = True
 
@@ -62,7 +82,9 @@ class SupervisorUserFactory(UserFactory):
     """Factory for supervisor users."""
 
     email = factory.Sequence(lambda n: f"supervisor{n}@test.com")
-    job_profile = "JEFE_CUADRILLA"
+    job_profile = factory.SubFactory(
+        JobProfileTypeFactory, code="JEFE_CUADRILLA", name="Jefe de Cuadrilla"
+    )
 
 
 class ContractFactory(DjangoModelFactory):
