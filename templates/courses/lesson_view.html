@@ -264,6 +264,133 @@
                                 </div>
                             </div>
                         </div>
+                    {% elif lesson.lesson_type == 'attendance' %}
+                        <div class="mb-6">
+                            {% if lesson.scheduled_date %}
+                                <div class="mb-4 inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>Fecha agendada: {{ lesson.scheduled_date|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            {% endif %}
+                            {% if existing_signature %}
+                                <div class="alert alert-success mb-6">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div>
+                                        <h3 class="font-bold">Ya has firmado esta lección</h3>
+                                        <div class="text-sm">Firma registrada: {{ existing_signature.signed_at|date:"d/m/Y H:i" }}</div>
+                                    </div>
+                                </div>
+                                <div class="mb-6">
+                                    <img src="{{ existing_signature.signature_image.url }}"
+                                         alt="Tu firma"
+                                         class="border border-gray-300 dark:border-gray-600 rounded-lg max-w-xs">
+                                </div>
+                            {% else %}
+                                <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                                    <p class="text-sm text-blue-800 dark:text-blue-200">
+                                        {% if is_instructor %}
+                                            Por favor, firma con tu firma de instructor
+                                        {% else %}
+                                            Por favor, firma para registrar tu asistencia
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Firma
+                                    </label>
+                                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                                        <canvas id="attendance-signature-canvas"
+                                                width="600"
+                                                height="200"
+                                                class="block w-full bg-white dark:bg-gray-700 cursor-crosshair touch-none"></canvas>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                        Dibuja tu firma en el área anterior
+                                    </p>
+                                </div>
+                                <div class="flex gap-2 mb-2">
+                                    <button type="button" id="attendance-clear-btn" class="btn btn-outline">
+                                        Limpiar
+                                    </button>
+                                    <button type="button" id="attendance-submit-btn" class="btn btn-primary" disabled>
+                                        Guardar Firma
+                                    </button>
+                                </div>
+                            {% endif %}
+                            {% if request.user.is_staff %}
+                                <div class="mt-8 pt-6 border-t dark:border-gray-700">
+                                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Resumen de asistencia</h3>
+                                        <a href="{% url 'courses:export_attendance_pdf' course.id lesson.id %}"
+                                           class="btn btn-primary btn-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            Descargar PDF
+                                        </a>
+                                    </div>
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                                        <div class="rounded-lg bg-gray-50 dark:bg-gray-700 p-3 text-center">
+                                            <div class="text-xs uppercase text-gray-500 dark:text-gray-400">Inscritos</div>
+                                            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ total_inscritos }}</div>
+                                        </div>
+                                        <div class="rounded-lg bg-green-50 dark:bg-green-900 p-3 text-center">
+                                            <div class="text-xs uppercase text-gray-500 dark:text-gray-300">Presentes</div>
+                                            <div class="text-2xl font-bold text-green-700 dark:text-green-300">{{ total_presentes }}</div>
+                                        </div>
+                                        <div class="rounded-lg bg-red-50 dark:bg-red-900 p-3 text-center">
+                                            <div class="text-xs uppercase text-gray-500 dark:text-gray-300">Ausentes</div>
+                                            <div class="text-2xl font-bold text-red-700 dark:text-red-300">{{ total_ausentes }}</div>
+                                        </div>
+                                        <div class="rounded-lg bg-blue-50 dark:bg-blue-900 p-3 text-center">
+                                            <div class="text-xs uppercase text-gray-500 dark:text-gray-300">% Asistencia</div>
+                                            <div class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ porcentaje_asistencia }}%</div>
+                                        </div>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="table table-sm w-full">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Cédula</th>
+                                                    <th>Estado</th>
+                                                    <th>Hora de firma</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for row in attendance_summary %}
+                                                    <tr>
+                                                        <td>{{ row.full_name }}</td>
+                                                        <td>{{ row.document_number }}</td>
+                                                        <td>
+                                                            {% if row.presente %}
+                                                                <span class="badge badge-success">Presente</span>
+                                                            {% else %}
+                                                                <span class="badge badge-error">Ausente</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if row.signed_at %}{{ row.signed_at|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% empty %}
+                                                    <tr>
+                                                        <td colspan="4" class="text-center text-gray-500 py-4">
+                                                            No hay inscritos en este curso.
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     {% else %}
                         <div class="text-center py-12 text-gray-400">
                             Contenido de tipo "{{ lesson.get_lesson_type_display }}" no soportado en visualizacion web.
@@ -281,6 +408,9 @@
                                     <span class="text-sm">Completa el video para avanzar a la siguiente leccion.</span>
                                 </div>
                             </div>
+                        {% elif lesson.lesson_type == 'attendance' %}
+                            {# El CTA de firma ya se muestra arriba, junto al contenido de la leccion. #}
+                            {# La finalizacion ocurre automaticamente al guardar la firma (ver script). #}
                         {% elif lesson.is_presential %}
                             <!-- Signature for presential lessons -->
                             {% include "courses/partials/lesson_signature.html" %}
@@ -526,6 +656,130 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+        </script>
+    {% endif %}
+    {% if lesson.lesson_type == 'attendance' and not existing_signature %}
+        <script>
+(function() {
+    const canvas = document.getElementById('attendance-signature-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const clearBtn = document.getElementById('attendance-clear-btn');
+    const submitBtn = document.getElementById('attendance-submit-btn');
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let blankDataUrl = null;
+
+    function getCanvasCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let x, y;
+        if (e.touches) {
+            x = (e.touches[0].clientX - rect.left) * scaleX;
+            y = (e.touches[0].clientY - rect.top) * scaleY;
+        } else {
+            x = (e.clientX - rect.left) * scaleX;
+            y = (e.clientY - rect.top) * scaleY;
+        }
+        return { x, y };
+    }
+
+    function drawLine(fromX, fromY, toX, toY) {
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.strokeStyle = '#1F2937';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function hasSignature() {
+        if (blankDataUrl === null) {
+            const blank = document.createElement('canvas');
+            blank.width = canvas.width;
+            blank.height = canvas.height;
+            blankDataUrl = blank.toDataURL('image/png');
+        }
+        return canvas.toDataURL('image/png') !== blankDataUrl;
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        const { x, y } = getCanvasCoordinates(e);
+        lastX = x;
+        lastY = y;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const { x, y } = getCanvasCoordinates(e);
+        drawLine(lastX, lastY, x, y);
+        lastX = x;
+        lastY = y;
+        submitBtn.disabled = !hasSignature();
+    });
+    canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    canvas.addEventListener('mouseout', () => { isDrawing = false; });
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDrawing = true;
+        const { x, y } = getCanvasCoordinates(e);
+        lastX = x;
+        lastY = y;
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isDrawing) return;
+        const { x, y } = getCanvasCoordinates(e);
+        drawLine(lastX, lastY, x, y);
+        lastX = x;
+        lastY = y;
+        submitBtn.disabled = !hasSignature();
+    });
+    canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+    clearBtn.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        submitBtn.disabled = true;
+    });
+
+    submitBtn.addEventListener('click', () => {
+        if (!hasSignature()) return;
+        submitBtn.disabled = true;
+        submitBtn.classList.add('loading');
+
+        fetch("{% url 'courses:save_attendance_signature' course.id lesson.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}",
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                signature_data: canvas.toDataURL('image/png'),
+            }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error al guardar la firma');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+            }
+        })
+        .catch(err => {
+            alert('Error: ' + err);
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+        });
+    });
+})();
         </script>
     {% endif %}
     <!-- Course completion signature modal -->

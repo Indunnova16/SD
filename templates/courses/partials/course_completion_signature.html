@@ -134,9 +134,50 @@
         completionSignatureDataInput.value = '';
     }
 
-    // On form submit, save canvas to data URL
+    // On form submit, capture the canvas and POST it via fetch instead of a
+    // native submit (SD#33/SD#48): a plain <form method=post> here made the
+    // browser navigate to the raw JSON the view returns. Both branches of
+    // sign_course_completion() already return the same JsonResponse, so the
+    // client just needs to consume it without leaving the page.
     document.querySelector('#completion-signature-modal form').addEventListener('submit', (e) => {
+        e.preventDefault();
+
         const dataURL = completionCanvas.toDataURL('image/png');
         completionSignatureDataInput.value = dataURL;
+
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({ signature: dataURL }),
+        })
+        .then((r) => r.json())
+        .then((data) => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error al guardar la firma');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('loading');
+                }
+            }
+        })
+        .catch((err) => {
+            alert('Error: ' + err);
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+            }
+        });
     });
 </script>

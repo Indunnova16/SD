@@ -216,6 +216,30 @@ def lesson_view(request, course_id, lesson_id):
     if lesson.lesson_type == "quiz":
         assessment = lesson.assessments.first()
 
+    # Attendance-lesson context (SD#33): lesson_view.html renders the
+    # signature capture inline for lesson_type='attendance' (same data
+    # attendance_lesson_view already computes), so students reaching an
+    # attendance lesson via the normal prev/next navigation get a working
+    # page instead of the "no soportado" fallback.
+    existing_signature = None
+    is_instructor = False
+    attendance_context = {}
+    if lesson.lesson_type == Lesson.Type.ATTENDANCE:
+        existing_signature = AttendanceSignature.objects.filter(
+            lesson=lesson,
+            user=request.user,
+        ).first()
+        is_instructor = lesson.metadata.get("instructor_id") == request.user.id
+        if request.user.is_staff:
+            summary = _build_attendance_summary(course, lesson)
+            attendance_context = {
+                "attendance_summary": summary["rows"],
+                "total_inscritos": summary["total_inscritos"],
+                "total_presentes": summary["total_presentes"],
+                "total_ausentes": summary["total_ausentes"],
+                "porcentaje_asistencia": summary["porcentaje_asistencia"],
+            }
+
     context = {
         "course": course,
         "lesson": lesson,
@@ -226,7 +250,10 @@ def lesson_view(request, course_id, lesson_id):
         "enrollment": enrollment,
         "lesson_evidence": lesson_evidence,
         "assessment": assessment,
+        "existing_signature": existing_signature,
+        "is_instructor": is_instructor,
     }
+    context.update(attendance_context)
     return render(request, "courses/lesson_view.html", context)
 
 
@@ -1985,11 +2012,30 @@ def save_attendance_signature(request, course_id, lesson_id):
             save=True,
         )
 
-        LessonProgress.objects.get_or_create(
+        # get_or_create(..., defaults=...) only applies `defaults` when the
+        # row is CREATED -- if lesson_view() was visited first (SD#33: now
+        # the normal entry point for an attendance lesson), it already
+        # created this LessonProgress row with is_completed=False (views.py
+        # ~line 190), so `defaults` would silently never fire and the
+        # lesson would stay incomplete forever after signing. Set the
+        # fields explicitly on the returned instance instead.
+        lesson_progress, _ = LessonProgress.objects.get_or_create(
             lesson=lesson,
             enrollment=enrollment,
-            defaults={"is_completed": True, "completed_at": timezone.now()},
         )
+        lesson_progress.is_completed = True
+        lesson_progress.completed_at = timezone.now()
+        lesson_progress.save()
+
+        # Recalculate enrollment.progress (SD#33): update_progress()/
+        # update_video_progress() already do this after marking a
+        # LessonProgress complete -- without it, an attendance lesson never
+        # pushes enrollment.progress to 100, so "Finalizar Curso" (and the
+        # course completion signature modal, both gated on
+        # enrollment.progress >= 100) never appears for a course whose last
+        # lesson is of type attendance. This is the missing link between
+        # "firmar asistencia" and "completar curso" that the client reported.
+        EnrollmentService.update_enrollment_progress(enrollment)
 
         messages.success(request, "Firma registrada correctamente.")
         return JsonResponse(
