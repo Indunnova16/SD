@@ -261,6 +261,22 @@ const QuizBuilder = {
     editingIndex: -1,
     currentForm: null,
 
+    // Scope every DOM lookup to the currently active <form> (this.currentForm)
+    // instead of the global `document`. lesson_form.html is included ONCE PER
+    // MODULE in the builder, so ids like #quizQuestionsInput are duplicated
+    // (one per module) and a global document.getElementById/querySelector
+    // always resolves to the FIRST module's element, regardless of which
+    // module the user is actually working on. That mismatch is the root
+    // cause of SD#37/#38 (quiz answers saved into the wrong module's hidden
+    // input, so the submitted form travels with quiz_questions='[]').
+    qs(sel) {
+        return (this.currentForm || document).querySelector(sel);
+    },
+
+    qsa(sel) {
+        return (this.currentForm || document).querySelectorAll(sel);
+    },
+
     init(formEl) {
         // Prefer the form Alpine handed us ($el); fall back to global lookup.
         this.currentForm = formEl || document.querySelector('form[x-data]');
@@ -271,8 +287,7 @@ const QuizBuilder = {
     },
 
     setupQuizUI() {
-        const scope = this.currentForm || document;
-        const quizBuilder = scope.querySelector('#quizBuilder');
+        const quizBuilder = this.qs('#quizBuilder');
         if (!quizBuilder) return;
 
         // Clear existing content
@@ -306,7 +321,7 @@ const QuizBuilder = {
         quizBuilder.appendChild(btnDiv);
 
         // Attach event listeners
-        document.getElementById('quizAddBtn').addEventListener('click', () => this.showForm());
+        quizBuilder.querySelector('#quizAddBtn').addEventListener('click', () => this.showForm());
         this.setupFormListeners();
         this.renderQuestions();
     },
@@ -377,22 +392,22 @@ const QuizBuilder = {
     },
 
     setupFormListeners() {
-        const typeSelect = document.getElementById('qType');
+        const typeSelect = this.qs('#qType');
         typeSelect.addEventListener('change', () => this.updateFormSections());
 
-        document.getElementById('addAnswerBtn').addEventListener('click', () => this.addAnswer());
-        document.getElementById('addMatchBtn').addEventListener('click', () => this.addMatch());
-        document.getElementById('qSaveBtn').addEventListener('click', () => this.saveQuestion());
-        document.getElementById('qCancelBtn').addEventListener('click', () => this.hideForm());
+        this.qs('#addAnswerBtn').addEventListener('click', () => this.addAnswer());
+        this.qs('#addMatchBtn').addEventListener('click', () => this.addMatch());
+        this.qs('#qSaveBtn').addEventListener('click', () => this.saveQuestion());
+        this.qs('#qCancelBtn').addEventListener('click', () => this.hideForm());
 
         this.updateFormSections();
     },
 
     updateFormSections() {
-        const type = document.getElementById('qType').value;
-        document.getElementById('answersSection').classList.toggle('hidden', !['single_choice', 'multiple_choice'].includes(type));
-        document.getElementById('trueFalseSection').classList.toggle('hidden', type !== 'true_false');
-        document.getElementById('matchingSection').classList.toggle('hidden', type !== 'matching');
+        const type = this.qs('#qType').value;
+        this.qs('#answersSection').classList.toggle('hidden', !['single_choice', 'multiple_choice'].includes(type));
+        this.qs('#trueFalseSection').classList.toggle('hidden', type !== 'true_false');
+        this.qs('#matchingSection').classList.toggle('hidden', type !== 'matching');
 
         if (['single_choice', 'multiple_choice'].includes(type)) {
             this.renderAnswers();
@@ -404,21 +419,21 @@ const QuizBuilder = {
     showForm() {
         this.editingIndex = -1;
         this.resetForm();
-        document.querySelector('.quiz-form').classList.remove('hidden');
-        document.getElementById('quizAddBtn').classList.add('hidden');
+        this.qs('.quiz-form').classList.remove('hidden');
+        this.qs('#quizAddBtn').classList.add('hidden');
     },
 
     hideForm() {
-        document.querySelector('.quiz-form').classList.add('hidden');
-        document.getElementById('quizAddBtn').classList.remove('hidden');
+        this.qs('.quiz-form').classList.add('hidden');
+        this.qs('#quizAddBtn').classList.remove('hidden');
         this.resetForm();
     },
 
     resetForm() {
-        document.getElementById('qType').value = 'single_choice';
-        document.getElementById('qText').value = '';
-        document.getElementById('qPoints').value = '1';
-        document.getElementById('qExplanation').value = '';
+        this.qs('#qType').value = 'single_choice';
+        this.qs('#qText').value = '';
+        this.qs('#qPoints').value = '1';
+        this.qs('#qExplanation').value = '';
         this.tempAnswers = [{text: '', is_correct: false}, {text: '', is_correct: false}];
         this.tempMatches = [{left: '', right: ''}, {left: '', right: ''}];
         this.updateFormSections();
@@ -430,10 +445,10 @@ const QuizBuilder = {
     },
 
     renderAnswers() {
-        const list = document.getElementById('answersList');
+        const list = this.qs('#answersList');
         list.innerHTML = '';
         this.tempAnswers.forEach((ans, i) => {
-            const type = document.getElementById('qType').value;
+            const type = this.qs('#qType').value;
             const inputType = type === 'single_choice' ? 'radio' : 'checkbox';
             const inputName = type === 'single_choice' ? `tfCorrect_${i}` : `check_${i}`;
             list.innerHTML += `
@@ -446,10 +461,10 @@ const QuizBuilder = {
         });
 
         // Attach listeners
-        document.querySelectorAll('.ans-check').forEach(el => {
+        this.qsa('.ans-check').forEach(el => {
             el.addEventListener('change', (e) => {
                 const idx = parseInt(e.target.dataset.idx);
-                if (document.getElementById('qType').value === 'single_choice') {
+                if (this.qs('#qType').value === 'single_choice') {
                     this.tempAnswers.forEach((a, i) => a.is_correct = i === idx);
                 } else {
                     this.tempAnswers[idx].is_correct = e.target.checked;
@@ -457,13 +472,13 @@ const QuizBuilder = {
             });
         });
 
-        document.querySelectorAll('.ans-text').forEach(el => {
+        this.qsa('.ans-text').forEach(el => {
             el.addEventListener('input', (e) => {
                 this.tempAnswers[parseInt(e.target.dataset.idx)].text = e.target.value;
             });
         });
 
-        document.querySelectorAll('.ans-del').forEach(el => {
+        this.qsa('.ans-del').forEach(el => {
             el.addEventListener('click', (e) => {
                 this.tempAnswers.splice(parseInt(e.target.dataset.idx), 1);
                 this.renderAnswers();
@@ -477,7 +492,7 @@ const QuizBuilder = {
     },
 
     renderMatches() {
-        const list = document.getElementById('matchingList');
+        const list = this.qs('#matchingList');
         list.innerHTML = '';
         this.tempMatches.forEach((m, i) => {
             list.innerHTML += `
@@ -490,19 +505,19 @@ const QuizBuilder = {
             `;
         });
 
-        document.querySelectorAll('.match-left').forEach(el => {
+        this.qsa('.match-left').forEach(el => {
             el.addEventListener('input', (e) => {
                 this.tempMatches[parseInt(e.target.dataset.idx)].left = e.target.value;
             });
         });
 
-        document.querySelectorAll('.match-right').forEach(el => {
+        this.qsa('.match-right').forEach(el => {
             el.addEventListener('input', (e) => {
                 this.tempMatches[parseInt(e.target.dataset.idx)].right = e.target.value;
             });
         });
 
-        document.querySelectorAll('.match-del').forEach(el => {
+        this.qsa('.match-del').forEach(el => {
             el.addEventListener('click', (e) => {
                 this.tempMatches.splice(parseInt(e.target.dataset.idx), 1);
                 this.renderMatches();
@@ -511,23 +526,23 @@ const QuizBuilder = {
     },
 
     saveQuestion() {
-        const text = document.getElementById('qText').value.trim();
+        const text = this.qs('#qText').value.trim();
         if (!text) {
             alert('Por favor escribe la pregunta');
             return;
         }
 
         const question = {
-            type: document.getElementById('qType').value,
+            type: this.qs('#qType').value,
             text: text,
-            points: parseInt(document.getElementById('qPoints').value),
-            explanation: document.getElementById('qExplanation').value
+            points: parseInt(this.qs('#qPoints').value),
+            explanation: this.qs('#qExplanation').value
         };
 
         if (['single_choice', 'multiple_choice'].includes(question.type)) {
             question.answers = this.tempAnswers.filter(a => a.text.trim());
         } else if (question.type === 'true_false') {
-            question.truefalse_correct = document.querySelector('input[name="tfCorrect"]:checked')?.value === 'true';
+            question.truefalse_correct = this.qs('input[name="tfCorrect"]:checked')?.value === 'true';
         } else if (question.type === 'matching') {
             question.pairs = this.tempMatches.filter(m => m.left.trim() && m.right.trim());
         }
@@ -544,7 +559,7 @@ const QuizBuilder = {
     },
 
     renderQuestions() {
-        const list = document.querySelector('.quiz-list');
+        const list = this.qs('.quiz-list');
         list.innerHTML = '';
 
         if (this.questions.length === 0) {
@@ -574,11 +589,11 @@ const QuizBuilder = {
             `;
         });
 
-        document.querySelectorAll('.q-edit').forEach(el => {
+        this.qsa('.q-edit').forEach(el => {
             el.addEventListener('click', (e) => this.editQuestion(parseInt(e.target.dataset.idx)));
         });
 
-        document.querySelectorAll('.q-del').forEach(el => {
+        this.qsa('.q-del').forEach(el => {
             el.addEventListener('click', (e) => {
                 this.questions.splice(parseInt(e.target.dataset.idx), 1);
                 this.saveQuestionsToInput();
@@ -590,30 +605,29 @@ const QuizBuilder = {
     editQuestion(index) {
         this.editingIndex = index;
         const q = this.questions[index];
-        document.getElementById('qType').value = q.type;
-        document.getElementById('qText').value = q.text;
-        document.getElementById('qPoints').value = q.points;
-        document.getElementById('qExplanation').value = q.explanation || '';
+        this.qs('#qType').value = q.type;
+        this.qs('#qText').value = q.text;
+        this.qs('#qPoints').value = q.points;
+        this.qs('#qExplanation').value = q.explanation || '';
 
         if (q.answers) this.tempAnswers = JSON.parse(JSON.stringify(q.answers));
         if (q.pairs) this.tempMatches = JSON.parse(JSON.stringify(q.pairs));
         if (q.truefalse_correct !== undefined) {
-            document.querySelector(`input[name="tfCorrect"][value="${q.truefalse_correct}"]`).checked = true;
+            this.qs(`input[name="tfCorrect"][value="${q.truefalse_correct}"]`).checked = true;
         }
 
-        document.querySelector('.quiz-form').classList.remove('hidden');
-        document.getElementById('quizAddBtn').classList.add('hidden');
+        this.qs('.quiz-form').classList.remove('hidden');
+        this.qs('#quizAddBtn').classList.add('hidden');
         this.updateFormSections();
-        document.getElementById('qSaveBtn').textContent = 'Guardar Cambios';
+        this.qs('#qSaveBtn').textContent = 'Guardar Cambios';
     },
 
     saveQuestionsToInput() {
-        document.getElementById('quizQuestionsInput').value = JSON.stringify(this.questions);
+        this.qs('#quizQuestionsInput').value = JSON.stringify(this.questions);
     },
 
     loadQuestionsFromInput() {
-        const scope = this.currentForm || document;
-        const input = scope.querySelector('#quizQuestionsInput');
+        const input = this.qs('#quizQuestionsInput');
         try {
             this.questions = JSON.parse(input.value || '[]');
         } catch {
