@@ -122,6 +122,12 @@ LOGGING = {
 # Example: ALLOWED_HOSTS=sd-lms.example.com,*.example.com
 # If not set, defaults to localhost and 127.0.0.1 (from base.py)
 
+# Public base URL of this service, used to build certificate verification
+# links / QR codes (apps/certifications/services.py). SITE_URL is not
+# currently set via --set-env-vars in deploy.yml, so without a default here
+# services.py fell back to a hardcoded, non-existent domain (SD#43).
+SITE_URL = config("SITE_URL", default="https://sd-lms-rvfp6uj2va-uc.a.run.app")
+
 # Axes - reduce lockout for cloud environment
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 10

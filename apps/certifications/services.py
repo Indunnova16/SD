@@ -145,7 +145,7 @@ class CertificateService:
             # Generate verification URL
             base_url = getattr(settings, "SITE_URL", "https://lms.sd.com.co")
             certificate.verification_url = (
-                f"{base_url}/certificates/verify/{certificate.certificate_number}/"
+                f"{base_url}/certifications/verify/{certificate.certificate_number}/"
             )
 
             # Generate QR code
@@ -551,7 +551,7 @@ class CertificateTemplateService:
             "issued_date": timezone.now().strftime("%d de %B de %Y"),
             "expires_date": (timezone.now() + timedelta(days=365)).strftime("%d de %B de %Y"),
             "score": 95.0,
-            "verification_url": "https://lms.sd.com.co/certificates/verify/SD-PREVIEW-00000000/",
+            "verification_url": "https://lms.sd.com.co/certifications/verify/SD-PREVIEW-00000000/",
         }
 
         if sample_data:

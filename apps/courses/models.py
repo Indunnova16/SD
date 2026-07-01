@@ -285,6 +285,17 @@ class Course(models.Model):
         result = self.modules.aggregate(total=Sum("lessons__duration"))
         return result["total"] or 0
 
+    @property
+    def duration_hours(self):
+        """Total course duration in hours (rounded to 1 decimal).
+
+        `total_duration` is in seconds (sum of Lesson.duration). This is the
+        value certificate templates should use (SD#43: the template
+        previously referenced `course.estimated_duration`, an attribute
+        removed from this model, which silently rendered blank).
+        """
+        return round(self.total_duration / 3600, 1)
+
 
 class Module(models.Model):
     """
