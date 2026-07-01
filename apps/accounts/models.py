@@ -102,6 +102,12 @@ class User(AbstractUser):
         blank=True,
         null=True,
     )
+    signature = models.ImageField(
+        _("Firma"),
+        upload_to="users/signatures/",
+        blank=True,
+        null=True,
+    )
 
     # Employment information
     job_position = models.CharField(_("Cargo"), max_length=100)
