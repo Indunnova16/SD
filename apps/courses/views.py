@@ -6,6 +6,7 @@ import base64
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.db import models, transaction
@@ -2129,6 +2130,40 @@ def _build_attendance_summary(course, lesson):
     }
 
 
+def _resolve_attendance_responsable(course, lesson):
+    """Resolve the "responsable" of an attendance lesson and their signature
+    URL, for the PDF footer (SD#51).
+
+    There is no formal "responsable de la lección" field/FK today, so
+    ``course.created_by`` is used as the default (heredado de F1), with a
+    fallback to ``lesson.metadata["instructor_id"]`` when explicitly set
+    (mirrors the instructor resolution already used by
+    ``save_attendance_signature``).
+
+    Returns a tuple ``(responsable, responsable_signature_url)``:
+      - ``responsable_signature_url`` is ``""`` when the responsable has no
+        signature on file (or the storage backend raises resolving `.url`) —
+        never raises, the PDF must still render with a blank signature line.
+    """
+    User = get_user_model()
+    responsable = course.created_by
+    instructor_id = lesson.metadata.get("instructor_id")
+    if instructor_id:
+        try:
+            responsable = User.objects.get(pk=instructor_id)
+        except User.DoesNotExist:
+            pass
+
+    responsable_signature_url = ""
+    if responsable and responsable.signature:
+        try:
+            responsable_signature_url = responsable.signature.url
+        except Exception:
+            responsable_signature_url = ""
+
+    return responsable, responsable_signature_url
+
+
 @login_required
 def export_attendance_pdf(request, course_id, lesson_id):
     """Export the attendance list of an attendance lesson as PDF (staff only).
@@ -2136,6 +2171,13 @@ def export_attendance_pdf(request, course_id, lesson_id):
     Includes, per enrollee: full name, document number (cédula), status
     (Presente/Ausente), signature timestamp and the signature image, plus
     totals and the attendance percentage for the session (SD#33 + SD#40).
+
+    Also includes, in the footer, the pre-loaded signature of the lesson's
+    "responsable" (SD#51): there is no formal "responsable de la lección"
+    field/FK today, so `course.created_by` is used as the default, with a
+    fallback to `lesson.metadata["instructor_id"]` when explicitly set. If
+    that user has a `signature` on file, it's embedded automatically so the
+    responsable does not have to sign each printed PDF by hand.
     """
     if err := _staff_required(request):
         return err
@@ -2154,6 +2196,7 @@ def export_attendance_pdf(request, course_id, lesson_id):
     )
 
     summary = _build_attendance_summary(course, lesson)
+    responsable, responsable_signature_url = _resolve_attendance_responsable(course, lesson)
 
     context = {
         "course": course,
@@ -2165,6 +2208,8 @@ def export_attendance_pdf(request, course_id, lesson_id):
         "porcentaje_asistencia": summary["porcentaje_asistencia"],
         "generated_at": timezone.now(),
         "request_user": request.user,
+        "responsable": responsable,
+        "responsable_signature_url": responsable_signature_url,
     }
 
     html_string = render_to_string("courses/attendance_pdf.html", context)

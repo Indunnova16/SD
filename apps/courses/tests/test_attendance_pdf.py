@@ -34,7 +34,7 @@ from apps.courses.models import (
     Lesson,
     Module,
 )
-from apps.courses.views import _build_attendance_summary
+from apps.courses.views import _build_attendance_summary, _resolve_attendance_responsable
 
 
 # Minimal valid 1x1 transparent PNG, so ImageField validation passes.
@@ -272,3 +272,181 @@ class ExportAttendancePdfViewTests(TestCase):
         self.assertEqual(summary["total_inscritos"], 2)
         self.assertEqual(summary["total_presentes"], 1)
         self.assertEqual(summary["porcentaje_asistencia"], 50.0)
+
+
+class ResolveAttendanceResponsableTests(TestCase):
+    """_resolve_attendance_responsable() (SD#51, A3).
+
+    responsable = course.created_by by default, with fallback to
+    lesson.metadata["instructor_id"] when set; responsable_signature_url is
+    "" (never raises) when the responsable has no signature.
+    """
+
+    def setUp(self):
+        self.creator = _make_user(is_staff=True)
+        self.course, self.module = _make_course(self.creator)
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Asistencia",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+
+    def test_responsable_defaults_to_course_created_by(self):
+        responsable, url = _resolve_attendance_responsable(self.course, self.lesson)
+        self.assertEqual(responsable, self.creator)
+        self.assertEqual(url, "")
+
+    def test_responsable_with_signature_returns_url(self):
+        """Happy path: responsable con firma -> URL presente."""
+        self.creator.signature.save("firma.png", _png_file(), save=True)
+        responsable, url = _resolve_attendance_responsable(self.course, self.lesson)
+        self.assertEqual(responsable, self.creator)
+        self.assertTrue(url)
+        self.assertIn("users/signatures/", url)
+
+    def test_responsable_without_signature_returns_empty_string_no_error(self):
+        """Edge case: responsable sin firma -> string vacio, no rompe."""
+        responsable, url = _resolve_attendance_responsable(self.course, self.lesson)
+        self.assertIsNotNone(responsable)
+        self.assertEqual(url, "")
+
+    def test_fallback_to_instructor_id_when_set_in_metadata(self):
+        """Edge case: fallback a instructor_id cuando metadata lo trae seteado."""
+        instructor = _make_user(is_staff=True)
+        self.lesson.metadata = {"instructor_id": instructor.id}
+        self.lesson.save()
+
+        responsable, url = _resolve_attendance_responsable(self.course, self.lesson)
+        self.assertEqual(responsable, instructor)
+        self.assertNotEqual(responsable, self.creator)
+
+    def test_fallback_instructor_id_nonexistent_keeps_created_by(self):
+        """instructor_id apunta a un usuario inexistente -> no rompe, se
+        mantiene el fallback a course.created_by."""
+        self.lesson.metadata = {"instructor_id": 9_999_999}
+        self.lesson.save()
+
+        responsable, url = _resolve_attendance_responsable(self.course, self.lesson)
+        self.assertEqual(responsable, self.creator)
+        self.assertEqual(url, "")
+
+
+class ExportAttendancePdfResponsableSignatureTests(TestCase):
+    """export_attendance_pdf() end-to-end with the responsable signature
+    embedded in the footer (SD#51, A3/A4)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.staff = _make_user(is_staff=True)
+        self.course, self.module = _make_course(self.staff)
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Asistencia",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        self.url = reverse(
+            "courses:export_attendance_pdf",
+            args=[self.course.id, self.lesson.id],
+        )
+
+    def _get_pdf_bytes(self):
+        self.client.force_login(self.staff)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        return resp.getvalue() if hasattr(resp, "getvalue") else resp.content
+
+    def test_pdf_generates_without_error_when_responsable_has_no_signature(self):
+        """Edge case: curso cuyo responsable NO tiene firma -> PDF sigue
+        generando sin error (linea de firma en blanco, no hay excepcion)."""
+        content = self._get_pdf_bytes()
+        self.assertTrue(content.startswith(b"%PDF"))
+        self.assertGreater(len(content), 800)
+
+    def test_pdf_still_generates_when_responsable_has_signature(self):
+        """Con firma cargada, el PDF sigue generando sin error (200,
+        application/pdf). El crecimiento de tamaño del PDF en producción
+        (proxy de "la firma quedó embebida") depende del backend de storage
+        (GCS con URL https:// absoluta que xhtml2pdf puede resolver
+        directamente) -- se valida en el journey E2E (SD_51.yaml) contra
+        prod real, no acá: el FileSystemStorage local de test devuelve una
+        URL relativa que xhtml2pdf no puede resolver sin un `link_callback`,
+        así que localmente NO es una señal confiable de embebido (ver
+        `_resolve_attendance_responsable` y los tests de template para la
+        verificación determinista de que la URL sí llega al contexto/HTML).
+        """
+        self.staff.signature.save("firma.png", _png_file(), save=True)
+        content = self._get_pdf_bytes()
+        self.assertTrue(content.startswith(b"%PDF"))
+        self.assertGreater(len(content), 800)
+
+
+class AttendancePdfResponsableTemplateTests(TestCase):
+    """templates/courses/attendance_pdf.html — sección "Firma del Responsable"
+    (SD#51, A4). Renderiza el template directamente (sin PDF binario) para
+    validar el contenido HTML de forma determinista."""
+
+    def _base_context(self, **overrides):
+        from django.utils import timezone
+
+        context = {
+            "course": None,
+            "lesson": None,
+            "rows": [],
+            "total_inscritos": 0,
+            "total_presentes": 0,
+            "total_ausentes": 0,
+            "porcentaje_asistencia": 0.0,
+            "generated_at": timezone.now(),
+            "request_user": None,
+            "responsable": None,
+            "responsable_signature_url": "",
+        }
+        context.update(overrides)
+        return context
+
+    def test_section_renders_with_responsable_full_name(self):
+        from django.template.loader import render_to_string
+
+        creator = _make_user(is_staff=True)
+        course, _module = _make_course(creator)
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            self._base_context(course=course, responsable=creator),
+        )
+        self.assertIn("Firma del Responsable", html)
+        self.assertIn(creator.get_full_name(), html)
+
+    def test_section_shows_blank_line_when_no_signature_url(self):
+        from django.template.loader import render_to_string
+
+        creator = _make_user(is_staff=True)
+        course, _module = _make_course(creator)
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            self._base_context(course=course, responsable=creator, responsable_signature_url=""),
+        )
+        self.assertIn("Firma del Responsable", html)
+        # ".signature-img" is also defined in <style> (used by the signers
+        # table), so assert on the actual <img alt=...> marker unique to
+        # this section rather than the bare CSS class substring.
+        self.assertNotIn('alt="Firma del responsable"', html)
+        self.assertIn("border-top: 1px solid #1a1a1a", html)
+
+    def test_section_shows_signature_image_when_url_present(self):
+        from django.template.loader import render_to_string
+
+        creator = _make_user(is_staff=True)
+        course, _module = _make_course(creator)
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            self._base_context(
+                course=course,
+                responsable=creator,
+                responsable_signature_url="/media/users/signatures/firma.png",
+            ),
+        )
+        self.assertIn("Firma del Responsable", html)
+        self.assertIn('alt="Firma del responsable"', html)
+        self.assertIn("/media/users/signatures/firma.png", html)

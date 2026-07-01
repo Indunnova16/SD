@@ -214,6 +214,23 @@
             </tbody>
         </table>
 
+        <div class="section-title">Firma del Responsable</div>
+        <table class="info-table">
+            <tr>
+                <td style="width:60%;">
+                    <div class="label">Responsable</div>
+                    <div class="value">{{ responsable.get_full_name|default:"—" }}</div>
+                </td>
+                <td style="width:40%; text-align:center;">
+                    {% if responsable_signature_url %}
+                        <img class="signature-img" src="{{ responsable_signature_url }}" alt="Firma del responsable">
+                    {% else %}
+                        <div style="border-top: 1px solid #1a1a1a; margin-top: 30px; padding-top: 4px; font-size:8pt; color:#666;">Firma del responsable</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
         <div class="footer">
             Documento generado automáticamente — {{ course.title }} · {{ lesson.title }}
         </div>
