@@ -7,7 +7,7 @@ import logging
 from datetime import date
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -21,12 +21,12 @@ class PasswordService:
         """
         Generate a standardized password from user data.
 
-        Format: document_number + first 3 letters of first_name (lowercase)
-        Example: document=1234567890, name=Carlos -> "1234567890car"
+        Format: document_number + first 3 letters of first_name (UPPERCASE)
+        Example: document=1234567890, name=Carlos -> "1234567890CAR"
         """
-        name_part = first_name.strip().lower()[:3] if first_name else "usr"
+        name_part = first_name.strip().upper()[:3] if first_name else "USR"
         # Pad if name is shorter than 3 chars
-        name_part = name_part.ljust(3, "x")
+        name_part = name_part.ljust(3, "X")
         return f"{document_number}{name_part}"
 
     @staticmethod
@@ -47,6 +47,14 @@ class BulkUploadService:
         "apellido",
         "numero_documento",
     ]
+
+    # Aliases naturales que el usuario puede escribir a mano (o reutilizar de
+    # un export previo) en vez del nombre exacto de columna. Se aplican DESPUÉS
+    # de la normalización de acentos/espacios, antes de validar REQUIRED_COLUMNS.
+    HEADER_ALIASES = {
+        "cedula": "numero_documento",
+        "documento": "numero_documento",
+    }
 
     OPTIONAL_COLUMNS = [
         "tipo_documento",
@@ -136,6 +144,7 @@ class BulkUploadService:
                 .replace("ñ", "n")
                 .replace(" ", "_")
             )
+            val = BulkUploadService.HEADER_ALIASES.get(val, val)
             headers.append(val)
 
         # Validate required columns
@@ -229,31 +238,42 @@ class BulkUploadService:
             password = PasswordService.generate_password(document_number, first_name)
 
             try:
-                from apps.courses.models import JobProfileType
+                with transaction.atomic():
+                    from apps.courses.models import JobProfileType
 
-                job_profile = JobProfileType.objects.filter(code=profile_code).first()
-                if not job_profile:
-                    job_profile = JobProfileType.objects.get(code="LINIERO")
+                    job_profile = JobProfileType.objects.filter(code=profile_code).first()
+                    if not job_profile:
+                        job_profile = JobProfileType.objects.get(code="LINIERO")
 
-                user = User(
-                    email=email,
-                    first_name=first_name,
-                    last_name=last_name,
-                    document_type=document_type,
-                    document_number=document_number,
-                    phone=phone,
-                    job_position=job_position,
-                    job_profile=job_profile,
-                    employment_type=employment_type,
-                    hire_date=hire_date,
-                    status=status,
-                    is_active=status == "active",
-                )
-                user.set_password(password)
-                user.save()
+                    user = User(
+                        email=email,
+                        first_name=first_name,
+                        last_name=last_name,
+                        document_type=document_type,
+                        document_number=document_number,
+                        phone=phone,
+                        job_position=job_position,
+                        job_profile=job_profile,
+                        employment_type=employment_type,
+                        hire_date=hire_date,
+                        status=status,
+                        is_active=status == "active",
+                    )
+                    user.set_password(password)
+                    user.save()
                 created.append(user)
-            except Exception as e:
-                errors.append(f"Fila {row_num}: Error al crear usuario: {e}")
+            except IntegrityError:
+                logger.exception(f"Fila {row_num}: IntegrityError al crear usuario")
+                errors.append(
+                    f"Fila {row_num}: No se pudo crear el usuario debido a un error "
+                    "interno. Contacte al administrador."
+                )
+            except Exception:
+                logger.exception(f"Fila {row_num}: Error inesperado al crear usuario")
+                errors.append(
+                    f"Fila {row_num}: No se pudo crear el usuario debido a un error "
+                    "interno. Contacte al administrador."
+                )
 
         logger.info(f"Bulk upload: {len(created)} created, {len(errors)} errors")
         return created, errors
@@ -305,6 +325,25 @@ class BulkUploadService:
         # Set column widths
         for col_idx, header in enumerate(headers, 1):
             ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 20
+
+        # Second sheet documenting conventions (column aliases + password rule)
+        notes_ws = wb.create_sheet("Instrucciones")
+        notes_ws.append(["Columna / Regla", "Descripción"])
+        notes_ws.append(
+            [
+                "numero_documento",
+                "También se acepta 'Cédula' o 'documento' como nombre de columna.",
+            ]
+        )
+        notes_ws.append(
+            [
+                "Contraseña generada",
+                "numero_documento + 3 primeras letras del nombre en MAYÚSCULA "
+                "(ej: documento 1234567890 + nombre Carlos -> 1234567890CAR).",
+            ]
+        )
+        notes_ws.column_dimensions["A"].width = 25
+        notes_ws.column_dimensions["B"].width = 70
 
         output = io.BytesIO()
         wb.save(output)
