@@ -1,5 +1,8 @@
 <div data-lesson-id="{{ lesson.id }}"
      x-data="{ editingLesson: false, showQuizAssign: false, showQuestionEditor: false }">
+    {% if quiz_error %}
+        <div class="alert alert-error text-xs mb-2 py-2">{{ quiz_error }}</div>
+    {% endif %}
     <!-- Lesson row -->
     <div class="flex items-center gap-2 p-2 rounded-lg hover:bg-base-200 group transition-colors">
         <!-- Drag Handle -->

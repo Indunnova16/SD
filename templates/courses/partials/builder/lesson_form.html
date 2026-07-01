@@ -321,7 +321,7 @@ const QuizBuilder = {
                         <option value="multiple_choice">Selección múltiple</option>
                         <option value="true_false">Verdadero/Falso</option>
                         <option value="matching">Emparejamiento</option>
-                        <option value="open">Respuesta abierta</option>
+                        <option value="short_answer">Respuesta abierta</option>
                     </select>
                 </div>
                 <div class="form-control">
@@ -558,7 +558,7 @@ const QuizBuilder = {
                 'multiple_choice': 'Sel. múltiple',
                 'true_false': 'V/F',
                 'matching': 'Emparejamiento',
-                'open': 'Abierta'
+                'short_answer': 'Abierta'
             }[q.type] || q.type;
 
             list.innerHTML += `
