@@ -1141,75 +1141,87 @@ def builder_add_lesson(request, course_id, module_id):
             form.add_error(None, f"Error al guardar la leccion: {e}")
         else:
             # Auto-create assessment + questions for quiz-type lessons
+            quiz_error = None
             if lesson.lesson_type == "quiz":
                 from apps.assessments.models import Answer, Assessment, Question
 
                 try:
-                    assessment = Assessment.objects.create(
-                        title=lesson.title,
-                        assessment_type="quiz",
-                        passing_score=80,
-                        max_attempts=3,
-                        course=course,
-                        lesson=lesson,
-                        created_by=request.user,
-                        status="published",
-                    )
-
-                    # Parse inline quiz questions from JSON
-                    import json
-
-                    quiz_questions_json = request.POST.get("quiz_questions", "[]")
-                    try:
-                        quiz_questions = json.loads(quiz_questions_json)
-                    except (json.JSONDecodeError, TypeError):
-                        quiz_questions = []
-
-                    for i, qdata in enumerate(quiz_questions):
-                        try:
-                            q_points = _parse_points(qdata.get("points", "1"))
-                        except InvalidOperation:
-                            q_points = Decimal("1.00")
-                        question = Question.objects.create(
-                            assessment=assessment,
-                            question_type=qdata.get("type", "single_choice"),
-                            text=qdata.get("text", ""),
-                            explanation=qdata.get("explanation", ""),
-                            points=q_points,
-                            order=i,
+                    with transaction.atomic():
+                        assessment = Assessment.objects.create(
+                            title=lesson.title,
+                            assessment_type="quiz",
+                            passing_score=80,
+                            max_attempts=3,
+                            course=course,
+                            lesson=lesson,
+                            created_by=request.user,
+                            status="published",
                         )
-                        q_type = qdata.get("type", "single_choice")
-                        if q_type in ("single_choice", "multiple_choice"):
-                            for j, adata in enumerate(qdata.get("answers", [])):
+
+                        # Parse inline quiz questions from JSON
+                        import json
+
+                        quiz_questions_json = request.POST.get("quiz_questions", "[]")
+                        try:
+                            quiz_questions = json.loads(quiz_questions_json)
+                        except (json.JSONDecodeError, TypeError):
+                            quiz_questions = []
+
+                        for i, qdata in enumerate(quiz_questions):
+                            try:
+                                q_points = _parse_points(qdata.get("points", "1"))
+                            except InvalidOperation:
+                                q_points = Decimal("1.00")
+                            question = Question.objects.create(
+                                assessment=assessment,
+                                question_type=qdata.get("type", "single_choice"),
+                                text=qdata.get("text", ""),
+                                explanation=qdata.get("explanation", ""),
+                                points=q_points,
+                                order=i,
+                            )
+                            q_type = qdata.get("type", "single_choice")
+                            if q_type in ("single_choice", "multiple_choice"):
+                                for j, adata in enumerate(qdata.get("answers", [])):
+                                    Answer.objects.create(
+                                        question=question,
+                                        text=adata.get("text", ""),
+                                        is_correct=adata.get("is_correct", False),
+                                        order=j,
+                                    )
+                            elif q_type == "true_false":
+                                # `truefalse_correct` llega como BOOLEAN JSON real
+                                # (QuizBuilder.saveQuestion() lo emite sin comillas),
+                                # NO como string "true"/"false" — bool() es el cast correcto.
+                                is_true = bool(qdata.get("truefalse_correct", True))
                                 Answer.objects.create(
                                     question=question,
-                                    text=adata.get("text", ""),
-                                    is_correct=adata.get("is_correct", False),
-                                    order=j,
+                                    text="Verdadero",
+                                    is_correct=is_true,
+                                    order=0,
                                 )
-                        elif q_type == "true_false":
-                            is_true = qdata.get("trueFalseCorrect", "true") == "true"
-                            Answer.objects.create(
-                                question=question, text="Verdadero", is_correct=is_true, order=0
-                            )
-                            Answer.objects.create(
-                                question=question, text="Falso", is_correct=not is_true, order=1
-                            )
-                        elif q_type == "matching":
-                            for j, pair in enumerate(qdata.get("matchPairs", [])):
                                 Answer.objects.create(
                                     question=question,
-                                    text=pair.get("left", ""),
-                                    feedback=pair.get("right", ""),
-                                    is_correct=True,
-                                    order=j,
+                                    text="Falso",
+                                    is_correct=not is_true,
+                                    order=1,
                                 )
+                            elif q_type == "matching":
+                                for j, pair in enumerate(qdata.get("pairs", [])):
+                                    Answer.objects.create(
+                                        question=question,
+                                        text=pair.get("left", ""),
+                                        feedback=pair.get("right", ""),
+                                        is_correct=True,
+                                        order=j,
+                                    )
                 except Exception as e:
                     import logging
 
                     logger = logging.getLogger(__name__)
                     logger.exception("Error creating assessment for quiz lesson")
-                    messages.error(request, f"Error al crear el quiz: {e}")
+                    quiz_error = f"Error al crear el quiz: {e}"
+                    messages.error(request, quiz_error)
 
             if request.headers.get("HX-Request"):
                 return render(
@@ -1220,6 +1232,7 @@ def builder_add_lesson(request, course_id, module_id):
                         "course": course,
                         "module": module,
                         "available_assessments": _get_available_assessments(course),
+                        "quiz_error": quiz_error,
                     },
                 )
 
