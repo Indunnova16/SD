@@ -25,6 +25,7 @@ JSON bool) would invert the bug instead of fixing it.
 
 import json
 from datetime import date
+from decimal import Decimal
 from unittest.mock import patch
 
 from django.test import Client, TestCase
@@ -328,3 +329,197 @@ class BuilderAddQuizLessonIssue38Tests(TestCase):
         self.assertEqual(self.legacy_assessment.status, "published")
         self.assertEqual(Question.objects.filter(assessment=self.legacy_assessment).count(), 0)
         self.assertEqual(self.module.lessons.count(), 2)
+
+
+# ==========================================================================
+# ROUND 3 (bounce=2, this run) — EDITING an EXISTING question.
+#
+# Client report (2026-07-02): after Round 2 fixed CREATING new quiz
+# questions (see BuilderAddQuizLessonIssue38Tests above), EDITING a
+# question that already exists still does not persist "Puntos" nor a
+# newly-added answer/option.
+#
+# Real root cause (confirmed by F2 via 2 live Playwright reproductions
+# against prod): templates/courses/partials/builder/question_item.html's
+# `<template x-if="editing">` never called `htmx.process($el)` after
+# Alpine cloned it into the DOM (unlike its sibling
+# `lesson_item.html:150`, which does). Because the cloned
+# `<form hx-post=... hx-target=... hx-swap=...>` (question_form.html) has
+# no explicit `method`/`action` fallback, htmx never registered it, so
+# clicking "Guardar" fell back to the browser's *native* GET submit and
+# `builder_edit_question` (this view) was **never invoked at all** — the
+# database stayed 100% intact both times.
+#
+# IMPORTANT: this is a pure frontend wiring bug (Alpine not triggering
+# htmx.process on the clone). A Django test client POST never exercises
+# real browser JS, so it CANNOT reproduce/catch the actual bug — the fix
+# (`x-init="$nextTick(() => htmx.process($el))"` in question_item.html)
+# is only proven by the E2E Playwright journey at
+# $RUN_DIR/journeys/SD_38.yaml (m38_legacy_question_points_persist /
+# m38_new_question_add_option_persist), which reproduced the bug live
+# against prod (RED) before the fix.
+#
+# What THIS test class covers instead: it pins builder_edit_question's
+# server-side persistence contract (POST -> Points + Answers updated in
+# DB) against a question that already existed before the POST (mirrors
+# the real prod row id=28 used in F2's reproduction), as a safety net —
+# if this backend logic itself ever regresses, CI catches it even though
+# it is not what broke for the client this time.
+# ==========================================================================
+
+
+class BuilderEditExistingQuestionIssue38Tests(TestCase):
+    """Pin builder_edit_question's persistence contract for an EXISTING
+    (pre-created, i.e. "legacy-like") question — the flow the client
+    reported broken. Does NOT cover the real (frontend/htmx) root cause;
+    see class docstring above."""
+
+    def setUp(self):
+        self.client = Client()
+
+        self.staff = User.objects.create_user(
+            email="staff_sd38_edit@test.com",
+            password="testpass123",
+            first_name="Staff",
+            last_name="SD38Edit",
+            document_number="38000002",
+            job_position="Admin",
+            job_profile=None,
+            hire_date=date(2024, 1, 1),
+            is_staff=True,
+        )
+        self.category = Category.objects.create(
+            name="Cat SD38 Edit",
+            slug="cat-sd38-edit",
+            description="cat",
+            color="#00AA00",
+        )
+        self.course = Course.objects.create(
+            code="COURSE-SD38-2",
+            title="Curso SD38 Edit",
+            description="desc",
+            objectives="obj",
+            course_type=Course.Type.MANDATORY,
+            status=Course.Status.DRAFT,
+            category=self.category,
+            created_by=self.staff,
+        )
+        self.module = Module.objects.create(
+            course=self.course, title="Modulo SD38 Edit", description="m", order=1
+        )
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Evaluacion SD38 edit",
+            description="leccion",
+            lesson_type=Lesson.Type.QUIZ,
+            order=0,
+        )
+        self.assessment = Assessment.objects.create(
+            title="Evaluacion SD38 edit",
+            assessment_type="quiz",
+            passing_score=80,
+            max_attempts=3,
+            course=self.course,
+            lesson=self.lesson,
+            created_by=self.staff,
+            status="published",
+        )
+        # A question that already existed BEFORE this test's POST — mirrors
+        # the real prod row (legacy question id=28) F2 used to reproduce
+        # the client's bug, not a same-request fixture.
+        self.question = Question.objects.create(
+            assessment=self.assessment,
+            question_type="single_choice",
+            text="QA_M38_edit pregunta preexistente",
+            explanation="si",
+            points=10,
+            order=0,
+        )
+        Answer.objects.create(
+            question=self.question, text="Opcion A", is_correct=True, order=0
+        )
+        Answer.objects.create(
+            question=self.question, text="Opcion B", is_correct=False, order=1
+        )
+
+        self.url = reverse(
+            "courses:builder_edit_question",
+            kwargs={
+                "course_id": self.course.id,
+                "assessment_id": self.assessment.id,
+                "question_id": self.question.id,
+            },
+        )
+        self.client.force_login(self.staff)
+
+    def test_edit_persists_points_change_on_existing_question(self):
+        """POST to builder_edit_question with a new Points value must persist
+        it on the pre-existing question (client's exact complaint: "Puntos
+        no persiste, vuelve al valor anterior")."""
+        resp = self.client.post(
+            self.url,
+            data={
+                "question_type": "single_choice",
+                "text": self.question.text,
+                "explanation": "QA_E2E_M38_legacy_explicacion_nueva",
+                "points": "15",
+                "answer_text": ["Opcion A", "Opcion B"],
+                "correct_answer": ["0"],
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.question.refresh_from_db()
+        self.assertEqual(self.question.points, Decimal("15.00"))
+        self.assertEqual(self.question.explanation, "QA_E2E_M38_legacy_explicacion_nueva")
+
+    def test_edit_persists_newly_added_option_on_existing_question(self):
+        """POST adding a 3rd answer option to a pre-existing question must
+        create it in the DB (client's other complaint: "opcion nueva no
+        persiste")."""
+        resp = self.client.post(
+            self.url,
+            data={
+                "question_type": "single_choice",
+                "text": self.question.text,
+                "explanation": self.question.explanation,
+                "points": str(self.question.points),
+                "answer_text": ["Opcion A", "Opcion B", "QA_E2E_M38_opcionC"],
+                "correct_answer": ["0"],
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(resp.status_code, 200)
+        answers = list(Answer.objects.filter(question=self.question).order_by("order"))
+        self.assertEqual(len(answers), 3)
+        self.assertEqual(answers[2].text, "QA_E2E_M38_opcionC")
+        self.assertTrue(
+            Answer.objects.filter(question=self.question, text="QA_E2E_M38_opcionC").exists()
+        )
+
+    def test_edit_does_not_affect_unrelated_question(self):
+        """Editing one existing question must not disturb a sibling question
+        in the same assessment (isolation / no cross-contamination)."""
+        other_question = Question.objects.create(
+            assessment=self.assessment,
+            question_type="short_answer",
+            text="QA_M38_edit otra pregunta",
+            explanation="",
+            points=5,
+            order=1,
+        )
+        self.client.post(
+            self.url,
+            data={
+                "question_type": "single_choice",
+                "text": self.question.text,
+                "explanation": self.question.explanation,
+                "points": "20",
+                "answer_text": ["Opcion A"],
+                "correct_answer": ["0"],
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        other_question.refresh_from_db()
+        self.assertEqual(other_question.points, Decimal("5.00"))
+        self.assertEqual(other_question.text, "QA_M38_edit otra pregunta")

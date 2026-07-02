@@ -122,7 +122,7 @@ Context: question, course, assessment
     </div>
     <!-- Edit Mode -->
     <template x-if="editing">
-        <div>
+        <div x-init="$nextTick(() => htmx.process($el))">
             {% include "courses/partials/builder/question_form.html" with course=course assessment=assessment question=question is_edit=True %}
         </div>
     </template>
