@@ -317,10 +317,13 @@
                                     <button type="button" id="attendance-clear-btn" class="btn btn-outline">
                                         Limpiar
                                     </button>
-                                    <button type="button" id="attendance-submit-btn" class="btn btn-primary" disabled>
+                                    <button type="button" id="attendance-submit-btn" class="btn btn-primary">
                                         Guardar Firma
                                     </button>
                                 </div>
+                                <p id="attendance-signature-error"
+                                   class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"
+                                   role="alert"></p>
                             {% endif %}
                             {% if request.user.is_staff %}
                                 <div class="mt-8 pt-6 border-t dark:border-gray-700">
@@ -703,6 +706,7 @@ document.addEventListener('alpine:init', () => {
     const ctx = canvas.getContext('2d');
     const clearBtn = document.getElementById('attendance-clear-btn');
     const submitBtn = document.getElementById('attendance-submit-btn');
+    const errorEl = document.getElementById('attendance-signature-error');
 
     let isDrawing = false;
     let lastX = 0;
@@ -758,7 +762,6 @@ document.addEventListener('alpine:init', () => {
         drawLine(lastX, lastY, x, y);
         lastX = x;
         lastY = y;
-        submitBtn.disabled = !hasSignature();
     });
     canvas.addEventListener('mouseup', () => { isDrawing = false; });
     canvas.addEventListener('mouseout', () => { isDrawing = false; });
@@ -776,17 +779,31 @@ document.addEventListener('alpine:init', () => {
         drawLine(lastX, lastY, x, y);
         lastX = x;
         lastY = y;
-        submitBtn.disabled = !hasSignature();
     });
     canvas.addEventListener('touchend', () => { isDrawing = false; });
 
     clearBtn.addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        submitBtn.disabled = true;
+        if (errorEl) errorEl.classList.add('hidden');
     });
 
     submitBtn.addEventListener('click', () => {
-        if (!hasSignature()) return;
+        // SD#48: the button used to start `disabled` in the HTML and only
+        // get enabled from inside the mousemove/touchmove handlers above --
+        // a tap/click short drag never fired either, so the button stayed
+        // disabled forever and a click on a disabled <button> dispatches NO
+        // JS event at all (no fetch, no alert, no console error: total
+        // silence, exactly what the client hit). The button is now always
+        // clickable and this handler is the single gate: it always runs
+        // and shows a visible inline error instead of failing silently.
+        if (!hasSignature()) {
+            if (errorEl) {
+                errorEl.textContent = 'Debes dibujar tu firma antes de guardar.';
+                errorEl.classList.remove('hidden');
+            }
+            return;
+        }
+        if (errorEl) errorEl.classList.add('hidden');
         submitBtn.disabled = true;
         submitBtn.classList.add('loading');
 

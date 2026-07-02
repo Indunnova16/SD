@@ -2073,6 +2073,13 @@ def save_attendance_signature(request, course_id, lesson_id):
             enrollment=enrollment,
         )
         lesson_progress.is_completed = True
+        # SD#48: mirror update_progress()/update_video_progress() -- both
+        # set progress_percent=100 when a lesson completes. This path never
+        # did, so lesson_progress.progress_percent stayed at its 0 default
+        # forever even though is_completed=True (a data-integrity bug
+        # confirmed independent of the client-reported symptom, which was
+        # actually the submit button never firing -- see lesson_view.html).
+        lesson_progress.progress_percent = 100
         lesson_progress.completed_at = timezone.now()
         lesson_progress.save()
 
