@@ -10,6 +10,7 @@ Covers:
 
 from datetime import date
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -48,6 +49,11 @@ class _BaseAdminViewsTests(TestCase):
         self.template = CertificateTemplate.objects.create(
             name="Plantilla Demo",
             description="Plantilla para tests",
+            template_file=SimpleUploadedFile(
+                "plantilla_demo.html",
+                b"<html><body>CERTIFICADO - {{ user_name }}</body></html>",
+                content_type="text/html",
+            ),
             signer_name="Directora HSEQ",
             signer_title="Directora",
             is_active=True,
@@ -97,6 +103,9 @@ class TemplateCreateTests(_BaseAdminViewsTests):
             data={
                 "name": "Plantilla Nueva",
                 "description": "Creada en test",
+                "template_file": SimpleUploadedFile(
+                    "plantilla_nueva.html", b"<html></html>", content_type="text/html"
+                ),
                 "signer_name": "Firma X",
                 "signer_title": "Cargo Y",
                 "is_active": "on",

@@ -1,0 +1,20 @@
+{% extends "base/dashboard.html" %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+        <div class="max-w-lg mx-auto px-4">
+            <div class="text-center mb-8">
+                <svg class="mx-auto w-16 h-16 text-error"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                <h1 class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">No autorizado</h1>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">No tienes permiso para descargar este certificado.</p>
+            </div>
+            <div class="text-center">
+                <a href="{% url 'certifications:my_certificates' %}" class="btn btn-primary">Volver a Mis Certificados</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

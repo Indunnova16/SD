@@ -16,6 +16,7 @@ from datetime import date
 from unittest.mock import patch
 
 from django.core.files.base import ContentFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -113,6 +114,9 @@ class CertificadosE2ETest(TransactionTestCase):
             data={
                 "name": "Plantilla E2E",
                 "description": "Plantilla para test E2E",
+                "template_file": SimpleUploadedFile(
+                    "plantilla_e2e.html", b"<html></html>", content_type="text/html"
+                ),
                 "signer_name": "Directora HSEQ",
                 "signer_title": "HSEQ",
                 "is_active": "on",

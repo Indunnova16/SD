@@ -22,9 +22,11 @@ B2 (Course.duration_hours) is covered separately in
 apps/courses/tests/test_issue_43.py since it's a Course model concern.
 """
 
+import re
 from datetime import date, timedelta
 from unittest.mock import patch
 
+from django.core.files.base import ContentFile
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -405,4 +407,144 @@ class ReassignEnrollmentViewReissueTest(TransactionTestCase):
         self.assertTrue(
             certs.filter(status=Certificate.Status.ISSUED).exists(),
             "expected a fresh ISSUED certificate after recompletion post-reassignment",
+        )
+
+
+# Minimal valid PDF content, same pattern used by test_download.py, to give
+# the older ("still visible/downloadable") certificate a real attached file —
+# without it the pre-existing template gate
+# (`certificate.certificate_file and certificate.status == 'issued'`) hides
+# the download link regardless of status, which isn't the scenario SD#43
+# describes (the OLD cert is a real, already-downloadable certificate).
+MINIMAL_PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
+
+# Matches the pending-notice <div ...> ONLY as an HTML tag attribute — not the
+# always-present `[data-certificate-pending="true"]` CSS selector string
+# embedded in the auto-refresh <script> (see extra_js block), which would
+# otherwise produce a false positive on a plain substring check.
+PENDING_MARKER_TAG_RE = re.compile(r'<div[^>]*\bdata-certificate-pending="true"[^>]*>')
+
+
+@override_settings(
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
+        },
+    },
+)
+class MyCertificatesPendingIndicatorTest(TestCase):
+    """
+    UX mitigation (F2/F3, SD#43 reproceso round 2): F2 REFUTED F1's silent-
+    rollback hypothesis with hard evidence (psql against prod, 48h Cloud Run
+    logs, live HTTP download+pdftotext of 2 real certificates) — the
+    generation pipeline works correctly end to end. The most plausible
+    explanation for what the client saw is a ~3.5s timing window between
+    Enrollment.completed_at and Certificate.status flipping to 'issued'
+    (transaction.on_commit + weasyprint render), during which the NEW
+    certificate exists with status=PENDING (no download button, template
+    gates on status=='issued') while an OLDER certificate from a different
+    course remains fully visible/downloadable on the same page with no
+    indicator explaining the missing new one.
+
+    These tests cover the UX mitigation only (explicit pending notice +
+    bounded auto-refresh marker in my_certificates.html) — they do not (and
+    cannot) reproduce the transitory timing window itself.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="user-issue43-pending@test.com",
+            password="testpass123",
+            first_name="Marta",
+            last_name="Lopez",
+            document_number="900000401",
+            job_position="Technician",
+            hire_date=date(2021, 6, 15),
+        )
+        self.old_course = Course.objects.create(
+            code="ISSUE43-PEND-OLD",
+            title="Curso Viejo Issue 43",
+            created_by=self.user,
+            status=Course.Status.PUBLISHED,
+            validity_months=12,
+        )
+        self.new_course = Course.objects.create(
+            code="ISSUE43-PEND-NEW",
+            title="Curso Nuevo Issue 43",
+            created_by=self.user,
+            status=Course.Status.PUBLISHED,
+            validity_months=12,
+        )
+        # Older certificate, fully issued AND with a real file attached, so
+        # it renders as downloadable — mirrors the real prod case (user_id=2
+        # had an ISSUED+downloadable certificate for course 63 while course
+        # 68's certificate was still generating).
+        self.old_cert = Certificate.objects.create(
+            user=self.user,
+            course=self.old_course,
+            certificate_number="SD-ISSUE43-PEND-OLD",
+            status=Certificate.Status.ISSUED,
+            issued_at=timezone.now() - timedelta(days=20),
+            expires_at=timezone.now() + timedelta(days=345),
+        )
+        self.old_cert.certificate_file.save(
+            f"{self.old_cert.certificate_number}.pdf",
+            ContentFile(MINIMAL_PDF),
+            save=True,
+        )
+
+    def test_pending_certificate_shows_generation_notice_and_poll_marker(self):
+        """
+        While the new certificate is still PENDING, the card must show an
+        explicit notice and the pending-marker tag must render, instead of
+        silently omitting the download button with no explanation — and the
+        older certificate's download link must remain untouched (still
+        visible), matching the real scenario.
+        """
+        new_cert = Certificate.objects.create(
+            user=self.user,
+            course=self.new_course,
+            certificate_number="SD-ISSUE43-PEND-NEW",
+            status=Certificate.Status.PENDING,
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("certifications:my_certificates"))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Certificado en generación")
+        self.assertRegex(content, PENDING_MARKER_TAG_RE)
+        # Bounded auto-refresh marker present (script only acts when the
+        # pending-marker tag it queries for actually exists in the DOM).
+        self.assertContains(response, "sd43CertPollStart")
+        # The older certificate keeps its download link...
+        self.assertContains(
+            response, reverse("certifications:download", args=[self.old_cert.id])
+        )
+        # ...but the new PENDING certificate must not offer one yet.
+        self.assertNotContains(
+            response, reverse("certifications:download", args=[new_cert.id])
+        )
+
+    def test_no_pending_certificates_omits_notice_and_marker_tag(self):
+        """
+        Baseline / regression guard: with no PENDING certificate (only the
+        older ISSUED+downloadable one from setUp), neither the notice nor the
+        pending-marker tag should render on any card — the auto-refresh
+        script itself may still be present in the page (it self-gates via a
+        DOM query and is a no-op with nothing to find), but it must find
+        zero elements to act on.
+        """
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("certifications:my_certificates"))
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Certificado en generación")
+        self.assertNotRegex(content, PENDING_MARKER_TAG_RE)
+        # The older certificate's download link is present and untouched.
+        self.assertContains(
+            response, reverse("certifications:download", args=[self.old_cert.id])
         )
