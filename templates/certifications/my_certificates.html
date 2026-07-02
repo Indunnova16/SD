@@ -63,6 +63,18 @@
                             </span>
                         </div>
 
+                        {% if certificate.status == 'pending' %}
+                            <!-- Pending generation notice (SD#43): the download button only
+                                 appears once status flips to 'issued' (a few seconds after
+                                 course completion, while the PDF renders). Without this
+                                 notice a user could mistake a still-visible OLDER certificate
+                                 for the new one. -->
+                            <div class="alert alert-info text-xs py-2 px-3 mb-3"
+                                 data-certificate-pending="true">
+                                <span>Certificado en generación, actualiza en unos segundos.</span>
+                            </div>
+                        {% endif %}
+
                         <!-- Details -->
                         <div class="space-y-1 text-sm">
                             {% if certificate.issued_at %}
@@ -160,4 +172,41 @@
             </div>
         </div>
     {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {# SD#43: while any certificate is 'pending' (created but not yet issued —
+       transaction.on_commit + PDF render take a few seconds), poll lightly so
+       the "Descargar PDF" button appears without the user manually reloading.
+       Bounded to ~15s total (persisted across reloads via sessionStorage) so
+       it never polls forever if generation stalls. #}
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            var STORAGE_KEY = 'sd43CertPollStart';
+            var POLL_INTERVAL_MS = 2000;
+            var POLL_MAX_MS = 15000;
+
+            var hasPending = document.querySelector('[data-certificate-pending="true"]') !== null;
+            if (!hasPending) {
+                sessionStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            var now = Date.now();
+            var start = parseInt(sessionStorage.getItem(STORAGE_KEY), 10);
+            if (!start) {
+                start = now;
+                sessionStorage.setItem(STORAGE_KEY, String(start));
+            }
+
+            if (now - start >= POLL_MAX_MS) {
+                sessionStorage.removeItem(STORAGE_KEY);
+                return;
+            }
+
+            setTimeout(function () {
+                window.location.reload();
+            }, POLL_INTERVAL_MS);
+        })();
+    </script>
 {% endblock %}
