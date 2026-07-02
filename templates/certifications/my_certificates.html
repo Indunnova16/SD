@@ -175,11 +175,13 @@
 {% endblock %}
 
 {% block extra_js %}
-    {# SD#43: while any certificate is 'pending' (created but not yet issued —
-       transaction.on_commit + PDF render take a few seconds), poll lightly so
-       the "Descargar PDF" button appears without the user manually reloading.
-       Bounded to ~15s total (persisted across reloads via sessionStorage) so
-       it never polls forever if generation stalls. #}
+    {% comment %}
+    SD#43: while any certificate is 'pending' (created but not yet issued —
+    transaction.on_commit + PDF render take a few seconds), poll lightly so
+    the "Descargar PDF" button appears without the user manually reloading.
+    Bounded to ~15s total (persisted across reloads via sessionStorage) so
+    it never polls forever if generation stalls.
+    {% endcomment %}
     <script nonce="{{ request.csp_nonce }}">
         (function () {
             var STORAGE_KEY = 'sd43CertPollStart';
