@@ -212,10 +212,21 @@ def lesson_view(request, course_id, lesson_id):
     if lesson.is_presential:
         lesson_evidence = LessonEvidence.objects.filter(lesson=lesson, user=request.user).first()
 
-    # Get assessment for quiz lessons
+    # Get assessment for quiz lessons (SD#54: also resolve whether the user
+    # already has a PASSED attempt, so the template can gate the "mark as
+    # complete" action instead of exposing a generic bypass button).
     assessment = None
+    has_passed_quiz = False
     if lesson.lesson_type == "quiz":
         assessment = lesson.assessments.first()
+        if assessment:
+            from apps.assessments.models import AssessmentAttempt
+
+            has_passed_quiz = AssessmentAttempt.objects.filter(
+                user=request.user,
+                assessment=assessment,
+                passed=True,
+            ).exists()
 
     # Attendance-lesson context (SD#33): lesson_view.html renders the
     # signature capture inline for lesson_type='attendance' (same data
@@ -251,6 +262,7 @@ def lesson_view(request, course_id, lesson_id):
         "enrollment": enrollment,
         "lesson_evidence": lesson_evidence,
         "assessment": assessment,
+        "has_passed_quiz": has_passed_quiz,
         "existing_signature": existing_signature,
         "is_instructor": is_instructor,
     }
@@ -291,9 +303,32 @@ def update_progress(request, course_id, lesson_id):
 
     # Update progress
     new_progress = request.POST.get("progress", 0)
-    progress.progress_percent = min(float(new_progress), 100)
+    new_progress_percent = min(float(new_progress), 100)
+    will_complete = new_progress_percent >= 100
 
-    if progress.progress_percent >= 100:
+    # SD#54: a 'quiz' (Evaluación) lesson can only be completed after the
+    # user has PASSED its assessment. Without this server-side gate, a
+    # direct POST to this endpoint (or a generic "mark as complete" button)
+    # could mark the lesson done -- and unlock the next mandatory lesson --
+    # without ever passing the evaluation.
+    if will_complete and lesson.lesson_type == Lesson.Type.QUIZ:
+        from apps.assessments.models import AssessmentAttempt
+
+        has_passed_attempt = AssessmentAttempt.objects.filter(
+            user=request.user,
+            assessment__lesson=lesson,
+            passed=True,
+        ).exists()
+        if not has_passed_attempt:
+            error_message = (
+                "No puedes marcar esta lección como completada: primero debes "
+                "aprobar la evaluación."
+            )
+            return JsonResponse({"status": "error", "message": error_message}, status=400)
+
+    progress.progress_percent = new_progress_percent
+
+    if will_complete:
         progress.is_completed = True
         from django.utils import timezone
 

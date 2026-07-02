@@ -46,8 +46,19 @@
             </div>
             <!-- Actions -->
             <div class="border-t dark:border-gray-700 mt-4 pt-4 space-y-2">
-                <a href="{% url 'assessments:detail' assessment.id %}"
-                   class="btn btn-primary btn-block">Volver a la Evaluación</a>
+                {% if not attempt.passed %}
+                    <!-- SD#54: direct retry when the attempt did not pass, instead of
+                         forcing the user through the assessment detail page. -->
+                    <a href="{% url 'assessments:start' assessment.id %}"
+                       class="btn btn-primary btn-block">Reintentar Evaluación</a>
+                    {% if assessment.lesson %}
+                        <a href="{% url 'courses:lesson' assessment.lesson.module.course_id assessment.lesson.id %}"
+                           class="btn btn-ghost btn-block">Volver a la Lección</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'assessments:detail' assessment.id %}"
+                       class="btn btn-primary btn-block">Volver a la Evaluación</a>
+                {% endif %}
                 <a href="{% url 'assessments:my_attempts' %}"
                    class="btn btn-ghost btn-block">Mis Intentos</a>
             </div>
