@@ -17,17 +17,7 @@
       hx-swap="innerHTML"
       hx-indicator="#login-indicator">
     {% csrf_token %}
-    <div class="form-control mb-4">
-        <label class="label" for="id_email">
-            <span class="label-text font-medium">Correo electrónico</span>
-        </label>
-        {{ form.email }}
-        {% if form.email.errors %}
-            <label class="label">
-                <span class="label-text-alt text-error">{{ form.email.errors.0 }}</span>
-            </label>
-        {% endif %}
-    </div>
+    {% include "accounts/partials/_username_field.html" %}
     <div class="form-control mb-4">
         <label class="label" for="id_password">
             <span class="label-text font-medium">Contraseña</span>

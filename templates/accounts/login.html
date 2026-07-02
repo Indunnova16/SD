@@ -34,20 +34,7 @@
               hx-swap="innerHTML"
               hx-indicator="#login-indicator">
             {% csrf_token %}
-            <div class="form-control mb-4">
-                <label class="label" for="id_username">
-                    <span class="label-text font-medium">Cédula o correo electrónico</span>
-                </label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <div class="label" id="username-error" aria-live="polite">
-                        <span class="label-text-alt text-error" role="alert">{{ form.username.errors.0 }}</span>
-                    </div>
-                {% endif %}
-                <div class="label">
-                    <span class="label-text-alt text-gray-500">Personal operativo: número de cédula. Personal profesional: correo electrónico.</span>
-                </div>
-            </div>
+            {% include "accounts/partials/_username_field.html" %}
             <div class="form-control mb-4">
                 <label class="label" for="id_password">
                     <span class="label-text font-medium">Contraseña</span>
