@@ -45,4 +45,8 @@ urlpatterns = [
     path("admin/", views.admin_dashboard, name="admin-dashboard"),
     path("admin/analytics/", views.admin_analytics, name="admin-analytics"),
     path("admin/top-earners/", views.admin_top_earners, name="admin-top-earners"),
+    # Team (Coordinador) — issue #58 A9
+    path("equipo/", views.team_dashboard, name="team-dashboard"),
+    path("equipo/analytics/", views.team_analytics, name="team-analytics"),
+    path("equipo/top-earners/", views.team_top_earners, name="team-top-earners"),
 ]

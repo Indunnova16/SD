@@ -406,3 +406,55 @@ def admin_top_earners(request):
         "gamification/admin/partials/top_earners.html",
         {"top_earners": data["users"]["top_earners"]},
     )
+
+
+# ============================================================================
+# Team Dashboard (Coordinador) — issue #58 A9
+# ============================================================================
+#
+# Filtrado de datos de Gamificación por rol: propio (dashboard de arriba,
+# sin cambio) / equipo (acá, NUEVO — Coordinador vía `User.supervisor` FK
+# de A1, `related_name='equipo'`) / todo (Admin dashboard de arriba, ya
+# migrado por A4 a `require_rol(ADMINISTRADOR)`). Reusa los MISMOS partials
+# de "Admin" (`gamification/admin/partials/analytics.html` y
+# `.../top_earners.html`) porque el shape de contexto es idéntico — solo
+# cambia qué datos trae el service (`get_team_analytics` vs
+# `get_admin_analytics`), no cómo se renderizan.
+
+
+@login_required
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
+def team_dashboard(request):
+    """
+    Dashboard de gamificación del equipo. Ranking/puntos SOLO de los
+    usuarios que reportan a `request.user` vía `User.supervisor` FK.
+    Accesible a Coordinador (su equipo) y Administrador (a quien supervisa
+    directamente — alcance distinto de "todo el sistema" de `admin_dashboard`).
+    """
+    return render(request, "gamification/team/dashboard.html")
+
+
+@login_required
+@require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
+def team_analytics(request):
+    """Get team analytics (HTMX partial) — acotado al equipo de `request.user`."""
+    data = GamificationDashboardService.get_team_analytics(request.user)
+    return render(
+        request,
+        "gamification/admin/partials/analytics.html",
+        data,
+    )
+
+
+@login_required
+@require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
+def team_top_earners(request):
+    """Get team's top earners this week (HTMX partial) — acotado al equipo."""
+    data = GamificationDashboardService.get_team_analytics(request.user)
+    return render(
+        request,
+        "gamification/admin/partials/top_earners.html",
+        {"top_earners": data["users"]["top_earners"]},
+    )
