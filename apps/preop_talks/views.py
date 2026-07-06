@@ -16,7 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.models import User
-from apps.accounts.permissions import Rol, user_has_rol
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
 from apps.preop_talks.forms import TalkTemplateForm
 from apps.preop_talks.models import PreopTalk, TalkAttendee, TalkTemplate
 from apps.preop_talks.services import PreopTalkService, TalkAttendeeService
@@ -24,8 +24,15 @@ from apps.preop_talks.services import PreopTalkService, TalkAttendeeService
 
 @login_required
 @require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def talk_list(request):
-    """Talk list page."""
+    """Talk list page.
+
+    Listado ADMINISTRATIVO (issue #58, A8): oculto para Ejecutor (403), completo
+    para Coordinador/Administrador. NO afecta las vistas donde el Ejecutor
+    participa de su propia charla (`talk_conduct`, `start_talk`, `complete_talk`,
+    `sign_attendance`) — esas siguen sin este gate, ver PLAN A8.
+    """
     context = {"today": timezone.localdate()}
 
     # Check if this is an HTMX request for the table
@@ -46,8 +53,16 @@ def today_talks(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def talks_table(request):
-    """Get talks table (HTMX partial)."""
+    """Get talks table (HTMX partial).
+
+    Mismo gate que `talk_list` (issue #58, A8) — `talks_table` tiene su propia
+    URL (`preop_talks:table`) además de ser invocada internamente por
+    `talk_list`; sin este gate un Ejecutor podría ver el listado completo
+    pegándole directo a esa URL aunque `talk_list` lo bloquee (hueco visible,
+    scope ampliado dentro de A8 — ver notas del sub-item).
+    """
     date_from = request.GET.get("date_from")
     date_to = request.GET.get("date_to")
     status = request.GET.get("status")
