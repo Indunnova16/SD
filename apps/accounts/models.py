@@ -3,6 +3,7 @@ User and authentication models for SD LMS.
 """
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -73,6 +74,23 @@ class User(AbstractUser):
         # Personal administrativo (usa email para login)
         ADMINISTRADOR = "ADMINISTRADOR", _("Administrador")
 
+    class Rol(models.TextChoices):
+        """Rol de acceso (RBAC) — issue #58.
+
+        INDEPENDIENTE de `job_profile` (decisión de Miguel, HITL 2026-07-06):
+        no se deriva en runtime, es un campo real persistido, editable por un
+        Administrador aunque se sugiera un valor según `job_profile`. No
+        confundir con `JobProfile` (arriba, TextChoices código muerto — ver
+        migración 0012) ni con el modelo `Role`/`UserRole` de más abajo
+        (sistema de permisos granulares sin uso real hoy). `rol` es la ÚNICA
+        fuente de verdad para gating de UI/vistas (`apps/accounts/permissions.py`,
+        sub-item A4 — NO leer `job_profile` ni `is_staff` en checks nuevos).
+        """
+
+        EJECUTOR = "EJECUTOR", _("Ejecutor")
+        COORDINADOR = "COORDINADOR", _("Coordinador")
+        ADMINISTRADOR = "ADMINISTRADOR", _("Administrador")
+
     # Remove username field, use email or document for login
     username = None
     email = models.EmailField(
@@ -118,6 +136,32 @@ class User(AbstractUser):
         blank=True,
         related_name="users",
         verbose_name=_("Perfil ocupacional"),
+    )
+    rol = models.CharField(
+        _("Rol de acceso"),
+        max_length=20,
+        choices=Rol.choices,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Rol de acceso (RBAC) para navegación y permisos. Independiente "
+            "del perfil ocupacional: se sugiere un valor según `job_profile` "
+            "al crear/editar el usuario, pero es editable por un "
+            "Administrador. Nulo = pendiente de asignación explícita."
+        ),
+    )
+    supervisor = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="equipo",
+        verbose_name=_("Supervisor"),
+        help_text=_(
+            "Coordinador o Administrador responsable de este usuario. Se usa "
+            "para filtrar datos por equipo (Certificados, Gamificación) "
+            "cuando el rol del supervisor es Coordinador."
+        ),
     )
     employment_type = models.CharField(
         _("Tipo de vinculación"),
@@ -179,6 +223,14 @@ class User(AbstractUser):
         if not self.email:
             self.email = None
         super().save(*args, **kwargs)
+
+    def clean(self):
+        """Reject self-supervision (`supervisor == self`, issue #58 A1)."""
+        super().clean()
+        if self.pk is not None and self.supervisor_id == self.pk:
+            raise ValidationError(
+                {"supervisor": _("Un usuario no puede ser supervisor de sí mismo.")}
+            )
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}".strip()
