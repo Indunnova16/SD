@@ -12,15 +12,85 @@ from apps.accounts.permissions import Rol, user_has_rol
 from .models import Certificate, CertificateVerification
 
 
+# ---------------------------------------------------------------------------
+# A7 (issue #58) — filtrado por rol: propio (Ejecutor) / equipo vía
+# `supervisor` FK (Coordinador) / todos (Administrador).
+# ---------------------------------------------------------------------------
+
+#: Valores válidos del query param ``scope`` en `my_certificates`.
+SCOPE_MIO = "mio"
+SCOPE_EQUIPO = "equipo"
+SCOPE_TODOS = "todos"
+
+
+def _certificates_queryset_for_scope(user, scope):
+    """
+    Devuelve el queryset de `Certificate` correspondiente a `scope`,
+    ya resuelto y autorizado para `user` (ver `_resolve_scope`).
+
+    - ``mio``: certificados propios (todos los roles).
+    - ``equipo``: certificados de usuarios con `supervisor=user` (Coordinador
+      o Administrador — un Administrador que además supervisa gente ve su
+      propio equipo con este scope, distinto de `todos`).
+    - ``todos``: TODOS los certificados del sistema (solo Administrador).
+    """
+    if scope == SCOPE_TODOS:
+        return Certificate.objects.select_related("course", "template", "user")
+    if scope == SCOPE_EQUIPO:
+        return Certificate.objects.filter(user__supervisor=user).select_related(
+            "course", "template", "user"
+        )
+    return Certificate.objects.filter(user=user).select_related("course", "template")
+
+
+def _resolve_scope(user, requested_scope):
+    """
+    Valida `requested_scope` contra el `rol` de `user` y degrada a `mio`
+    (el más restrictivo) si el usuario no está autorizado — nunca se filtra
+    "hacia arriba" un scope no permitido (evita fuga de datos por
+    manipulación del query param, ej. un Ejecutor pidiendo `?scope=todos`).
+    """
+    can_view_equipo = user_has_rol(user, Rol.COORDINADOR, Rol.ADMINISTRADOR)
+    can_view_todos = user_has_rol(user, Rol.ADMINISTRADOR)
+
+    if requested_scope == SCOPE_TODOS and can_view_todos:
+        scope = SCOPE_TODOS
+    elif requested_scope == SCOPE_EQUIPO and can_view_equipo:
+        scope = SCOPE_EQUIPO
+    else:
+        scope = SCOPE_MIO
+
+    return scope, can_view_equipo, can_view_todos
+
+
+def _user_can_view_certificate(user, certificate):
+    """
+    True si `user` puede ver/descargar `certificate`: dueño, Administrador
+    (ve todo), o Coordinador que supervisa al dueño del certificado (equipo,
+    vía `User.supervisor` — FK de A1, `related_name='equipo'`).
+    """
+    if certificate.user_id == user.id:
+        return True
+    if user_has_rol(user, Rol.ADMINISTRADOR):
+        return True
+    if user_has_rol(user, Rol.COORDINADOR):
+        return certificate.user.supervisor_id == user.id
+    return False
+
+
 @login_required
 def my_certificates(request):
-    """View user's certificates."""
-    certificates = (
-        Certificate.objects.filter(
-            user=request.user,
-        )
-        .select_related("course", "template")
-        .order_by("-issued_at")
+    """
+    Ver certificados: propios por defecto; `?scope=equipo` (Coordinador ve
+    su equipo vía `supervisor` FK; Administrador ve a quien supervisa
+    directamente) o `?scope=todos` (Administrador, todos los certificados
+    del sistema) — issue #58 sub-item A7.
+    """
+    requested_scope = request.GET.get("scope", SCOPE_MIO)
+    scope, can_view_equipo, can_view_todos = _resolve_scope(request.user, requested_scope)
+
+    certificates = _certificates_queryset_for_scope(request.user, scope).order_by(
+        "-issued_at"
     )
 
     # Filter by status
@@ -32,6 +102,9 @@ def my_certificates(request):
         "certificates": certificates,
         "current_status": status_filter,
         "statuses": Certificate.Status.choices,
+        "current_scope": scope,
+        "can_view_equipo": can_view_equipo,
+        "can_view_todos": can_view_todos,
     }
     return render(request, "certifications/my_certificates.html", context)
 
@@ -44,8 +117,8 @@ def certificate_detail(request, certificate_id):
         pk=certificate_id,
     )
 
-    # Only allow owner or staff to view
-    if certificate.user != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
+    # Owner, Administrador, o Coordinador del equipo del dueño (A7).
+    if not _user_can_view_certificate(request.user, certificate):
         return render(request, "certifications/not_authorized.html", status=403)
 
     context = {
@@ -101,12 +174,14 @@ def verify_certificate(request, certificate_number=None):
 def certificate_download(request, certificate_id):
     """Download certificate file."""
     certificate = get_object_or_404(
-        Certificate,
+        Certificate.objects.select_related("user"),
         pk=certificate_id,
     )
 
-    # Only allow owner or staff
-    if certificate.user != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
+    # Owner, Administrador, o Coordinador del equipo del dueño (A7) — mismo
+    # criterio que certificate_detail, para no dejar un botón "Descargar"
+    # visible en el detalle que luego 403-ee acá.
+    if not _user_can_view_certificate(request.user, certificate):
         return render(request, "certifications/not_authorized.html", status=403)
 
     # Validate certificate status
