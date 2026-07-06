@@ -104,7 +104,7 @@
                                 <li>
                                     <a href="{% url 'lessons_learned:list' %}">💡 Lecciones Aprendidas</a>
                                 </li>
-                                {% if user.is_staff %}
+                                {% if user.rol == 'ADMINISTRADOR' %}
                                     <li>
                                         <a href="{% url 'attendance:mobile_face_qr' %}">📷 Asistencia facial (QR)</a>
                                     </li>
@@ -143,22 +143,22 @@
                                 Sistema
                             </summary>
                             <ul class="p-2 bg-base-100 dark:bg-gray-700 rounded-box w-56">
-                                {% if user.is_staff %}
+                                {% if user.rol == 'ADMINISTRADOR' %}
                                     <li>
                                         <a href="{% url 'accounts:user_list' %}">👥 Gestión de Usuarios</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'courses:parametrizacion' %}">⚙️ Parametrización</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'reports:dashboard' %}">📊 Reportes y Analytics</a>
+                                    </li>
                                 {% endif %}
-                                <li>
-                                    <a href="{% url 'reports:dashboard' %}">📊 Reportes y Analytics</a>
-                                </li>
                                 <li>
                                     <a href="{% url 'notifications:list' %}">🔔 Notificaciones</a>
                                 </li>
                                 <li class="border-t dark:border-gray-600 my-1"></li>
-                                {% if user.is_staff %}
+                                {% if user.rol == 'ADMINISTRADOR' %}
                                     <li>
                                         <a href="{% url 'accounts:help_admin' %}">📖 Manual de Administrador</a>
                                     </li>
@@ -294,7 +294,7 @@
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💬 Charlas Pre-Op</a>
                 <a href="{% url 'lessons_learned:list' %}"
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💡 Lecciones Aprendidas</a>
-                {% if user.is_staff %}
+                {% if user.rol == 'ADMINISTRADOR' %}
                     <a href="{% url 'attendance:mobile_face_qr' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📷 Asistencia facial (QR)</a>
                     <a href="{% url 'attendance:face_event_list' %}"
@@ -310,17 +310,17 @@
                 <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Sistema
                 </div>
-                {% if user.is_staff %}
+                {% if user.rol == 'ADMINISTRADOR' %}
                     <a href="{% url 'accounts:user_list' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">👥 Gestión de Usuarios</a>
                     <a href="{% url 'courses:parametrizacion' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⚙️ Parametrización</a>
+                    <a href="{% url 'reports:dashboard' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📊 Reportes</a>
                 {% endif %}
-                <a href="{% url 'reports:dashboard' %}"
-                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📊 Reportes</a>
                 <a href="{% url 'notifications:list' %}"
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones</a>
-                {% if user.is_staff %}
+                {% if user.rol == 'ADMINISTRADOR' %}
                     <a href="{% url 'accounts:help_admin' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual de Administrador</a>
                 {% else %}
