@@ -21,7 +21,7 @@ class Command(BaseCommand):
                         title=lesson.title,
                         assessment_type="quiz",
                         passing_score=80,
-                        max_attempts=3,
+                        max_attempts=0,
                         course=course,
                         lesson=lesson,
                         created_by=course.created_by,
