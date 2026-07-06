@@ -120,6 +120,42 @@
                         <span class="label-text-alt">Personal operativo usa cédula. Personal profesional/admin usa email.</span>
                     </label>
                 </div>
+                {% if form.rol %}
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Rol de acceso <span class="text-error">*</span></span>
+                        </label>
+                        {{ form.rol }}
+                        {% if form.rol.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.rol.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                        <label class="label">
+                            <span class="label-text-alt">
+                                Se sugiere según el perfil ocupacional (editable). Controla navegación y permisos — independiente del perfil ocupacional.
+                            </span>
+                        </label>
+                    </div>
+                {% endif %}
+                {% if form.supervisor %}
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Supervisor</span>
+                        </label>
+                        {{ form.supervisor }}
+                        {% if form.supervisor.errors %}
+                            <label class="label">
+                                <span class="label-text-alt text-error">{{ form.supervisor.errors.0 }}</span>
+                            </label>
+                        {% endif %}
+                        <label class="label">
+                            <span class="label-text-alt">
+                                Coordinador o Administrador responsable de este usuario (filtra Certificados/Gamificación por equipo).
+                            </span>
+                        </label>
+                    </div>
+                {% endif %}
                 <div class="form-control">
                     <label class="label">
                         <span class="label-text">Tipo de vinculación <span class="text-error">*</span></span>
@@ -288,6 +324,32 @@
         </div>
     </div>
 </form>
+
+{% if form.rol %}
+<script nonce="{{ request.csp_nonce }}">
+(function () {
+    // Prellenado sugerido (pero SIEMPRE editable) de `rol` según
+    // `job_profile` (issue #58, sub-item A2). El mapeo viene del server
+    // (form.rol_suggestions_json, misma decisión de Miguel que la
+    // migración 0016_backfill_user_rol.py) — value=null significa "sin
+    // sugerencia automática", se limpia el selector para forzar una
+    // elección explícita del Administrador. Esto es solo asistencia de
+    // UI: si el JS no corre (o el admin lo desactiva después), el
+    // servidor exige la misma elección explícita en `clean()`.
+    const jobProfileSelect = document.getElementById('id_job_profile');
+    const rolSelect = document.getElementById('id_rol');
+    if (!jobProfileSelect || !rolSelect) {
+        return;
+    }
+    const rolSugeridoPorJobProfileId = {{ form.rol_suggestions_json|safe }};
+
+    jobProfileSelect.addEventListener('change', function () {
+        const suggestion = rolSugeridoPorJobProfileId[this.value];
+        rolSelect.value = suggestion || '';
+    });
+})();
+</script>
+{% endif %}
 
 {% if form.signature %}
 <script>

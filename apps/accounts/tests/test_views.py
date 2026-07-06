@@ -433,6 +433,13 @@ class UserEditSignatureTests(TestCase):
             "document_number": self.target.document_number,
             "phone": "",
             "job_position": self.target.job_position,
+            # `target` no tiene `job_profile` (FK) seteado en este fixture,
+            # solo el texto libre `job_position="Liniero"` — cae en el
+            # bucket "sin sugerencia automática" de SD#58/A2, así que el
+            # form ahora exige `rol` explícito para validar. Estos tests
+            # solo verifican persistencia de `signature`, no la validación
+            # de `rol` en sí (eso vive en test_issue_58_a2.py).
+            "rol": "EJECUTOR",
             "employment_type": "direct",
             "hire_date": "2024-01-01",
             "status": "active",
