@@ -36,7 +36,13 @@ class UserFactory(DjangoModelFactory):
     document_type = "CC"
     document_number = factory.Sequence(lambda n: f"{20000000 + n}")
     job_position = "Technician"
-    job_profile = "LINIERO"
+    # `job_profile` es FK a `courses.JobProfileType` (nullable) — issue #58
+    # (PLAN F2): el enum `User.JobProfile` (TextChoices) es código muerto, y
+    # el string "LINIERO" NUNCA fue un valor válido acá (ValueError: Cannot
+    # assign — pre-existente, ajeno a RBAC, mismo patrón que A4 documentó en
+    # otras 9 apps). None es el valor seguro que ya usan el resto de
+    # factories/fixtures del repo.
+    job_profile = None
     hire_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     is_active = True
 
@@ -54,6 +60,11 @@ class AdminUserFactory(UserFactory):
     email = factory.Sequence(lambda n: f"notifadmin{n}@test.com")
     is_staff = True
     is_superuser = True
+    # RBAC (issue #58, A10): `NotificationTemplateViewSet` ahora exige
+    # `rol == ADMINISTRADOR` (ver `apps.notifications.api.permissions
+    # .IsAdministrador`) — `is_staff`/`is_superuser` solos ya NO alcanzan
+    # (decisión de Miguel #2 del PLAN: `rol` es la única fuente de verdad).
+    rol = User.Rol.ADMINISTRADOR
 
 
 class NotificationTemplateFactory(DjangoModelFactory):
