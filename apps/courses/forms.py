@@ -382,13 +382,10 @@ class LessonBuilderForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        lesson_type = cleaned_data.get("lesson_type")
-        scheduled_date = cleaned_data.get("scheduled_date")
-        if lesson_type == Lesson.Type.ATTENDANCE and not scheduled_date:
-            self.add_error(
-                "scheduled_date",
-                _("La fecha y hora agendada es obligatoria para lecciones de Asistencia."),
-            )
+        # scheduled_date es opcional incluso para lecciones de Asistencia
+        # (decision de Miguel, SD#57.1): antes se exigia aqui, pero el campo
+        # ya es null=True/blank=True a nivel de modelo y el cliente pidio
+        # poder guardar una leccion de Asistencia sin fecha agendada.
         return cleaned_data
 
 
@@ -441,7 +438,7 @@ class QuickAssessmentForm(forms.Form):
     )
     max_attempts = forms.IntegerField(
         label=_("Intentos maximos"),
-        initial=3,
+        initial=0,
         min_value=0,
         widget=forms.NumberInput(attrs={"class": "input input-bordered w-full", "min": "0"}),
         help_text=_("0 = intentos ilimitados"),

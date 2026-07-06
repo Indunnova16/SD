@@ -1214,7 +1214,7 @@ def builder_add_lesson(request, course_id, module_id):
                             title=lesson.title,
                             assessment_type="quiz",
                             passing_score=80,
-                            max_attempts=3,
+                            max_attempts=0,
                             course=course,
                             lesson=lesson,
                             created_by=request.user,
@@ -1270,14 +1270,26 @@ def builder_add_lesson(request, course_id, module_id):
                                     order=1,
                                 )
                             elif q_type == "matching":
+                                match_pairs = []
                                 for j, pair in enumerate(qdata.get("pairs", [])):
+                                    left = pair.get("left", "")
+                                    right = pair.get("right", "")
                                     Answer.objects.create(
                                         question=question,
-                                        text=pair.get("left", ""),
-                                        feedback=pair.get("right", ""),
+                                        text=left,
+                                        feedback=right,
                                         is_correct=True,
                                         order=j,
                                     )
+                                    match_pairs.append({"left": left, "right": right})
+                                # SD#57.3: sin esto, question.metadata queda {} y
+                                # AssessmentService._grade_objective_answer (que
+                                # arma correct_map EXCLUSIVAMENTE desde metadata)
+                                # marca SIEMPRE incorrecto sin importar la
+                                # respuesta -- mismo patron que ya usan
+                                # builder_add_question/builder_edit_question.
+                                question.metadata = {"match_pairs": match_pairs}
+                                question.save(update_fields=["metadata"])
                 except Exception as e:
                     import logging
 
@@ -1352,7 +1364,7 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                                 title=lesson.title,
                                 assessment_type="quiz",
                                 passing_score=80,
-                                max_attempts=3,
+                                max_attempts=0,
                                 course=course,
                                 lesson=lesson,
                                 created_by=request.user,

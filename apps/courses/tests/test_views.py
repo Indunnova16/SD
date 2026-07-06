@@ -258,8 +258,16 @@ class BuilderAddAttendanceLessonViewTests(TestCase):
             kwargs={"course_id": self.course.id, "module_id": self.module.id},
         )
 
-    def test_attendance_without_scheduled_date_is_rejected(self):
-        """Reproduce: POST attendance WITHOUT scheduled_date -> no lesson created."""
+    def test_attendance_without_scheduled_date_is_created(self):
+        """SD#57.1: scheduled_date ya NO es obligatorio para Asistencia (decision
+        de Miguel, cambio de requisito). POST attendance SIN scheduled_date ->
+        la leccion SE CREA con scheduled_date=None.
+
+        (Este test invierte el comportamiento anterior, pinneado por
+        test_attendance_without_scheduled_date_is_rejected antes de SD#57:
+        antes clean() rechazaba el POST cuando faltaba la fecha; ahora se
+        permite guardar sin fecha.)
+        """
         self.client.force_login(self.staff)
         before = Lesson.objects.filter(
             module=self.module, lesson_type=Lesson.Type.ATTENDANCE
@@ -271,19 +279,18 @@ class BuilderAddAttendanceLessonViewTests(TestCase):
                 "lesson_type": "attendance",
                 "is_mandatory": "on",
                 "duration": "0",
-                # scheduled_date intentionally omitted -> clean() must reject
+                # scheduled_date intentionally omitted -> ahora debe permitirse
             },
             HTTP_HX_REQUEST="true",
         )
-        # The view re-renders the form (does not raise) and creates nothing.
         self.assertEqual(resp.status_code, 200)
         after = Lesson.objects.filter(
             module=self.module, lesson_type=Lesson.Type.ATTENDANCE
         ).count()
-        self.assertEqual(after, before)
-        self.assertFalse(
-            Lesson.objects.filter(module=self.module, title="Asistencia sin fecha").exists()
-        )
+        self.assertEqual(after, before + 1)
+        lesson = Lesson.objects.get(module=self.module, title="Asistencia sin fecha")
+        self.assertEqual(lesson.lesson_type, Lesson.Type.ATTENDANCE)
+        self.assertIsNone(lesson.scheduled_date)
 
     def test_attendance_with_scheduled_date_is_created(self):
         """Happy path: attendance + scheduled_date persists with type attendance."""

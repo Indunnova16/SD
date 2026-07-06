@@ -78,7 +78,7 @@ class Assessment(models.Model):
     )
     max_attempts = models.PositiveIntegerField(
         _("Intentos máximos"),
-        default=3,
+        default=0,
         help_text=_("0 = intentos ilimitados"),
     )
     shuffle_questions = models.BooleanField(

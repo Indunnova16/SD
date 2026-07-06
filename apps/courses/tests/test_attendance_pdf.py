@@ -116,10 +116,14 @@ class AttendanceFormTests(TestCase):
         self.assertTrue(form.is_valid(), form.errors)
         self.assertIsNotNone(form.cleaned_data["scheduled_date"])
 
-    def test_attendance_without_scheduled_date_is_invalid(self):
+    def test_attendance_without_scheduled_date_is_valid(self):
+        """SD#57.1: scheduled_date ya no es obligatorio para Asistencia
+        (decision de Miguel, cambio de requisito) -- invierte el
+        comportamiento anterior pinneado por
+        test_attendance_without_scheduled_date_is_invalid antes de SD#57."""
         form = LessonBuilderForm(data=self._base_data(scheduled_date=""))
-        self.assertFalse(form.is_valid())
-        self.assertIn("scheduled_date", form.errors)
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertIsNone(form.cleaned_data.get("scheduled_date"))
 
     def test_video_lesson_without_scheduled_date_is_valid(self):
         form = LessonBuilderForm(
