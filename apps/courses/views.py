@@ -5,6 +5,7 @@ Web views for courses app.
 import base64
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -44,6 +45,25 @@ from .services import EnrollmentService
 from .utils import get_client_ip
 
 
+def _target_profiles_contains(field_prefix, profile_code):
+    """Q object para `<field_prefix>__contains=[profile_code]`, con fallback
+    SQLite (issue #58, sub-item A6).
+
+    El lookup `contains` de `JSONField` solo esta soportado en Postgres/
+    MySQL/Oracle — NO en SQLite (usado por `config/settings/test.py`,
+    `django.db.utils.NotSupportedError`). Mismo patron ya usado en
+    `apps.learning_paths.api.views` / `apps.lessons_learned.api.views` (el
+    filtro `?profile=` de esas APIs): en Postgres (prod) se usa el operador
+    real de contencion jsonb; en SQLite (tests) se cae a `icontains` sobre
+    el JSON serializado (aproximado, pero suficiente dado que ningun codigo
+    real de `job_profile_types` es substring de otro).
+    """
+    db_engine = settings.DATABASES["default"]["ENGINE"]
+    if "postgresql" in db_engine:
+        return Q(**{f"{field_prefix}__contains": [profile_code]})
+    return Q(**{f"{field_prefix}__icontains": profile_code})
+
+
 @login_required
 def course_list(request):
     """List all published courses."""
@@ -53,6 +73,20 @@ def course_list(request):
         .prefetch_related("modules")
         .annotate(modules_count=Count("modules"))
     )
+
+    # RBAC — filtrado por rol (issue #58, sub-item A6): Ejecutor (o rol sin
+    # asignar tras el backfill) ve solo el subconjunto de cursos dirigidos a
+    # su `job_profile` (via `target_profiles`), + los cursos sin perfil
+    # objetivo asignado (target_profiles=[], "genéricos", visibles a todos).
+    # Coordinador/Administrador ven el catálogo completo sin filtrar.
+    if not user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR):
+        profile_code = request.user.job_profile.code if request.user.job_profile else None
+        if profile_code:
+            courses = courses.filter(
+                Q(target_profiles=[]) | _target_profiles_contains("target_profiles", profile_code)
+            )
+        else:
+            courses = courses.filter(target_profiles=[])
 
     # Filtering
     category_slug = request.GET.get("category")

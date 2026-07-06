@@ -2,15 +2,30 @@
 Web views for assessments app.
 """
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.accounts.permissions import Rol, user_has_rol
+
 from .models import Answer, Assessment, AssessmentAttempt, AttemptAnswer, Question
 from .services import AssessmentService
+
+
+def _target_profiles_contains(field_prefix, profile_code):
+    """Q object para `<field_prefix>__contains=[profile_code]`, con fallback
+    SQLite (issue #58, sub-item A6) — ver docstring gemelo en
+    `apps.courses.views._target_profiles_contains`. El lookup `contains` de
+    `JSONField` no esta soportado en SQLite (`config/settings/test.py`)."""
+    db_engine = settings.DATABASES["default"]["ENGINE"]
+    if "postgresql" in db_engine:
+        return Q(**{f"{field_prefix}__contains": [profile_code]})
+    return Q(**{f"{field_prefix}__icontains": profile_code})
 
 
 @login_required
@@ -19,6 +34,28 @@ def assessment_list(request):
     assessments = Assessment.objects.filter(status=Assessment.Status.PUBLISHED).select_related(
         "course", "created_by"
     )
+
+    # RBAC — filtrado por rol (issue #58, sub-item A6): Ejecutor (o rol sin
+    # asignar) ve solo evaluaciones cuyo curso (directo via `course`, o
+    # heredado via `lesson.module.course`) esté dirigido a su `job_profile`
+    # (via `target_profiles`), + evaluaciones sin curso targeteado
+    # (standalone, o curso/ruta genérica sin perfiles asignados — visibles a
+    # todos). Coordinador/Administrador ven todas las evaluaciones.
+    if not user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR):
+        profile_code = request.user.job_profile.code if request.user.job_profile else None
+        generic = (
+            Q(course__isnull=True, lesson__isnull=True)
+            | Q(course__isnull=False, course__target_profiles=[])
+            | Q(lesson__isnull=False, lesson__module__course__target_profiles=[])
+        )
+        if profile_code:
+            assessments = assessments.filter(
+                generic
+                | _target_profiles_contains("course__target_profiles", profile_code)
+                | _target_profiles_contains("lesson__module__course__target_profiles", profile_code)
+            )
+        else:
+            assessments = assessments.filter(generic)
 
     # Filter by course
     course_id = request.GET.get("course")

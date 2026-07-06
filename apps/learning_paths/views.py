@@ -2,16 +2,29 @@
 Web views for learning paths app.
 """
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
 from apps.courses.models import Enrollment
 
 from .forms import LearningPathCreateForm
 from .models import LearningPath, PathAssignment
+
+
+def _target_profiles_contains(field_prefix, profile_code):
+    """Q object para `<field_prefix>__contains=[profile_code]`, con fallback
+    SQLite (issue #58, sub-item A6) — ver docstring gemelo en
+    `apps.courses.views._target_profiles_contains`. El lookup `contains` de
+    `JSONField` no esta soportado en SQLite (`config/settings/test.py`)."""
+    db_engine = settings.DATABASES["default"]["ENGINE"]
+    if "postgresql" in db_engine:
+        return Q(**{f"{field_prefix}__contains": [profile_code]})
+    return Q(**{f"{field_prefix}__icontains": profile_code})
 
 
 @login_required
@@ -20,6 +33,19 @@ def learning_path_list(request):
     paths = LearningPath.objects.filter(status=LearningPath.Status.ACTIVE).prefetch_related(
         "path_courses", "path_courses__course"
     )
+
+    # RBAC — filtrado por rol (issue #58, sub-item A6): Ejecutor (o rol sin
+    # asignar) ve solo el subconjunto de rutas dirigidas a su `job_profile`
+    # (via `target_profiles`), + rutas sin perfil objetivo (genéricas,
+    # visibles a todos). Coordinador/Administrador ven todas las rutas.
+    if not user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR):
+        profile_code = request.user.job_profile.code if request.user.job_profile else None
+        if profile_code:
+            paths = paths.filter(
+                Q(target_profiles=[]) | _target_profiles_contains("target_profiles", profile_code)
+            )
+        else:
+            paths = paths.filter(target_profiles=[])
 
     # Filter by profile
     profile = request.GET.get("profile")
@@ -189,12 +215,9 @@ def my_learning_paths(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="learning_paths:list")
 def learning_path_create(request):
-    """Create a new learning path (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("learning_paths:list")
-
+    """Create a new learning path (Administrador only)."""
     form = LearningPathCreateForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
