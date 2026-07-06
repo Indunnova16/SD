@@ -412,9 +412,16 @@ class MigratedViewsRegressionTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_attendance_face_event_list_ejecutor_bloqueado(self):
+        """Actualizado por issue #58 sub-item A8: `face_event_list` dejó de
+        usar `_staff_required` (ADMINISTRADOR-only vía `user_passes_test` →
+        302) y ahora usa `require_rol(COORDINADOR, ADMINISTRADOR,
+        raise_exception=True)` → 403 explícito, ampliando además el acceso a
+        COORDINADOR. Ver `apps/accounts/tests/test_issue_58_a8.py` para el
+        resto de la regresión de A8 sobre este módulo (preop_talks,
+        lessons_learned, attendance)."""
         self.client.force_login(self.ejecutor)
         response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     # --- 7. reports/views.py — @user_passes_test(_is_administrador) -----
 

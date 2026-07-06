@@ -2,16 +2,22 @@
 Vistas de asistencia con reconocimiento facial.
 
 - `mobile_face_checkin`  : kiosko PÚBLICO (sin login). Identifica 1:N por selfie.
-- `mobile_face_qr`       : QR a la URL del kiosko (staff).
-- `face_event_list`      : auditoría de marcaciones (staff).
-- `reindex_user_face`    : (re)indexa la foto de un usuario en Rekognition (staff).
+- `mobile_face_qr`       : QR a la URL del kiosko (rol=ADMINISTRADOR).
+- `face_event_list`      : auditoría de marcaciones — listado ADMINISTRATIVO
+                           (issue #58, A8): oculto para Ejecutor (403), completo
+                           para Coordinador/Administrador. NO afecta el kiosko
+                           público (`mobile_face_checkin`), que sigue siendo la
+                           vía por la que el Ejecutor marca su propia asistencia.
+- `reindex_user_face`    : (re)indexa la foto de un usuario en Rekognition
+                           (rol=ADMINISTRADOR, sin cambio en A8 — fuera del
+                           alcance del "listado" que pide el PLAN).
 """
 
 import logging
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,7 +25,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from apps.accounts.permissions import Rol, user_has_rol
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
 
 from .models import FaceCheckEvent
 from .services import AttendanceService
@@ -175,11 +181,20 @@ def mobile_face_qr(request):
     )
 
 
-# ───────────────────────── Auditoría (staff) ─────────────────────────
+# ────────────────── Auditoría (Coordinador/Administrador) ──────────────────
 
 
-@_staff_required
+@login_required
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def face_event_list(request):
+    """Listado ADMINISTRATIVO de marcaciones (issue #58, A8).
+
+    Oculto para Ejecutor (403 explícito, ver PLAN A8), completo para
+    Coordinador/Administrador — a diferencia de `mobile_face_qr` y
+    `reindex_user_face` (abajo), que siguen restringidos a ADMINISTRADOR vía
+    `_staff_required` (sin cambio, fuera del alcance de A8: el PLAN solo pide
+    ampliar el listado, no estas otras dos acciones de configuración).
+    """
     qs = FaceCheckEvent.objects.select_related("user").order_by("-created_at")
 
     status = request.GET.get("status", "").strip()

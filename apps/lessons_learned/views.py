@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from apps.accounts.permissions import Rol, user_has_rol
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
 from apps.lessons_learned.models import Category, LessonLearned
 from apps.lessons_learned.services import (
     LessonCommentService,
@@ -19,8 +19,14 @@ from apps.lessons_learned.services import (
 
 @login_required
 @require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def lesson_list(request):
-    """Lesson list page."""
+    """Lesson list page.
+
+    Listado ADMINISTRATIVO (issue #58, A8): oculto para Ejecutor (403), completo
+    para Coordinador/Administrador. No afecta `my_lessons` (propias lecciones
+    del Ejecutor) ni `lesson_detail`/`lesson_create`/`lesson_edit` — ver PLAN A8.
+    """
     categories = Category.objects.filter(is_active=True).order_by("name")
 
     context = {
@@ -36,8 +42,15 @@ def lesson_list(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def lesson_grid(request):
-    """Get lesson grid (HTMX partial)."""
+    """Get lesson grid (HTMX partial).
+
+    Mismo gate que `lesson_list` (issue #58, A8) — tiene su propia URL
+    (`lessons_learned:grid`) además de ser invocada internamente por
+    `lesson_list`; sin este gate un Ejecutor podría ver el listado completo
+    pegándole directo a esa URL (hueco visible, scope ampliado dentro de A8).
+    """
     category_id = request.GET.get("category")
     severity = request.GET.get("severity")
     lesson_type = request.GET.get("type")
