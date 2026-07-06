@@ -332,6 +332,7 @@ class ReassignEnrollmentViewReissueTest(TransactionTestCase):
             job_position="Administrator",
             hire_date=date(2020, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.user = User.objects.create_user(
             email="user-issue43-reassign@test.com",

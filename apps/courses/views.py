@@ -38,6 +38,8 @@ from .models import (
     LessonProgress,
     Module,
 )
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
+
 from .services import EnrollmentService
 from .utils import get_client_ip
 
@@ -242,7 +244,7 @@ def lesson_view(request, course_id, lesson_id):
             user=request.user,
         ).first()
         is_instructor = lesson.metadata.get("instructor_id") == request.user.id
-        if request.user.is_staff:
+        if user_has_rol(request.user, Rol.ADMINISTRADOR):
             summary = _build_attendance_summary(course, lesson)
             attendance_context = {
                 "attendance_summary": summary["rows"],
@@ -521,13 +523,10 @@ def reenable_course(request, enrollment_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 @transaction.atomic
 def course_create(request):
     """Create a new course (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     form = CourseCreateForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
@@ -552,12 +551,9 @@ def course_create(request):
 
 
 @login_required
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def category_list(request):
     """List all categories (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     categories = (
         Category.objects.annotate(course_count=Count("courses"))
         .order_by("order", "name")
@@ -569,13 +565,10 @@ def category_list(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 @transaction.atomic
 def category_create(request):
     """Create a new category (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     form = CategoryForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -599,13 +592,10 @@ def category_create(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 @transaction.atomic
 def category_edit(request, category_id):
     """Edit a category (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     category = get_object_or_404(Category, id=category_id)
     form = CategoryForm(request.POST or None, instance=category)
 
@@ -623,12 +613,9 @@ def category_edit(request, category_id):
 
 @login_required
 @require_http_methods(["POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def category_delete(request, category_id):
     """Delete a category (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     category = get_object_or_404(Category, id=category_id)
 
     # Check if category has courses
@@ -655,12 +642,9 @@ def category_delete(request, category_id):
 
 @login_required
 @require_http_methods(["POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def category_toggle_active(request, category_id):
     """Toggle category is_active status (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     category = get_object_or_404(Category, id=category_id)
     category.is_active = not category.is_active
     category.save(update_fields=["is_active"])
@@ -683,12 +667,13 @@ def category_toggle_active(request, category_id):
 
 
 @login_required
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def parametrizacion_hub(request):
     """Parametrizacion hub - central admin page for categories, courses and profiles."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     # Stats
     total_categories = Category.objects.count()
     active_categories = Category.objects.filter(is_active=True).count()
@@ -733,12 +718,9 @@ def parametrizacion_hub(request):
 
 
 @login_required
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def course_admin_list(request):
     """Admin course list for parametrización (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     courses = Course.objects.select_related("category", "created_by").order_by("title")
 
     # Filters
@@ -780,12 +762,9 @@ def course_admin_list(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def course_edit_params(request, course_id):
     """Edit course parameters from parametrización (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("courses:list")
-
     course = get_object_or_404(Course, id=course_id)
     form = CourseEditParamsForm(request.POST or None, instance=course)
 
@@ -800,11 +779,9 @@ def course_edit_params(request, course_id):
 
 @login_required
 @require_http_methods(["POST"])
+@require_rol(Rol.ADMINISTRADOR, json_only=True)
 def course_toggle_status(request, course_id):
     """Toggle course status (draft/published/archived) via HTMX (staff only)."""
-    if not request.user.is_staff:
-        return JsonResponse({"error": "No autorizado"}, status=403)
-
     course = get_object_or_404(Course, id=course_id)
     new_status = request.POST.get("status")
 
@@ -833,12 +810,13 @@ def course_toggle_status(request, course_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def course_full_edit(request, course_id):
     """Full course edit from Parametrizacion (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     course = get_object_or_404(Course, id=course_id)
     form = CourseFullEditForm(request.POST or None, request.FILES or None, instance=course)
 
@@ -855,12 +833,13 @@ def course_full_edit(request, course_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def course_delete(request, course_id):
     """Delete a course with confirmation (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     course = get_object_or_404(Course, id=course_id)
 
     if request.method == "POST":
@@ -898,12 +877,13 @@ def course_delete(request, course_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def profile_type_create(request):
     """Create a new job profile type (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     form = JobProfileTypeForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -917,12 +897,13 @@ def profile_type_create(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def profile_type_edit(request, profile_id):
     """Edit a job profile type (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     profile = get_object_or_404(JobProfileType, id=profile_id)
     form = JobProfileTypeForm(request.POST or None, instance=profile)
 
@@ -937,12 +918,13 @@ def profile_type_edit(request, profile_id):
 
 @login_required
 @require_http_methods(["POST"])
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="courses:list",
+    message="No tiene permisos para acceder a esta pagina.",
+)
 def profile_type_delete(request, profile_id):
     """Delete a job profile type (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta pagina.")
-        return redirect("courses:list")
-
     profile = get_object_or_404(JobProfileType, id=profile_id)
 
     # Check if any courses use this profile
@@ -963,11 +945,9 @@ def profile_type_delete(request, profile_id):
 
 @login_required
 @require_http_methods(["POST"])
+@require_rol(Rol.ADMINISTRADOR, json_only=True)
 def profile_type_toggle_active(request, profile_id):
     """Toggle profile type active status (staff only)."""
-    if not request.user.is_staff:
-        return JsonResponse({"error": "No autorizado"}, status=403)
-
     profile = get_object_or_404(JobProfileType, id=profile_id)
     profile.is_active = not profile.is_active
     profile.save(update_fields=["is_active"])
@@ -1002,8 +982,8 @@ def _parse_points(raw, default="1"):
 
 
 def _staff_required(request):
-    """Check if user is staff, return error response or None."""
-    if not request.user.is_staff:
+    """Check if user has rol=ADMINISTRADOR, return error response or None."""
+    if not user_has_rol(request.user, Rol.ADMINISTRADOR):
         if request.headers.get("HX-Request"):
             return JsonResponse({"error": "No autorizado"}, status=403)
         messages.error(request, "No tiene permisos para acceder a esta pagina.")
@@ -1597,7 +1577,9 @@ def builder_edit_assessment(request, course_id, assessment_id):
     assessment = get_object_or_404(Assessment, id=assessment_id, course=course)
 
     # Permission: staff OR creator
-    if not (request.user.is_staff or assessment.created_by_id == request.user.id):
+    if not (
+        user_has_rol(request.user, Rol.ADMINISTRADOR) or assessment.created_by_id == request.user.id
+    ):
         if request.headers.get("HX-Request"):
             return JsonResponse({"error": "No autorizado"}, status=403)
         messages.error(request, "No tiene permisos para editar esta evaluacion.")
@@ -2002,7 +1984,7 @@ def attendance_lesson_view(request, course_id, lesson_id):
 
     # Admin attendance summary (SD#40): staff see the per-session roster with
     # derived Presente/Ausente status, totals and attendance percentage.
-    if request.user.is_staff:
+    if user_has_rol(request.user, Rol.ADMINISTRADOR):
         summary = _build_attendance_summary(course, lesson)
         context.update(
             {

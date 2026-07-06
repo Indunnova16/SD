@@ -79,6 +79,12 @@ def _make_user(is_staff=False, **kwargs):
         "hire_date": date(2024, 1, 1),
         "is_staff": is_staff,
     }
+    # issue #58 (RBAC): is_staff ya no gatea nada de negocio, el gating lee
+    # `rol`. Un `_make_user(is_staff=True)` en estos tests representa al
+    # usuario admin/staff del escenario -> le asignamos rol=ADMINISTRADOR
+    # tambien, salvo que el caller ya haya pasado `rol` explicito.
+    if is_staff:
+        defaults.setdefault("rol", User.Rol.ADMINISTRADOR)
     defaults.update(kwargs)
     return User.objects.create_user(**defaults)
 

@@ -2,12 +2,12 @@
 Views for gamification app.
 """
 
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET, require_POST
 
+from apps.accounts.permissions import Rol, require_rol
 from apps.gamification.models import (
     Achievement,
     Badge,
@@ -375,14 +375,16 @@ def redemptions_history(request):
 # ============================================================================
 
 
-@staff_member_required
+@login_required
+@require_rol(Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
 def admin_dashboard(request):
     """Admin gamification dashboard."""
     return render(request, "gamification/admin/dashboard.html")
 
 
-@staff_member_required
+@login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
 def admin_analytics(request):
     """Get admin analytics (HTMX partial)."""
     data = GamificationDashboardService.get_admin_analytics()
@@ -393,8 +395,9 @@ def admin_analytics(request):
     )
 
 
-@staff_member_required
+@login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="gamification:dashboard")
 def admin_top_earners(request):
     """Get top earners this week (HTMX partial)."""
     data = GamificationDashboardService.get_admin_analytics()

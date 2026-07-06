@@ -53,11 +53,18 @@ class UserFactory(DjangoModelFactory):
 
 
 class AdminUserFactory(UserFactory):
-    """Factory for admin users."""
+    """Factory for admin users.
+
+    `rol=ADMINISTRADOR` (issue #58, RBAC): el gating de negocio ya no lee
+    `is_staff`/`is_superuser` sino `user.rol` — se mantienen ambos flags
+    porque siguen dando acceso a `/admin/` de Django, pero un
+    `AdminUserFactory()` debe representar tambien al rol de acceso real.
+    """
 
     email = factory.Sequence(lambda n: f"admin{n}@test.com")
     is_staff = True
     is_superuser = True
+    rol = User.Rol.ADMINISTRADOR
 
 
 class PointCategoryFactory(DjangoModelFactory):

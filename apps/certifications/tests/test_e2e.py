@@ -78,6 +78,7 @@ class CertificadosE2ETest(TransactionTestCase):
             job_position="Administrator",
             hire_date=date(2020, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         # Student — will complete the course and download the cert.
         self.student = User.objects.create_user(

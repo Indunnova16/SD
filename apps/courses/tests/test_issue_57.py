@@ -46,6 +46,7 @@ class BuilderMatchingQuestionGradingIssue57Tests(TestCase):
             job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.student = User.objects.create_user(
             email="student_sd57@test.com",
@@ -185,6 +186,7 @@ class BuilderQuizAssessmentMaxAttemptsIssue57Tests(TestCase):
             job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.category = Category.objects.create(
             name="Cat SD57B",

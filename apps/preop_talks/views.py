@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.models import User
+from apps.accounts.permissions import Rol, user_has_rol
 from apps.preop_talks.forms import TalkTemplateForm
 from apps.preop_talks.models import PreopTalk, TalkAttendee, TalkTemplate
 from apps.preop_talks.services import PreopTalkService, TalkAttendeeService
@@ -140,7 +141,7 @@ def talk_conduct(request, talk_id):
     )
 
     # Only conductor can access
-    if talk.conducted_by != request.user and not request.user.is_staff:
+    if talk.conducted_by != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         messages.error(request, "No tienes permiso para conducir esta charla")
         return redirect("preop_talks:detail", talk_id=talk.id)
 
@@ -154,7 +155,7 @@ def start_talk(request, talk_id):
     """Start a talk."""
     talk = get_object_or_404(PreopTalk, id=talk_id)
 
-    if talk.conducted_by != request.user and not request.user.is_staff:
+    if talk.conducted_by != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return HttpResponse("No autorizado", status=403)
 
     gps_lat = request.POST.get("gps_latitude")
@@ -178,7 +179,7 @@ def complete_talk(request, talk_id):
     """Complete a talk."""
     talk = get_object_or_404(PreopTalk, id=talk_id)
 
-    if talk.conducted_by != request.user and not request.user.is_staff:
+    if talk.conducted_by != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return HttpResponse("No autorizado", status=403)
 
     notes = request.POST.get("notes", "")

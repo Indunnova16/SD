@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from apps.accounts.models import User
+from apps.accounts.permissions import Rol, user_has_rol
 from apps.certifications.models import Certificate
 from apps.courses.models import Category, Course, Enrollment
 from apps.learning_paths.models import PathAssignment
@@ -473,8 +474,9 @@ from apps.reports.models import GeneratedReport, ReportTemplate, ScheduledReport
 from apps.reports.services import ReportService, ScheduledReportService
 
 
-def is_staff(user):
-    return user.is_staff
+def _is_administrador(user):
+    """Rol check para @user_passes_test (issue #58, ex-is_staff)."""
+    return user_has_rol(user, Rol.ADMINISTRADOR)
 
 
 @login_required
@@ -560,7 +562,7 @@ def delete_report(request, report_id):
 
 
 @login_required
-@user_passes_test(is_staff)
+@user_passes_test(_is_administrador)
 @require_GET
 def scheduled_list(request):
     """Get scheduled reports list."""
@@ -575,7 +577,7 @@ def scheduled_list(request):
 
 
 @login_required
-@user_passes_test(is_staff)
+@user_passes_test(_is_administrador)
 @require_POST
 def schedule_create(request):
     """Create a scheduled report."""
@@ -612,7 +614,7 @@ def schedule_create(request):
 
 
 @login_required
-@user_passes_test(is_staff)
+@user_passes_test(_is_administrador)
 @require_POST
 def schedule_toggle(request, schedule_id):
     """Toggle scheduled report active status."""

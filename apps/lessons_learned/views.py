@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
+from apps.accounts.permissions import Rol, user_has_rol
 from apps.lessons_learned.models import Category, LessonLearned
 from apps.lessons_learned.services import (
     LessonCommentService,
@@ -114,7 +115,7 @@ def lesson_edit(request, lesson_id):
     lesson = get_object_or_404(LessonLearned, id=lesson_id)
 
     # Check permissions
-    if lesson.created_by != request.user and not request.user.is_staff:
+    if lesson.created_by != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         messages.error(request, "No tienes permiso para editar esta lección")
         return redirect("lessons_learned:detail", lesson_id=lesson.id)
 
@@ -168,7 +169,7 @@ def submit_for_review(request, lesson_id):
 @require_POST
 def approve_lesson(request, lesson_id):
     """Approve a lesson (staff only)."""
-    if not request.user.is_staff:
+    if not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return HttpResponse("No autorizado", status=403)
 
     lesson = get_object_or_404(LessonLearned, id=lesson_id)
@@ -187,7 +188,7 @@ def approve_lesson(request, lesson_id):
 @require_POST
 def reject_lesson(request, lesson_id):
     """Reject a lesson (staff only)."""
-    if not request.user.is_staff:
+    if not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return HttpResponse("No autorizado", status=403)
 
     lesson = get_object_or_404(LessonLearned, id=lesson_id)
