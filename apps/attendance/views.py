@@ -19,6 +19,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from apps.accounts.permissions import Rol, user_has_rol
+
 from .models import FaceCheckEvent
 from .services import AttendanceService
 
@@ -27,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 def _staff_required(view):
-    """Decorator: solo usuarios staff (patrón del repo)."""
-    return user_passes_test(lambda u: u.is_authenticated and u.is_staff)(view)
+    """Decorator: solo usuarios con rol=ADMINISTRADOR (issue #58, ex-staff)."""
+    return user_passes_test(lambda u: user_has_rol(u, Rol.ADMINISTRADOR))(view)
 
 
 # ───────────────────────── Kiosko público ─────────────────────────

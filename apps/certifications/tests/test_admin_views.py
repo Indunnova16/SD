@@ -34,6 +34,7 @@ class _BaseAdminViewsTests(TestCase):
             job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.non_staff = User.objects.create_user(
             email="non-staff-tpl@example.com",

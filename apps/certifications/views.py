@@ -7,6 +7,8 @@ from django.http import FileResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
+from apps.accounts.permissions import Rol, user_has_rol
+
 from .models import Certificate, CertificateVerification
 
 
@@ -43,7 +45,7 @@ def certificate_detail(request, certificate_id):
     )
 
     # Only allow owner or staff to view
-    if certificate.user != request.user and not request.user.is_staff:
+    if certificate.user != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return render(request, "certifications/not_authorized.html", status=403)
 
     context = {
@@ -104,7 +106,7 @@ def certificate_download(request, certificate_id):
     )
 
     # Only allow owner or staff
-    if certificate.user != request.user and not request.user.is_staff:
+    if certificate.user != request.user and not user_has_rol(request.user, Rol.ADMINISTRADOR):
         return render(request, "certifications/not_authorized.html", status=403)
 
     # Validate certificate status
@@ -160,8 +162,8 @@ from .services import CertificateTemplateService  # noqa: E402
 
 
 def _staff_required(view):
-    """Decorator: only staff users can access."""
-    return user_passes_test(lambda u: u.is_authenticated and u.is_staff)(view)
+    """Decorator: only users with rol=ADMINISTRADOR can access."""
+    return user_passes_test(lambda u: user_has_rol(u, Rol.ADMINISTRADOR))(view)
 
 
 @_staff_required

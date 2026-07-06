@@ -52,6 +52,7 @@ class BuilderAddQuizLessonIssue38Tests(TestCase):
             job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.category = Category.objects.create(
             name="Cat SD38",
@@ -387,6 +388,7 @@ class BuilderEditExistingQuestionIssue38Tests(TestCase):
             job_profile=None,
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.category = Category.objects.create(
             name="Cat SD38 Edit",

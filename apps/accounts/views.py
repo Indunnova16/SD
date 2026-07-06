@@ -33,6 +33,7 @@ from .forms import (
     UserEditForm,
 )
 from .models import JobHistory
+from .permissions import Rol, require_rol
 from .services import BulkUploadService, ExportService, PasswordService
 
 logger = logging.getLogger(__name__)
@@ -255,12 +256,9 @@ def lockout_view(request):
 
 @login_required
 @require_http_methods(["GET"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="accounts:dashboard")
 def user_list(request):
     """List all users (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("accounts:dashboard")
-
     # Get search and filter parameters
     search = request.GET.get("search", "").strip()
     status_filter = request.GET.get("status", "")
@@ -320,12 +318,9 @@ def user_list(request):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="accounts:dashboard")
 def user_create(request):
     """Create a new user (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("accounts:dashboard")
-
     form = UserCreateForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -350,12 +345,9 @@ def user_create(request):
 
 @login_required
 @require_http_methods(["GET"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="accounts:dashboard")
 def user_detail(request, user_id):
     """View user details (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("accounts:dashboard")
-
     user = get_object_or_404(User, pk=user_id)
 
     context = {
@@ -370,12 +362,9 @@ def user_detail(request, user_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="accounts:dashboard")
 def user_edit(request, user_id):
     """Edit user details (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("accounts:dashboard")
-
     user = get_object_or_404(User, pk=user_id)
 
     # Store old values before update for job history tracking
@@ -452,12 +441,13 @@ def user_edit(request, user_id):
 
 @login_required
 @require_POST
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def user_toggle_status(request, user_id):
     """Toggle user active status (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     user = get_object_or_404(User, pk=user_id)
 
     # Prevent self-deactivation
@@ -495,12 +485,13 @@ def user_toggle_status(request, user_id):
 
 
 @login_required
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def user_learning_history(request, user_id):
     """View a user's learning history (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     from apps.courses.models import CompletionRecord, Enrollment
 
     user = get_object_or_404(User, pk=user_id)
@@ -544,6 +535,11 @@ def user_learning_history(request, user_id):
 
 @login_required
 @require_POST
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def reassign_enrollment(request, user_id, enrollment_id):
     """Reassign a course from a user's learning history (admin/staff only).
 
@@ -553,10 +549,6 @@ def reassign_enrollment(request, user_id, enrollment_id):
     Mirrors the reset logic of courses.reenable_course but is staff-driven and
     applies to any status (not only EXPIRED).
     """
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     from apps.courses.models import CompletionRecord, Enrollment, LessonProgress
 
     enrollment = get_object_or_404(
@@ -601,12 +593,13 @@ def reassign_enrollment(request, user_id, enrollment_id):
 
 @login_required
 @require_GET
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def user_export_pdf(request, user_id):
     """Export user profile and learning history as PDF (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     from io import BytesIO
 
     from xhtml2pdf import pisa
@@ -656,12 +649,13 @@ def user_export_pdf(request, user_id):
 
 @login_required
 @require_POST
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def user_delete(request, user_id):
     """Delete a user permanently (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     user = get_object_or_404(User, pk=user_id)
 
     # Prevent self-deletion
@@ -704,12 +698,13 @@ def user_delete(request, user_id):
 
 @login_required
 @require_POST
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def admin_reset_password(request, user_id):
     """Reset user password to parameterized default (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     user = get_object_or_404(User, pk=user_id)
     new_password = PasswordService.reset_password(user)
 
@@ -732,12 +727,9 @@ def admin_reset_password(request, user_id):
 
 @login_required
 @require_http_methods(["GET", "POST"])
+@require_rol(Rol.ADMINISTRADOR, redirect_url="accounts:dashboard")
 def bulk_upload(request):
     """Bulk upload users from Excel file (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para acceder a esta página.")
-        return redirect("accounts:dashboard")
-
     form = BulkUploadForm(request.POST or None, request.FILES or None)
     results = None
 
@@ -762,12 +754,13 @@ def bulk_upload(request):
 
 
 @login_required
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def download_template(request):
     """Download Excel template for bulk upload."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     content = BulkUploadService.generate_template()
     response = HttpResponse(
         content,
@@ -781,12 +774,13 @@ def download_template(request):
 
 
 @login_required
+@require_rol(
+    Rol.ADMINISTRADOR,
+    redirect_url="accounts:dashboard",
+    message="No tiene permisos para realizar esta acción.",
+)
 def export_pending_users(request):
     """Export users with pending courses to Excel (admin/staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "No tiene permisos para realizar esta acción.")
-        return redirect("accounts:dashboard")
-
     category_id = request.GET.get("category")
     profile = request.GET.get("job_profile")
 

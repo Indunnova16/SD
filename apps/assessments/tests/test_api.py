@@ -408,6 +408,7 @@ class DecimalFormsAndBuilderTests(TestCase):
             job_position="Admin",
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         self.web = Client()
         self.web.force_login(self.staff)

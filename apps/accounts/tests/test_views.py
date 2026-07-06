@@ -226,6 +226,7 @@ class ReassignEnrollmentViewTests(TestCase):
             document_number="99999999",
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
         )
         # Regular (non-staff) user.
         self.worker = User.objects.create_user(
@@ -409,6 +410,7 @@ class UserEditSignatureTests(TestCase):
             document_number="990000001",
             hire_date=date(2024, 1, 1),
             is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
             job_position="Coordinador HSEQ",
         )
         self.target = User.objects.create_user(
