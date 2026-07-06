@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from apps.accounts.models import User
-from apps.accounts.permissions import Rol, user_has_rol
+from apps.accounts.permissions import Rol, require_rol
 from apps.certifications.models import Certificate
 from apps.courses.models import Category, Course, Enrollment
 from apps.learning_paths.models import PathAssignment
@@ -43,6 +43,7 @@ def _apply_profile_filter(qs, filters, user_field="user__job_profile"):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def admin_dashboard(request):
     """Main admin dashboard view."""
     from apps.courses.models import JobProfileType
@@ -59,6 +60,7 @@ def admin_dashboard(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def dashboard_stats(request):
     """Get dashboard statistics cards."""
     filters = _get_filter_params(request)
@@ -124,6 +126,7 @@ def dashboard_stats(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def compliance_chart(request):
     """Get compliance chart data."""
     filters = _get_filter_params(request)
@@ -158,6 +161,7 @@ def compliance_chart(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def training_trend(request):
     """Get training trend chart data."""
     filters = _get_filter_params(request)
@@ -191,6 +195,7 @@ def training_trend(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def expiring_certs(request):
     """Get expiring certificates list."""
     filters = _get_filter_params(request)
@@ -217,6 +222,7 @@ def expiring_certs(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def overdue_assignments(request):
     """Get overdue assignments list."""
     filters = _get_filter_params(request)
@@ -243,6 +249,7 @@ def overdue_assignments(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def recent_activity(request):
     """Get recent activity feed."""
     filters = _get_filter_params(request)
@@ -318,6 +325,7 @@ def recent_activity(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def course_progress(request):
     """Get per-course enrollment/completion stats for chart."""
     filters = _get_filter_params(request)
@@ -373,6 +381,7 @@ def course_progress(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def course_type_distribution(request):
     """Get course type distribution data."""
     filters = _get_filter_params(request)
@@ -424,6 +433,7 @@ def course_type_distribution(request):
 
 @login_required
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def assessment_performance(request):
     """Get assessment performance stats for chart."""
     filters = _get_filter_params(request)
@@ -465,18 +475,12 @@ def assessment_performance(request):
 # Report Views
 # ============================================================================
 
-from django.contrib.auth.decorators import user_passes_test
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.reports.models import GeneratedReport, ReportTemplate, ScheduledReport
 from apps.reports.services import ReportService, ScheduledReportService
-
-
-def _is_administrador(user):
-    """Rol check para @user_passes_test (issue #58, ex-is_staff)."""
-    return user_has_rol(user, Rol.ADMINISTRADOR)
 
 
 @login_required
@@ -562,8 +566,8 @@ def delete_report(request, report_id):
 
 
 @login_required
-@user_passes_test(_is_administrador)
 @require_GET
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def scheduled_list(request):
     """Get scheduled reports list."""
     schedules = (
@@ -577,8 +581,8 @@ def scheduled_list(request):
 
 
 @login_required
-@user_passes_test(_is_administrador)
 @require_POST
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def schedule_create(request):
     """Create a scheduled report."""
     template_id = request.POST.get("template")
@@ -614,8 +618,8 @@ def schedule_create(request):
 
 
 @login_required
-@user_passes_test(_is_administrador)
 @require_POST
+@require_rol(Rol.ADMINISTRADOR, redirect_url="reports:list")
 def schedule_toggle(request, schedule_id):
     """Toggle scheduled report active status."""
     schedule = get_object_or_404(ScheduledReport, id=schedule_id, created_by=request.user)

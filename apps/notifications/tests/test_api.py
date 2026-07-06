@@ -513,6 +513,14 @@ class TestNotificationSend:
 
 # =============================================================================
 # NotificationTemplateViewSet Tests
+#
+# Issue #58 (RBAC, sub-item A10): esta superficie es "Sistema" (config de
+# plantillas admin), gap real cerrado acá — antes cualquier autenticado
+# (`authenticated_client`, usuario regular) podía listar/crear/editar/borrar
+# plantillas. Ahora exige `rol == ADMINISTRADOR`
+# (`apps.notifications.api.permissions.IsAdministrador`). Los tests de éxito
+# migran a `admin_client`; se agrega un test explícito de 403 para no-Admin
+# por acción (list/create/update/delete).
 # =============================================================================
 
 
@@ -527,48 +535,57 @@ class TestNotificationTemplateList:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_list_templates(self, authenticated_client):
-        """Test listing templates."""
-        NotificationTemplateFactory()
+    def test_list_templates_forbidden_for_non_admin(self, authenticated_client):
+        """RBAC A10: usuario autenticado SIN rol=ADMINISTRADOR -> 403."""
         NotificationTemplateFactory()
 
         url = reverse("notifications_api:template-list")
         response = authenticated_client.get(url)
 
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_list_templates(self, admin_client):
+        """Test listing templates."""
+        NotificationTemplateFactory()
+        NotificationTemplateFactory()
+
+        url = reverse("notifications_api:template-list")
+        response = admin_client.get(url)
+
         assert response.status_code == status.HTTP_200_OK
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         assert len(results) == 2
 
-    def test_list_templates_filter_by_channel(self, authenticated_client):
+    def test_list_templates_filter_by_channel(self, admin_client):
         """Test filtering templates by channel."""
         EmailTemplateFactory()
         EmailTemplateFactory()
         PushTemplateFactory()
 
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.get(url, {"channel": "email"})
+        response = admin_client.get(url, {"channel": "email"})
 
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         assert len(results) == 2
 
-    def test_list_templates_filter_active(self, authenticated_client):
+    def test_list_templates_filter_active(self, admin_client):
         """Test filtering active templates."""
         NotificationTemplateFactory(is_active=True)
         NotificationTemplateFactory(is_active=False)
 
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.get(url, {"active": "true"})
+        response = admin_client.get(url, {"active": "true"})
 
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         assert len(results) == 1
 
-    def test_list_templates_search(self, authenticated_client):
+    def test_list_templates_search(self, admin_client):
         """Test searching templates."""
         NotificationTemplateFactory(name="Welcome Email")
         NotificationTemplateFactory(name="Password Reset")
 
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.get(url, {"search": "Welcome"})
+        response = admin_client.get(url, {"search": "Welcome"})
 
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         assert len(results) == 1
@@ -579,10 +596,27 @@ class TestNotificationTemplateList:
 class TestNotificationTemplateCreate:
     """Tests for creating notification templates."""
 
-    def test_create_template(self, authenticated_client):
-        """Test creating a template."""
+    def test_create_template_forbidden_for_non_admin(self, authenticated_client):
+        """RBAC A10: usuario autenticado SIN rol=ADMINISTRADOR -> 403, no crea nada."""
         url = reverse("notifications_api:template-list")
         response = authenticated_client.post(
+            url,
+            {
+                "name": "Intento No Admin",
+                "subject": "Subject",
+                "body": "Body content",
+                "channel": "email",
+            },
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert not NotificationTemplate.objects.filter(name="Intento No Admin").exists()
+
+    def test_create_template(self, admin_client):
+        """Test creating a template."""
+        url = reverse("notifications_api:template-list")
+        response = admin_client.post(
             url,
             {
                 "name": "New Template",
@@ -597,10 +631,10 @@ class TestNotificationTemplateCreate:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Template"
 
-    def test_create_template_with_html(self, authenticated_client):
+    def test_create_template_with_html(self, admin_client):
         """Test creating a template with HTML body."""
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.post(
+        response = admin_client.post(
             url,
             {
                 "name": "HTML Template",
@@ -615,12 +649,12 @@ class TestNotificationTemplateCreate:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["html_body"] == "<p>HTML content</p>"
 
-    def test_create_template_duplicate_name_fails(self, authenticated_client):
+    def test_create_template_duplicate_name_fails(self, admin_client):
         """Test that duplicate template names fail."""
         NotificationTemplateFactory(name="Existing Template")
 
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.post(
+        response = admin_client.post(
             url,
             {
                 "name": "Existing Template",
@@ -638,12 +672,27 @@ class TestNotificationTemplateCreate:
 class TestNotificationTemplateUpdate:
     """Tests for updating notification templates."""
 
-    def test_update_template(self, authenticated_client):
+    def test_update_template_forbidden_for_non_admin(self, authenticated_client):
+        """RBAC A10: usuario autenticado SIN rol=ADMINISTRADOR -> 403, no cambia nada."""
+        template = NotificationTemplateFactory(subject="Original Subject")
+
+        url = reverse("notifications_api:template-detail", args=[template.id])
+        response = authenticated_client.patch(
+            url,
+            {"subject": "Intento No Admin"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        template.refresh_from_db()
+        assert template.subject == "Original Subject"
+
+    def test_update_template(self, admin_client):
         """Test updating a template."""
         template = NotificationTemplateFactory()
 
         url = reverse("notifications_api:template-detail", args=[template.id])
-        response = authenticated_client.patch(
+        response = admin_client.patch(
             url,
             {"subject": "Updated Subject"},
             format="json",
@@ -653,12 +702,12 @@ class TestNotificationTemplateUpdate:
         template.refresh_from_db()
         assert template.subject == "Updated Subject"
 
-    def test_deactivate_template(self, authenticated_client):
+    def test_deactivate_template(self, admin_client):
         """Test deactivating a template."""
         template = NotificationTemplateFactory(is_active=True)
 
         url = reverse("notifications_api:template-detail", args=[template.id])
-        response = authenticated_client.patch(
+        response = admin_client.patch(
             url,
             {"is_active": False},
             format="json",
@@ -673,12 +722,22 @@ class TestNotificationTemplateUpdate:
 class TestNotificationTemplateDelete:
     """Tests for deleting notification templates."""
 
-    def test_delete_template(self, authenticated_client):
-        """Test deleting a template."""
+    def test_delete_template_forbidden_for_non_admin(self, authenticated_client):
+        """RBAC A10: usuario autenticado SIN rol=ADMINISTRADOR -> 403, no borra nada."""
         template = NotificationTemplateFactory()
 
         url = reverse("notifications_api:template-detail", args=[template.id])
         response = authenticated_client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert NotificationTemplate.objects.filter(pk=template.pk).exists()
+
+    def test_delete_template(self, admin_client):
+        """Test deleting a template."""
+        template = NotificationTemplateFactory()
+
+        url = reverse("notifications_api:template-detail", args=[template.id])
+        response = admin_client.delete(url)
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not NotificationTemplate.objects.filter(pk=template.pk).exists()
@@ -1069,12 +1128,12 @@ class TestNotificationSerializer:
 class TestTemplateSerializer:
     """Tests for template serializers."""
 
-    def test_template_serializer_fields(self, authenticated_client):
+    def test_template_serializer_fields(self, admin_client):
         """Test that template serializer returns correct fields."""
         NotificationTemplateFactory()
 
         url = reverse("notifications_api:template-list")
-        response = authenticated_client.get(url)
+        response = admin_client.get(url)
 
         results = response.data["results"] if isinstance(response.data, dict) else response.data
         template = results[0]

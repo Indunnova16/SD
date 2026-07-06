@@ -18,6 +18,7 @@ from apps.notifications.models import (
     UserNotificationPreference,
 )
 
+from .permissions import IsAdministrador
 from .serializers import (
     MarkReadSerializer,
     NotificationCreateSerializer,
@@ -30,9 +31,14 @@ from .serializers import (
 
 
 class NotificationTemplateViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing notification templates."""
+    """ViewSet for managing notification templates.
 
-    permission_classes = [permissions.IsAuthenticated]
+    Superficie "Sistema" (config admin) — issue #58 (A10): CRUD de plantillas
+    exige `rol == ADMINISTRADOR` (antes `IsAuthenticated`, gap real de API
+    abierto a cualquier autenticado). Ver `apps/notifications/api/permissions.py`.
+    """
+
+    permission_classes = [IsAdministrador]
     serializer_class = NotificationTemplateSerializer
 
     def get_queryset(self):
