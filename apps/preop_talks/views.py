@@ -24,16 +24,25 @@ from apps.preop_talks.services import PreopTalkService, TalkAttendeeService
 
 @login_required
 @require_GET
-@require_rol(Rol.COORDINADOR, Rol.ADMINISTRADOR, raise_exception=True)
 def talk_list(request):
     """Talk list page.
 
-    Listado ADMINISTRATIVO (issue #58, A8): oculto para Ejecutor (403), completo
-    para Coordinador/Administrador. NO afecta las vistas donde el Ejecutor
-    participa de su propia charla (`talk_conduct`, `start_talk`, `complete_talk`,
-    `sign_attendance`) — esas siguen sin este gate, ver PLAN A8.
+    Issue #58, A12-fix (revierte parte del gate de A8): esta página aloja el
+    widget `today_talks` — la ÚNICA vía de la UI (navbar) para que un
+    Ejecutor llegue a firmar SU charla pre-operacional del día. Gatearla
+    completa con `raise_exception=True` (como hacía A8) le tiraba 403 y le
+    rompía el flujo diario real.
+
+    Ahora la vista es accesible a cualquier usuario autenticado; el gate se
+    mueve a nivel de contenido vía `can_manage` en el contexto (ver
+    `talk_list.html`, patrón propio/equipo/todos de A6/A7/A9): el widget
+    `today_talks` (propio) siempre visible, la gestión/historial completo
+    (todos) solo si `can_manage`. `talks_table` — el endpoint HTMX de la
+    tabla paginada completa, dato puramente administrativo — SIGUE gateado
+    tal cual con `require_rol(..., raise_exception=True)`.
     """
-    context = {"today": timezone.localdate()}
+    can_manage = user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR)
+    context = {"today": timezone.localdate(), "can_manage": can_manage}
 
     # Check if this is an HTMX request for the table
     if request.headers.get("HX-Request"):

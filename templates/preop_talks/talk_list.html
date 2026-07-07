@@ -5,29 +5,33 @@
 {% endblock %}
 {% block dashboard_content %}
     <div class="space-y-6">
-        <!-- Quick Actions -->
-        <div class="flex flex-wrap gap-4">
-            <a href="{% url 'preop_talks:create' %}" class="btn btn-primary">
-                <svg class="w-5 h-5 mr-2"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Nueva Charla
-            </a>
-            <a href="{% url 'preop_talks:templates' %}" class="btn btn-ghost">
-                <svg class="w-5 h-5 mr-2"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z">
-                    </path>
-                </svg>
-                Plantillas
-            </a>
-        </div>
-        <!-- Today's Talks -->
+        {% if can_manage %}
+            <!-- Quick Actions (gestión — Coordinador/Administrador, issue #58 A12-fix) -->
+            <div class="flex flex-wrap gap-4">
+                <a href="{% url 'preop_talks:create' %}" class="btn btn-primary">
+                    <svg class="w-5 h-5 mr-2"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Nueva Charla
+                </a>
+                <a href="{% url 'preop_talks:templates' %}" class="btn btn-ghost">
+                    <svg class="w-5 h-5 mr-2"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z">
+                        </path>
+                    </svg>
+                    Plantillas
+                </a>
+            </div>
+        {% endif %}
+        <!-- Today's Talks — SIEMPRE visible (issue #58 A12-fix): es el flujo diario
+             real del Ejecutor para firmar/ver SU charla pre-operacional, vía el
+             widget `today_talks` (sin gate). No condicionar a can_manage. -->
         <div class="card bg-base-100 shadow">
             <div class="card-body">
                 <div class="flex justify-between items-center">
@@ -53,58 +57,60 @@
                 </div>
             </div>
         </div>
-        <!-- Filters -->
-        <div class="card bg-base-100 shadow">
-            <div class="card-body">
-                <h3 class="card-title mb-4">Historial de Charlas</h3>
-                <div class="flex flex-wrap gap-4 mb-4">
-                    <div class="form-control">
-                        <input type="date"
-                               name="date_from"
-                               class="input input-bordered input-sm"
-                               hx-get="{% url 'preop_talks:list' %}"
-                               hx-target="#talks-table"
-                               hx-include="[name='date_to'],[name='status'],[name='search']">
+        {% if can_manage %}
+            <!-- Filters + Historial (gestión — Coordinador/Administrador, issue #58 A12-fix) -->
+            <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                    <h3 class="card-title mb-4">Historial de Charlas</h3>
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <div class="form-control">
+                            <input type="date"
+                                   name="date_from"
+                                   class="input input-bordered input-sm"
+                                   hx-get="{% url 'preop_talks:list' %}"
+                                   hx-target="#talks-table"
+                                   hx-include="[name='date_to'],[name='status'],[name='search']">
+                        </div>
+                        <div class="form-control">
+                            <input type="date"
+                                   name="date_to"
+                                   class="input input-bordered input-sm"
+                                   hx-get="{% url 'preop_talks:list' %}"
+                                   hx-target="#talks-table"
+                                   hx-include="[name='date_from'],[name='status'],[name='search']">
+                        </div>
+                        <select class="select select-bordered select-sm"
+                                name="status"
+                                hx-get="{% url 'preop_talks:list' %}"
+                                hx-target="#talks-table"
+                                hx-include="[name='date_from'],[name='date_to'],[name='search']">
+                            <option value="">Todos los estados</option>
+                            <option value="scheduled">Programada</option>
+                            <option value="in_progress">En progreso</option>
+                            <option value="completed">Completada</option>
+                            <option value="cancelled">Cancelada</option>
+                        </select>
+                        <div class="form-control">
+                            <input type="search"
+                                   name="search"
+                                   placeholder="Buscar..."
+                                   class="input input-bordered input-sm"
+                                   hx-get="{% url 'preop_talks:list' %}"
+                                   hx-target="#talks-table"
+                                   hx-trigger="keyup changed delay:300ms"
+                                   hx-include="[name='date_from'],[name='date_to'],[name='status']">
+                        </div>
                     </div>
-                    <div class="form-control">
-                        <input type="date"
-                               name="date_to"
-                               class="input input-bordered input-sm"
-                               hx-get="{% url 'preop_talks:list' %}"
-                               hx-target="#talks-table"
-                               hx-include="[name='date_from'],[name='status'],[name='search']">
-                    </div>
-                    <select class="select select-bordered select-sm"
-                            name="status"
-                            hx-get="{% url 'preop_talks:list' %}"
-                            hx-target="#talks-table"
-                            hx-include="[name='date_from'],[name='date_to'],[name='search']">
-                        <option value="">Todos los estados</option>
-                        <option value="scheduled">Programada</option>
-                        <option value="in_progress">En progreso</option>
-                        <option value="completed">Completada</option>
-                        <option value="cancelled">Cancelada</option>
-                    </select>
-                    <div class="form-control">
-                        <input type="search"
-                               name="search"
-                               placeholder="Buscar..."
-                               class="input input-bordered input-sm"
-                               hx-get="{% url 'preop_talks:list' %}"
-                               hx-target="#talks-table"
-                               hx-trigger="keyup changed delay:300ms"
-                               hx-include="[name='date_from'],[name='date_to'],[name='status']">
-                    </div>
-                </div>
-                <div id="talks-table"
-                     hx-get="{% url 'preop_talks:list' %}"
-                     hx-trigger="load"
-                     hx-swap="innerHTML">
-                    <div class="flex justify-center py-8">
-                        <span class="loading loading-spinner loading-md"></span>
+                    <div id="talks-table"
+                         hx-get="{% url 'preop_talks:list' %}"
+                         hx-trigger="load"
+                         hx-swap="innerHTML">
+                        <div class="flex justify-center py-8">
+                            <span class="loading loading-spinner loading-md"></span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
     </div>
 {% endblock %}

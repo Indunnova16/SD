@@ -19,6 +19,14 @@ Cubre además la regresión anti-romper-flujo-diario del propio PLAN: el
 Ejecutor debe seguir con 200/302-hacia-éxito en las vistas donde participa de
 SU PROPIA charla/asistencia (`talk_conduct`, `start_talk`, `complete_talk`,
 `sign_attendance`) — esas NO llevan el gate nuevo, A8 no las toca.
+
+ACTUALIZADO por issue #58 A12-fix (hallazgo de integración de A11): el 403
+de `talk_list` de este mismo A8 resultó ser una regresión real — esa página
+aloja el widget `today_talks`, única vía de la UI para que el Ejecutor firme
+SU charla del día. A12-fix revierte el gate de VISTA de `talk_list`
+(mantiene el de `talks_table`) y lo reemplaza por un gate de CONTENIDO
+(`can_manage`). Ver `test_preop_talks_list_ejecutor_ya_no_bloqueado_ver_a12_fix`
+abajo y el detalle completo en `apps/preop_talks/tests/test_issue_58_a12.py`.
 """
 
 import itertools
@@ -70,10 +78,20 @@ class OperacionesListadoAdministrativoTests(TestCase):
 
     # --- preop_talks:list / preop_talks:table ---------------------------
 
-    def test_preop_talks_list_ejecutor_bloqueado_403(self):
+    def test_preop_talks_list_ejecutor_ya_no_bloqueado_ver_a12_fix(self):
+        """ACTUALIZADO por issue #58 A12-fix (hallazgo de integración de
+        A11): el gate 403 de página completa que A8 puso en `talk_list` le
+        rompía al Ejecutor su flujo diario real de firmar SU charla — la
+        página aloja el widget `today_talks`, única vía de la UI hacia esa
+        acción (no hay link directo a `preop_talks:today` en el navbar).
+        A12-fix revierte el gate de VISTA para `talk_list` y lo mueve a
+        CONTENIDO (`can_manage` en el contexto, patrón propio/equipo/todos
+        de A6/A7/A9) — ver detalle y assertions de contenido en
+        `apps/preop_talks/tests/test_issue_58_a12.py`. `talks_table` (abajo)
+        SIGUE con el 403 original de A8, sin cambio."""
         self.client.force_login(self.ejecutor)
         response = self.client.get(reverse("preop_talks:list"))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
 
     def test_preop_talks_list_htmx_ejecutor_bloqueado_403(self):
         """`talk_list` delega a `talks_table` internamente cuando la request
