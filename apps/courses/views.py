@@ -36,6 +36,7 @@ from .models import (
     Enrollment,
     JobProfileType,
     Lesson,
+    LessonEvidence,
     LessonProgress,
     Module,
 )
