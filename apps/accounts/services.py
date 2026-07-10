@@ -384,6 +384,12 @@ class BulkUploadService:
                     )
                     user.set_password(password)
                     user.save()
+                # Atributo transiente (NO campo de modelo): expone la
+                # contraseña generada para que la plantilla la muestre en la
+                # tabla de resultados — sin esto, la carga masiva creaba
+                # cuentas reales cuyo password nadie veía nunca (issue #58,
+                # reproceso).
+                user.generated_password = password
                 created.append(user)
             except IntegrityError:
                 logger.exception(f"Fila {row_num}: IntegrityError al crear usuario")
