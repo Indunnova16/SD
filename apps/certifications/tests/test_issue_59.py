@@ -284,3 +284,117 @@ class CertificateGenerationUsesActiveTemplateLogoTest(TestCase):
         )
         self.assertIn(template.logo.url, html)
         self.assertNotIn('<div class="logo-fallback">SD</div>', html)
+
+
+class ResolveCertificateSignerTest(TestCase):
+    """A3: `CertificateService._resolve_certificate_signer` resolves who
+    actually assigned the course to the recipient — never the recipient
+    themselves — with a fallback to `course.created_by`."""
+
+    def setUp(self):
+        self.coordinator = _make_user(
+            first_name="Coordi",
+            last_name="Nador",
+            job_position="Coordinador HSEQ",
+        )
+        self.creator = _make_user(
+            first_name="Curso",
+            last_name="Creador",
+            job_position="Administrator",
+        )
+        self.recipient = _make_user(first_name="Estudiante", last_name="Uno")
+        self.course = _make_course(self.creator, code="ISSUE59-A3-SIGNER")
+
+    def _issue_certificate(self):
+        return Certificate.objects.create(
+            user=self.recipient,
+            course=self.course,
+            certificate_number=CertificateService.generate_certificate_number(),
+            status=Certificate.Status.PENDING,
+        )
+
+    def test_signer_prefers_assigned_by_over_course_creator(self):
+        """Happy path: assigned_by is a real coordinator, distinct from the
+        recipient — resolved signer must be the coordinator, not the course
+        creator."""
+        Enrollment.objects.create(
+            user=self.recipient,
+            course=self.course,
+            status=Enrollment.Status.COMPLETED,
+            progress=100,
+            assigned_by=self.coordinator,
+        )
+        certificate = self._issue_certificate()
+
+        signer = CertificateService._resolve_certificate_signer(certificate)
+        self.assertEqual(signer.id, self.coordinator.id)
+        self.assertNotEqual(signer.id, self.creator.id)
+
+    def test_signer_falls_back_to_course_creator_on_self_enrollment(self):
+        """Edge case (bug found by F2): enroll_course/learning_paths
+        self-enrollment sets assigned_by=request.user (the student
+        themself) -- without the guard, the certificate would show the
+        recipient "signing" their own certificate. Must fall back to
+        course.created_by instead."""
+        Enrollment.objects.create(
+            user=self.recipient,
+            course=self.course,
+            status=Enrollment.Status.COMPLETED,
+            progress=100,
+            assigned_by=self.recipient,  # self-enrollment
+        )
+        certificate = self._issue_certificate()
+
+        signer = CertificateService._resolve_certificate_signer(certificate)
+        self.assertEqual(signer.id, self.creator.id)
+        self.assertNotEqual(signer.id, self.recipient.id)
+
+    def test_signer_falls_back_to_course_creator_when_assigned_by_null(self):
+        """Edge case: Enrollment.assigned_by is null (on_delete=SET_NULL,
+        or never set) -- must fall back to course.created_by, same as
+        _resolve_attendance_responsable (SD#51)."""
+        Enrollment.objects.create(
+            user=self.recipient,
+            course=self.course,
+            status=Enrollment.Status.COMPLETED,
+            progress=100,
+            assigned_by=None,
+        )
+        certificate = self._issue_certificate()
+
+        signer = CertificateService._resolve_certificate_signer(certificate)
+        self.assertEqual(signer.id, self.creator.id)
+
+    def test_signature_image_included_when_signer_has_signature(self):
+        """Signature block renders the resolved signer's real name/cargo
+        and signature image — not the hardcoded 'Directora HSEQ' nor the
+        template's global signer fields."""
+        self.coordinator.signature.save("firma.png", _png_file("firma.png"), save=True)
+        Enrollment.objects.create(
+            user=self.recipient,
+            course=self.course,
+            status=Enrollment.Status.COMPLETED,
+            progress=100,
+            assigned_by=self.coordinator,
+        )
+        certificate = self._issue_certificate()
+        signer = CertificateService._resolve_certificate_signer(certificate)
+
+        html = render_to_string(
+            "certifications/certificate_template.html",
+            {
+                "certificate": certificate,
+                "user": self.recipient,
+                "course": self.course,
+                "template": None,
+                "signer": signer,
+                "issued_date": timezone.now(),
+                "expires_date": None,
+                "verification_url": "https://lms.sd.com.co/certifications/verify/TEST/",
+                "certificate_number": certificate.certificate_number,
+            },
+        )
+        self.assertIn(self.coordinator.get_full_name(), html)
+        self.assertIn(self.coordinator.job_position, html)
+        self.assertIn(self.coordinator.signature.url, html)
+        self.assertNotIn("Directora HSEQ", html)

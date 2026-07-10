@@ -217,6 +217,45 @@ class CertificateService:
             )
 
     @staticmethod
+    def _resolve_certificate_signer(certificate: Certificate):
+        """
+        Resolve who "signs" a certificate: the coordinator/admin who
+        assigned the course to the recipient, never the recipient
+        themselves (SD#59, A3). Mirrors the pattern of
+        `apps.courses.views._resolve_attendance_responsable` (SD#51).
+
+        Priority:
+          1. `Enrollment.assigned_by` for (certificate.user,
+             certificate.course), UNLESS it's null OR it's the SAME person
+             as the certificate recipient. `enroll_course`/learning_paths
+             self-enrollment sets `assigned_by=request.user` (the student
+             themself, not a coordinator) -- without this guard a
+             self-enrolled certificate would show the student "signing"
+             their own certificate.
+          2. Fallback: `course.created_by` (required FK, never null).
+
+        Returns the resolved `User` (never `None`) -- caller reads
+        `.get_full_name()`, `.job_position` and `.signature` from it.
+        """
+        enrollment = Enrollment.objects.filter(
+            user=certificate.user,
+            course=certificate.course,
+        ).first()
+
+        signer = None
+        if (
+            enrollment
+            and enrollment.assigned_by_id
+            and enrollment.assigned_by_id != certificate.user_id
+        ):
+            signer = enrollment.assigned_by
+
+        if signer is None:
+            signer = certificate.course.created_by
+
+        return signer
+
+    @staticmethod
     def _generate_pdf(certificate: Certificate) -> None:
         """
         Generate PDF certificate from template.
@@ -230,6 +269,7 @@ class CertificateService:
                 "user": certificate.user,
                 "course": certificate.course,
                 "template": certificate.template,
+                "signer": CertificateService._resolve_certificate_signer(certificate),
                 "issued_date": certificate.issued_at or timezone.now(),
                 "expires_date": certificate.expires_at,
                 "verification_url": certificate.verification_url,
