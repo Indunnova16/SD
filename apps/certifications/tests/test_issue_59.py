@@ -210,6 +210,11 @@ class CertificateGenerationUsesActiveTemplateLogoTest(TestCase):
     template (so its logo renders instead of the 'SD' text fallback)."""
 
     def setUp(self):
+        # Migration 0004 (A2) seeds one active default CertificateTemplate in
+        # every env, including this test DB — neutralize it so each test
+        # controls its own is_active state deterministically.
+        CertificateTemplate.objects.update(is_active=False)
+
         self.admin = _make_user(job_position="Administrator")
         self.user = _make_user()
         self.course = _make_course(self.admin, code="ISSUE59-A2-GEN")
