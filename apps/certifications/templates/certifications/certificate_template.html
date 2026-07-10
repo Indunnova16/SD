@@ -172,20 +172,22 @@
                 Por haber culminado satisfactoriamente el curso de
                 <strong>{{ course.title }}</strong>
                 con una duraci&oacute;n de
-                <strong>{{ course.duration_hours|default:"N/A" }} horas</strong>
+                <strong>{% if course.duration_hours is not None %}{{ course.duration_hours }}{% else %}N/A{% endif %} horas</strong>
                 a la fecha de
                 <strong>{{ issued_date|date:"d \d\e F \d\e Y" }}</strong>.
             </div>
             <div class="signature-block">
-                {% if template and template.signature_image %}
+                {% if signer.signature %}
+                    <img src="{{ signer.signature.url }}" alt="Firma" class="signature-img">
+                {% elif template and template.signature_image %}
                     <img src="{{ template.signature_image.url }}" alt="Firma" class="signature-img">
                 {% endif %}
                 <div class="signature-line"></div>
                 <div class="signer-name">
-                    {% if template and template.signer_name %}{{ template.signer_name }}{% else %}Directora HSEQ{% endif %}
+                    {% if signer %}{{ signer.get_full_name }}{% elif template and template.signer_name %}{{ template.signer_name }}{% else %}Directora HSEQ{% endif %}
                 </div>
                 <div class="signer-title">
-                    {% if template and template.signer_title %}{{ template.signer_title }}{% endif %}
+                    {% if signer %}{{ signer.job_position }}{% elif template and template.signer_title %}{{ template.signer_title }}{% endif %}
                 </div>
             </div>
         </div>

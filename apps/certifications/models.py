@@ -23,7 +23,12 @@ class CertificateTemplate(models.Model):
     template_file = models.FileField(
         _("Archivo de plantilla"),
         upload_to="certificates/templates/",
-        help_text=_("Archivo HTML/PDF de la plantilla"),
+        help_text=_(
+            "Archivo HTML/PDF de la plantilla (opcional -- una plantilla "
+            "puede definir solo logo/firma y usar la plantilla HTML por "
+            "defecto del sistema, SD#59 A2)"
+        ),
+        blank=True,
         validators=[validate_certificate_template_extension],
     )
     background_image = models.ImageField(

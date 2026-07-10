@@ -125,8 +125,8 @@
             </div>
         </div>
 
-        {% if request.user.is_staff %}
-        <!-- Admin attendance summary (SD#40) -->
+        {% if is_attendance_admin_view %}
+        <!-- Admin/Coordinador attendance summary (SD#40, ampliado a Coordinador en SD#59 A4) -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h2 class="text-xl font-semibold text-gray-900 dark:text-white">

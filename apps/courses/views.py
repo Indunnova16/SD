@@ -272,13 +272,21 @@ def lesson_view(request, course_id, lesson_id):
     existing_signature = None
     is_instructor = False
     attendance_context = {}
+    # SD#59 A4: roster+export ampliado de ADMINISTRADOR a también COORDINADOR.
+    # Se calcula SIEMPRE (no solo para lesson_type='attendance') porque se
+    # expone SIEMPRE en el contexto -- lesson_view.html:328 gatea su bloque
+    # de resumen leyendo esta misma variable (reemplazo del gate viejo
+    # `request.user.is_staff`, que un Coordinador normalmente NO tiene --
+    # decisión #58 #2: rol e is_staff desacoplados a propósito), ya anidado
+    # dentro del `{% elif lesson.lesson_type == 'attendance' %}` del template.
+    is_attendance_admin_view = user_has_rol(request.user, Rol.ADMINISTRADOR, Rol.COORDINADOR)
     if lesson.lesson_type == Lesson.Type.ATTENDANCE:
         existing_signature = AttendanceSignature.objects.filter(
             lesson=lesson,
             user=request.user,
         ).first()
         is_instructor = lesson.metadata.get("instructor_id") == request.user.id
-        if user_has_rol(request.user, Rol.ADMINISTRADOR):
+        if is_attendance_admin_view:
             summary = _build_attendance_summary(course, lesson)
             attendance_context = {
                 "attendance_summary": summary["rows"],
@@ -301,6 +309,7 @@ def lesson_view(request, course_id, lesson_id):
         "has_passed_quiz": has_passed_quiz,
         "existing_signature": existing_signature,
         "is_instructor": is_instructor,
+        "is_attendance_admin_view": is_attendance_admin_view,
     }
     context.update(attendance_context)
     return render(request, "courses/lesson_view.html", context)
@@ -2006,6 +2015,13 @@ def attendance_lesson_view(request, course_id, lesson_id):
     ).first()
 
     is_instructor = lesson.metadata.get("instructor_id") == request.user.id
+    # SD#59 A4: roster+export ampliado de ADMINISTRADOR a también COORDINADOR.
+    # Se expone SIEMPRE en el contexto (no solo cuando es True) porque
+    # attendance_lesson.html:128 gatea su bloque de resumen leyendo esta
+    # misma variable (reemplazo del gate viejo `request.user.is_staff`, que
+    # un Coordinador normalmente NO tiene -- decisión #58 #2: rol e
+    # is_staff desacoplados a propósito).
+    is_attendance_admin_view = user_has_rol(request.user, Rol.ADMINISTRADOR, Rol.COORDINADOR)
 
     context = {
         "course": course,
@@ -2013,12 +2029,14 @@ def attendance_lesson_view(request, course_id, lesson_id):
         "enrollment": enrollment,
         "existing_signature": existing_signature,
         "is_instructor": is_instructor,
+        "is_attendance_admin_view": is_attendance_admin_view,
         "form": AttendanceSignatureForm(),
     }
 
-    # Admin attendance summary (SD#40): staff see the per-session roster with
-    # derived Presente/Ausente status, totals and attendance percentage.
-    if user_has_rol(request.user, Rol.ADMINISTRADOR):
+    # Admin/Coordinador attendance summary (SD#40, ampliado a Coordinador en
+    # SD#59 A4): ven el roster por sesión con status derivado
+    # Presente/Ausente, totales y porcentaje de asistencia.
+    if is_attendance_admin_view:
         summary = _build_attendance_summary(course, lesson)
         context.update(
             {
@@ -2234,9 +2252,28 @@ def _resolve_attendance_responsable(course, lesson):
     return responsable, responsable_signature_url
 
 
+def _attendance_export_required(request):
+    """Check if user can export the attendance roster PDF (SD#59, A4).
+
+    Deliberately NOT `_staff_required` (ADMINISTRADOR only, shared by 9
+    other call sites in this module that gate builder/admin-only actions --
+    changing it would widen access on all of them). This mirrors the same
+    ADMINISTRADOR+COORDINADOR set already used to gate roster visibility in
+    `attendance_lesson_view`/`lesson_view` (`is_attendance_admin_view`), so
+    a Coordinador who can see the roster can also export it.
+    """
+    if not user_has_rol(request.user, Rol.ADMINISTRADOR, Rol.COORDINADOR):
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "No autorizado"}, status=403)
+        messages.error(request, "No tiene permisos para acceder a esta pagina.")
+        return redirect("courses:list")
+    return None
+
+
 @login_required
 def export_attendance_pdf(request, course_id, lesson_id):
-    """Export the attendance list of an attendance lesson as PDF (staff only).
+    """Export the attendance list of an attendance lesson as PDF
+    (ADMINISTRADOR + COORDINADOR — ampliado en SD#59 A4, antes solo staff).
 
     Includes, per enrollee: full name, document number (cédula), status
     (Presente/Ausente), signature timestamp and the signature image, plus
@@ -2249,7 +2286,7 @@ def export_attendance_pdf(request, course_id, lesson_id):
     that user has a `signature` on file, it's embedded automatically so the
     responsable does not have to sign each printed PDF by hand.
     """
-    if err := _staff_required(request):
+    if err := _attendance_export_required(request):
         return err
 
     from io import BytesIO
