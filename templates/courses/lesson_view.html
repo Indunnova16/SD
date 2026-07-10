@@ -325,7 +325,7 @@
                                    class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"
                                    role="alert"></p>
                             {% endif %}
-                            {% if request.user.is_staff %}
+                            {% if is_attendance_admin_view %}
                                 <div class="mt-8 pt-6 border-t dark:border-gray-700">
                                     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Resumen de asistencia</h3>
