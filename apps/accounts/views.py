@@ -325,7 +325,15 @@ def user_create(request):
 
     if request.method == "POST" and form.is_valid():
         user = form.save()
-        messages.success(request, f"Usuario {user.get_full_name()} creado exitosamente.")
+        generated_password = getattr(user, "generated_password", None)
+        if generated_password:
+            messages.success(
+                request,
+                f"Usuario {user.get_full_name()} creado exitosamente. "
+                f"Contraseña inicial: {generated_password}",
+            )
+        else:
+            messages.success(request, f"Usuario {user.get_full_name()} creado exitosamente.")
         logger.info(f"User {user.document_number} created by {request.user.document_number}")
 
         if request.htmx:

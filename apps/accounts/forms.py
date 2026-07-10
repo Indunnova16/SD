@@ -367,6 +367,12 @@ class UserCreateForm(RolSupervisorMixin, forms.ModelForm):
         user = super().save(commit=False)
         password = PasswordService.generate_password(user.document_number, user.first_name)
         user.set_password(password)
+        # Atributo transiente (NO campo de modelo, no persiste en BD): expone
+        # la contraseña generada para que la vista la muestre al admin en el
+        # momento de la creación — sin esto, la única forma de conocerla era
+        # `admin_reset_password` (issue #58, reproceso: avelasquez@indunnova.com
+        # no pudo loguearse porque nadie vio nunca su password inicial).
+        user.generated_password = password
         if commit:
             user.save()
         return user
