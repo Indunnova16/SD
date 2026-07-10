@@ -319,6 +319,7 @@ class AssessmentService:
             attempt.graded_by = grader
 
         attempt.save()
+        AssessmentService._sync_lesson_progress_on_pass(attempt)
         return attempt
 
     @staticmethod
@@ -357,6 +358,55 @@ class AssessmentService:
             AssessmentService.grade_attempt(attempt, grader)
 
         return attempt_answer
+
+    @staticmethod
+    def _sync_lesson_progress_on_pass(attempt: AssessmentAttempt) -> None:
+        """
+        SD#54 (auto-completar, decisión Miguel 2026-07-09): al aprobar un
+        intento (attempt.passed=True), propaga el resultado a
+        LessonProgress.is_completed=True para la lección 'quiz' asociada,
+        sin requerir el click manual en "Marcar como completado" -- revierte
+        la decisión de scope del cierre anterior de #54. Reutiliza
+        EnrollmentService.update_progress (get_or_create + is_completed=True
+        + completed_at + recalculo vía update_enrollment_progress), no
+        duplica lógica.
+
+        apps.courses.services.EnrollmentService.is_lesson_accessible ya
+        generaliza el desbloqueo de la siguiente lección obligatoria sobre
+        LessonProgress.is_completed=True sin ningún paso adicional -- no
+        requiere cambios (confirmado contra BD prod en F2_OUTPUT).
+
+        Import diferido de apps.courses para evitar import circular (mismo
+        patrón que ya usa apps/courses/views.py al importar
+        AssessmentAttempt de apps.assessments de forma diferida).
+
+        Guard: si el intento no aprobó, no tocar nada -- un intento
+        reprobado posterior NUNCA revierte un is_completed ya en True
+        (consistente con "aprobó alguna vez" = aprobado en el resto del
+        codebase, ej. can_start_attempt/max_attempts).
+        """
+        if not attempt.passed:
+            return
+
+        lesson = attempt.assessment.lesson
+        if lesson is None:
+            return
+
+        from apps.courses.models import Enrollment, Lesson
+
+        if lesson.lesson_type != Lesson.Type.QUIZ:
+            return
+
+        enrollment = Enrollment.objects.filter(
+            user=attempt.user,
+            course=lesson.module.course,
+        ).first()
+        if enrollment is None:
+            return
+
+        from apps.courses.services import EnrollmentService
+
+        EnrollmentService.update_progress(enrollment, lesson, {"completed": True})
 
     @staticmethod
     def get_attempt_results(attempt: AssessmentAttempt) -> dict:
@@ -618,9 +668,11 @@ class AssessmentService:
             )
 
         attempt.save()
+        AssessmentService._sync_lesson_progress_on_pass(attempt)
         return attempt
 
     @staticmethod
+    @transaction.atomic
     def calculate_score(attempt: AssessmentAttempt) -> AssessmentAttempt:
         """
         Recalculate the score for an attempt based on awarded points.
@@ -654,6 +706,7 @@ class AssessmentService:
             attempt.passed = False
 
         attempt.save()
+        AssessmentService._sync_lesson_progress_on_pass(attempt)
         return attempt
 
 
