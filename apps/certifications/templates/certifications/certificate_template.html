@@ -172,7 +172,7 @@
                 Por haber culminado satisfactoriamente el curso de
                 <strong>{{ course.title }}</strong>
                 con una duraci&oacute;n de
-                <strong>{{ course.duration_hours|default:"N/A" }} horas</strong>
+                <strong>{% if course.duration_hours is not None %}{{ course.duration_hours }}{% else %}N/A{% endif %} horas</strong>
                 a la fecha de
                 <strong>{{ issued_date|date:"d \d\e F \d\e Y" }}</strong>.
             </div>
