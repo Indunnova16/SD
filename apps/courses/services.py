@@ -340,6 +340,48 @@ class EnrollmentService:
         return True, None
 
     @staticmethod
+    def get_next_lesson_context(enrollment, lesson):
+        """
+        Resolve the lesson that follows ``lesson`` (in course module/lesson
+        order) for ``enrollment``, plus whether it is currently accessible.
+
+        Extracted (SD#54, reproceso 3ra ronda) from the inline logic in
+        ``apps.courses.views.lesson_view`` so it can be reused by
+        ``apps.assessments.views.attempt_result`` -- the "aprobado" branch of
+        the assessment result screen needs the exact same next-lesson lookup
+        to offer a "Continuar Curso" action, and duplicating it a third time
+        was flagged as the risk to avoid in the fix plan.
+
+        Returns: (next_lesson or None, next_lesson_accessible: bool)
+        """
+        all_lessons = list(
+            Lesson.objects.filter(module__course=enrollment.course).order_by(
+                "module__order", "order"
+            )
+        )
+
+        current_index = None
+        for i, current_lesson in enumerate(all_lessons):
+            if current_lesson.id == lesson.id:
+                current_index = i
+                break
+
+        if current_index is None:
+            return None, False
+
+        next_lesson = (
+            all_lessons[current_index + 1] if current_index < len(all_lessons) - 1 else None
+        )
+
+        next_lesson_accessible = True
+        if next_lesson:
+            next_lesson_accessible, _ = EnrollmentService.is_lesson_accessible(
+                enrollment, next_lesson
+            )
+
+        return next_lesson, next_lesson_accessible
+
+    @staticmethod
     def get_lesson_accessibility_map(enrollment):
         """
         Get a dict mapping lesson_id -> {is_accessible, is_completed}
