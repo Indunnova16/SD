@@ -140,16 +140,40 @@ def course_detail(request, course_id):
     # Get lesson progress and accessibility if enrolled
     lesson_progress = {}
     lesson_accessibility = {}
+    issued_certificate = None
     if enrollment:
         progress_qs = LessonProgress.objects.filter(enrollment=enrollment)
         lesson_progress = {lp.lesson_id: lp for lp in progress_qs}
         lesson_accessibility = EnrollmentService.get_lesson_accessibility_map(enrollment)
+
+        if enrollment.status == Enrollment.Status.COMPLETED:
+            # SD#59 (gap B, reproceso): course_detail never surfaced a
+            # download link for the certificate -- the only way to get the
+            # PDF was navigating away to /certifications/ (my_certificates).
+            # Same criterion as certifications/signals.py: most recent
+            # ISSUED certificate for (user, course). `None` while the
+            # certificate is still 'pending' (PDF renders a few seconds
+            # after completion, same pattern as my_certificates.html/SD#43)
+            # -- the template below simply omits the link in that case,
+            # it never breaks the view.
+            from apps.certifications.models import Certificate
+
+            issued_certificate = (
+                Certificate.objects.filter(
+                    user=request.user,
+                    course=course,
+                    status=Certificate.Status.ISSUED,
+                )
+                .order_by("-issued_at")
+                .first()
+            )
 
     context = {
         "course": course,
         "enrollment": enrollment,
         "lesson_progress": lesson_progress,
         "lesson_accessibility": lesson_accessibility,
+        "issued_certificate": issued_certificate,
     }
     return render(request, "courses/course_detail.html", context)
 
