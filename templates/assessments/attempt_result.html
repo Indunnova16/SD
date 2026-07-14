@@ -56,6 +56,20 @@
                            class="btn btn-ghost btn-block">Volver a la Lección</a>
                     {% endif %}
                 {% else %}
+                    <!-- SD#54 (reproceso 3ra ronda): rama aprobado -- ofrecer
+                         continuar directo a la siguiente leccion del curso,
+                         simetrico al patron de la rama reprobado (linea 54-57).
+                         Fallback a "Volver a la Leccion" si no hay siguiente
+                         leccion accesible pero la evaluacion si esta ligada a
+                         una leccion. -->
+                    {% if next_lesson and next_lesson_accessible %}
+                        <a href="{% url 'courses:lesson' next_lesson.module.course_id next_lesson.id %}"
+                           id="continue-course-btn"
+                           class="btn btn-primary btn-block">Continuar Curso</a>
+                    {% elif assessment.lesson %}
+                        <a href="{% url 'courses:lesson' assessment.lesson.module.course_id assessment.lesson.id %}"
+                           class="btn btn-primary btn-block">Volver a la Lección</a>
+                    {% endif %}
                     <a href="{% url 'assessments:detail' assessment.id %}"
                        class="btn btn-primary btn-block">Volver a la Evaluación</a>
                 {% endif %}

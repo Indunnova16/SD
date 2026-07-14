@@ -12,6 +12,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.permissions import Rol, user_has_rol
+from apps.courses.models import Enrollment
+from apps.courses.services import EnrollmentService
 
 from .models import Answer, Assessment, AssessmentAttempt, AttemptAnswer, Question
 from .services import AssessmentService
@@ -387,12 +389,32 @@ def attempt_result(request, attempt_id):
         aa.question_id: aa for aa in attempt.attempt_answers.prefetch_related("selected_answers")
     }
 
+    # SD#54 (reproceso 3ra ronda): resolve the next lesson so the "aprobado"
+    # branch of the template can offer a direct "Continuar Curso" action
+    # instead of stranding the user on the result screen. Reuses the
+    # next-lesson lookup shared with apps.courses.views.lesson_view via
+    # EnrollmentService.get_next_lesson_context. Fails safe to None/False --
+    # never raise for a missing enrollment or an assessment not tied to a
+    # lesson (generic course assessments).
+    next_lesson = None
+    next_lesson_accessible = False
+    if assessment.lesson:
+        enrollment = Enrollment.objects.filter(
+            user=request.user, course=assessment.lesson.module.course
+        ).first()
+        if enrollment:
+            next_lesson, next_lesson_accessible = EnrollmentService.get_next_lesson_context(
+                enrollment, assessment.lesson
+            )
+
     context = {
         "attempt": attempt,
         "assessment": assessment,
         "questions": questions,
         "user_answers": user_answers,
         "show_correct": assessment.show_correct_answers,
+        "next_lesson": next_lesson,
+        "next_lesson_accessible": next_lesson_accessible,
     }
     return render(request, "assessments/attempt_result.html", context)
 
