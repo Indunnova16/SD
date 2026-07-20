@@ -46,9 +46,9 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <option value="attendance">Asistencia</option>
             </select>
         </div>
-        <!-- Duration (hide for quiz) -->
-        <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential"
-             x-cloak x-show="['video','pdf','text','scorm','audio','interactive','presential'].includes(lessonType)">
+        <!-- Duration (shown for all types with a duration concept, including quiz) -->
+        <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential,quiz"
+             x-cloak x-show="['video','pdf','text','scorm','audio','interactive','presential','quiz'].includes(lessonType)">
             <label class="label py-1">
                 <span class="label-text text-xs">Duracion (minutos)</span>
             </label>
