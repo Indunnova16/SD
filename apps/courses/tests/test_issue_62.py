@@ -13,6 +13,13 @@ lecciones/módulos/cursos/rutas/certificados.
       builder_add_lesson/builder_edit_lesson/builder_delete_lesson
       agregan a su respuesta HTMX.
 
+  A4 (parcial, course_list/course_detail): unifica course_detail.html y
+      course_list.html para usar `course.duration_hours` (ya existe y es
+      correcto) en vez de `course.total_duration` (minutos crudos). El
+      resto de A4 (LearningPath.duration_hours, certificados) tiene tests
+      dedicados en apps/learning_paths/tests/test_issue_62.py y
+      apps/certifications/tests/test_issue_62.py.
+
 NOTA (detect_hot_files.py): apps/courses/tests.py es compartido entre
 varios issues de este RUN — este archivo de test es POR-ISSUE
 (test_issue_62.py), nunca se apendea a tests.py.
@@ -210,3 +217,47 @@ class BuilderDurationOobFragmentTests(TestCase):
         self.assertIn(f'id="module-duration-{self.module.id}"', content)
         # El modulo quedo sin lecciones tras el borrado -> 0.0 h.
         self.assertIn("0,0 h", content)
+
+
+# --------------------------------------------------------------------------
+# A4 (parcial) — course_detail.html / course_list.html usan duration_hours.
+# --------------------------------------------------------------------------
+class CourseDetailListDurationHoursTests(TestCase):
+    """A4: course_detail.html y course_list.html renderizan
+    `course.duration_hours` (horas) en vez de `course.total_duration`
+    (minutos crudos)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = _make_staff_user()
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_happy_path_course_detail_shows_hours(self):
+        course = _make_course(self.staff, status=Course.Status.PUBLISHED)
+        module = Module.objects.create(
+            course=course, title="M1", description="", order=0
+        )
+        Lesson.objects.create(
+            module=module, title="L1", lesson_type=Lesson.Type.VIDEO, duration=90, order=0
+        )
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("courses:detail", args=[course.id]))
+
+        self.assertEqual(response.status_code, 200)
+        # 90 min = 1.5 h; LANGUAGE_CODE=es-co localiza a coma. La fila
+        # "Duracion total" del sidebar ahora usa duration_hours -- NOTA:
+        # el listado de lecciones sigue mostrando "{{ lesson.duration }}
+        # min" por lección individual (course_detail.html:166), fuera de
+        # alcance de A4 (esa es la duracion de la leccion, no el total).
+        self.assertContains(response, "1,5 h")
+
+    def test_edge_course_list_zero_duration_course_does_not_crash(self):
+        """Curso publicado sin lecciones (duration_hours=0.0) no debe
+        romper course_list.html."""
+        _make_course(self.staff, status=Course.Status.PUBLISHED)
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("courses:list"))
+
+        self.assertEqual(response.status_code, 200)

@@ -88,6 +88,30 @@ class LearningPath(models.Model):
         )
         return result["total"] or 0
 
+    @property
+    def duration_hours(self):
+        """Total learning path duration in hours (rounded to 1 decimal),
+        analogous to Course.duration_hours (SD#62 A4).
+
+        Deliberately does NOT reuse `total_duration` above: that property
+        aggregates `Sum(F("course__total_duration"))` against
+        `Course.total_duration`, which is a Python `@property`, not a real
+        DB column/relation -- the ORM cannot resolve `course__total_duration`
+        as a field and raises `FieldError` at query time whenever
+        `total_duration` (or the API serializer field of the same name) is
+        actually evaluated. That is a pre-existing bug confirmed by
+        inspection; left untouched here to keep this fix surgical (SD#62
+        scope is duration_hours, not total_duration's contract). This
+        aggregates directly over the real FK chain instead.
+        """
+        from django.db.models import Sum
+
+        result = self.path_courses.aggregate(
+            total=Sum("course__modules__lessons__duration")
+        )
+        total_minutes = result["total"] or 0
+        return round(total_minutes / 60, 1)
+
 
 class PathCourse(models.Model):
     """

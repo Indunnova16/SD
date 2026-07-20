@@ -106,6 +106,14 @@
                                 {{ certificate.course.title }}
                             </p>
                         </div>
+                        {% if certificate.course.duration_hours %}
+                            <div>
+                                <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Duración</p>
+                                <p class="font-medium text-gray-900 dark:text-white">
+                                    {{ certificate.course.duration_hours }} h
+                                </p>
+                            </div>
+                        {% endif %}
                         <div>
                             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Estado</p>
                             <span class="badge {% if certificate.status == 'issued' %}badge-success{% elif certificate.status == 'expired' %}badge-warning{% elif certificate.status == 'revoked' %}badge-error{% else %}badge-info{% endif %}">

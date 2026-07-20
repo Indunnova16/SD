@@ -112,6 +112,14 @@
 
                         <!-- Details -->
                         <div class="space-y-1 text-sm">
+                            {% if certificate.course.duration_hours %}
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500 dark:text-gray-400">Duración</span>
+                                    <span class="text-gray-900 dark:text-white">
+                                        {{ certificate.course.duration_hours }} h
+                                    </span>
+                                </div>
+                            {% endif %}
                             {% if certificate.issued_at %}
                                 <div class="flex justify-between">
                                     <span class="text-gray-500 dark:text-gray-400">Emitido</span>
