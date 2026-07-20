@@ -95,7 +95,9 @@ class BuilderMatchingQuestionGradingIssue57Tests(TestCase):
                 "title": "QA_E2E_M57 leccion emparejamiento",
                 "lesson_type": "quiz",
                 "is_mandatory": "on",
-                "duration": "0",
+                # SD#62 A2: duration>0 ahora es obligatorio tambien para
+                # quiz (antes "0" pasaba porque el campo estaba oculto).
+                "duration": "10",
                 "quiz_questions": json.dumps(
                     [
                         {
@@ -222,7 +224,9 @@ class BuilderQuizAssessmentMaxAttemptsIssue57Tests(TestCase):
                 "title": "QA_E2E_M57B quiz nuevo",
                 "lesson_type": "quiz",
                 "is_mandatory": "on",
-                "duration": "0",
+                # SD#62 A2: duration>0 ahora es obligatorio tambien para
+                # quiz (antes "0" pasaba porque el campo estaba oculto).
+                "duration": "10",
                 "quiz_questions": "[]",
             },
             HTTP_HX_REQUEST="true",
@@ -256,7 +260,9 @@ class BuilderQuizAssessmentMaxAttemptsIssue57Tests(TestCase):
                 "title": lesson.title,
                 "lesson_type": "quiz",
                 "is_mandatory": "on",
-                "duration": "0",
+                # SD#62 A2: duration>0 ahora es obligatorio tambien para
+                # quiz (antes "0" pasaba porque el campo estaba oculto).
+                "duration": "10",
                 "quiz_time_limit": "",
             },
             HTTP_HX_REQUEST="true",

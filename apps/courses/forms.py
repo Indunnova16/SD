@@ -388,6 +388,29 @@ class LessonBuilderForm(forms.ModelForm):
         # poder guardar una leccion de Asistencia sin fecha agendada.
         return cleaned_data
 
+    def clean_duration(self):
+        """SD#62 A2: duration es obligatorio (>0 minutos) para todo
+        lesson_type EXCEPTO 'attendance' (que usa scheduled_date, SD#57.1).
+
+        RIESGO documentado en el PLAN: 21/25 lecciones en prod (84%) tienen
+        duration=0 hoy -- cualquier edicion futura de esas lecciones legacy
+        queda bloqueada hasta completar duration (comportamiento esperado,
+        no un bug: el cliente pidio que duration sea obligatorio).
+        """
+        duration = self.cleaned_data.get("duration")
+        # lesson_type se limpia antes que duration (orden de Meta.fields),
+        # pero self.data es el fallback si por algun motivo no llego a
+        # cleaned_data (p.ej. el propio lesson_type fallo su validacion).
+        lesson_type = self.cleaned_data.get("lesson_type") or self.data.get("lesson_type")
+        if lesson_type and lesson_type != Lesson.Type.ATTENDANCE and not duration:
+            raise forms.ValidationError(
+                _(
+                    "La duración es obligatoria (mayor a 0 minutos) para "
+                    "este tipo de lección."
+                )
+            )
+        return duration
+
 
 class QuickAssessmentForm(forms.Form):
     """Form for quickly creating an assessment from the course builder."""

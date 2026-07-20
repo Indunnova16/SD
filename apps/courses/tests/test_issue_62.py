@@ -7,6 +7,16 @@ lecciones/módulos/cursos/rutas/certificados.
       campo quedaba oculto para lecciones tipo Evaluación aunque el modelo
       sí lo guarda. Fix: agregar 'quiz' a ambas listas.
 
+  A2: LessonBuilderForm no exigía duration>0 -- el 84% de las lecciones en
+      prod tienen duration=0. Fix: clean_duration() exige duration>0 para
+      todo lesson_type EXCEPTO 'attendance' (usa scheduled_date, SD#57.1).
+      HALLAZGO de F2 confirmado aquí: builder_edit_lesson, al re-renderizar
+      lesson_item.html completo (hx-swap=outerHTML) tras un error, perdía
+      el estado Alpine `editingLesson` (reseteado a false por el x-data
+      fresco), dejando el <template x-if="editingLesson"> — que contiene el
+      mensaje de error — fuera del DOM. Fix: inicializar `editingLesson`
+      desde `lesson_form.errors` en el x-data raíz de lesson_item.html.
+
   A3: Module.duration_hours (nueva @property, análoga a Course.duration_
       hours) + badge en vivo en module_card.html/course_builder.html,
       refrescado sin reload vía un fragmento OOB (hx-swap-oob) que
@@ -32,6 +42,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
+from apps.courses.forms import LessonBuilderForm
 from apps.courses.models import Category, Course, Lesson, Module
 
 _SEQ = [6200]
@@ -123,6 +134,124 @@ class LessonFormQuizDurationVisibilityTests(TestCase):
             ".includes(lessonType)",
             html,
         )
+
+
+# --------------------------------------------------------------------------
+# A2 — duration obligatorio (>0) en el Constructor, excepto attendance.
+# --------------------------------------------------------------------------
+class LessonBuilderFormDurationRequiredTests(TestCase):
+    """A2: LessonBuilderForm.clean_duration() exige duration>0 para todo
+    lesson_type salvo 'attendance'."""
+
+    def test_edge_video_duration_zero_rejected(self):
+        form = LessonBuilderForm(
+            data={"title": "Video de prueba", "lesson_type": Lesson.Type.VIDEO, "duration": "0"}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("duration", form.errors)
+        self.assertIn("duraci", form.errors["duration"][0].lower())
+
+    def test_edge_quiz_duration_empty_rejected(self):
+        form = LessonBuilderForm(
+            data={"title": "Quiz de prueba", "lesson_type": Lesson.Type.QUIZ, "duration": ""}
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("duration", form.errors)
+
+    def test_happy_path_attendance_duration_zero_not_required(self):
+        """No debe romper SD#57.1: attendance usa scheduled_date, no
+        duration -- duration=0 (el valor por defecto del modelo) debe
+        seguir siendo valido para este tipo."""
+        form = LessonBuilderForm(
+            data={
+                "title": "Asistencia",
+                "lesson_type": Lesson.Type.ATTENDANCE,
+                "duration": "0",
+            }
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_happy_path_video_duration_positive_accepted(self):
+        form = LessonBuilderForm(
+            data={"title": "Video ok", "lesson_type": Lesson.Type.VIDEO, "duration": "15"}
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+
+class BuilderEditLessonDurationRequiredViewTests(TestCase):
+    """A2 (view level): editar una leccion legacy con duration=0 sin
+    corregirla falla con un mensaje claro (no una excepcion 500), y el
+    mensaje de error queda VISIBLE en el HTML devuelto (hallazgo de
+    visibilidad Alpine documentado en el sub-item)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = _make_staff_user()
+        cls.course = _make_course(cls.staff)
+        cls.module = Module.objects.create(
+            course=cls.course, title="Modulo 1", description="m", order=0
+        )
+        # Leccion legacy real: duration=0, tal como el 84% de las lecciones
+        # en prod (riesgo documentado en el PLAN de SD#62).
+        cls.lesson = Lesson.objects.create(
+            module=cls.module,
+            title="Leccion legacy",
+            description="",
+            lesson_type=Lesson.Type.VIDEO,
+            duration=0,
+            order=0,
+        )
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_edge_edit_legacy_lesson_duration_zero_fails_visibly_no_500(self):
+        self.client.force_login(self.staff)
+        url = reverse(
+            "courses:builder_edit_lesson",
+            args=[self.course.id, self.module.id, self.lesson.id],
+        )
+        response = self.client.post(
+            url,
+            data={
+                "title": self.lesson.title,
+                "lesson_type": Lesson.Type.VIDEO,
+                "duration": "0",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # editingLesson debe inicializar en `true` cuando la respuesta trae
+        # lesson_form.errors -- si no, el <template x-if="editingLesson">
+        # (que contiene el mensaje de error) queda fuera del DOM tras el
+        # hx-swap=outerHTML y el usuario no ve por que no guardo.
+        self.assertIn("editingLesson: true", content)
+        self.assertIn("alert-error", content)
+        self.assertIn("duraci", content.lower())
+
+    def test_happy_path_edit_lesson_with_positive_duration_succeeds(self):
+        """Regresion: corregir la duracion legacy SI debe guardar bien
+        (y volver a editingLesson: false, modo vista)."""
+        self.client.force_login(self.staff)
+        url = reverse(
+            "courses:builder_edit_lesson",
+            args=[self.course.id, self.module.id, self.lesson.id],
+        )
+        response = self.client.post(
+            url,
+            data={
+                "title": self.lesson.title,
+                "lesson_type": Lesson.Type.VIDEO,
+                "duration": "20",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.lesson.refresh_from_db()
+        self.assertEqual(self.lesson.duration, 20)
+        content = response.content.decode()
+        self.assertIn("editingLesson: false", content)
 
 
 # --------------------------------------------------------------------------

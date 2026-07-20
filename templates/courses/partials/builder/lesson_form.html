@@ -50,14 +50,22 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
         <div class="form-control conditional-field" data-show-for="video,pdf,text,scorm,audio,interactive,presential,quiz"
              x-cloak x-show="['video','pdf','text','scorm','audio','interactive','presential','quiz'].includes(lessonType)">
             <label class="label py-1">
-                <span class="label-text text-xs">Duracion (minutos)</span>
+                <span class="label-text text-xs">Duracion (minutos) <span class="text-error">*</span></span>
             </label>
             <input type="number"
                    name="duration"
                    value="{% if not is_new %}{{ lesson.duration }}{% else %}0{% endif %}"
                    class="input input-bordered input-sm w-full"
                    min="0"
+                   required
                    placeholder="Minutos">
+            <!-- min="0" (no "1"): duration=0 debe pasar la validacion nativa
+                 del navegador y llegar al servidor -- clean_duration()
+                 (apps/courses/forms.py) es quien rechaza 0 con un mensaje
+                 visible; un min="1" bloquearia el submit del lado del
+                 cliente antes de llegar al servidor (rompe el journey E2E
+                 i62_a2, que tipea 0 a proposito para verificar el rechazo
+                 server-side). -->
         </div>
         <!-- Is Mandatory -->
         <div class="form-control">

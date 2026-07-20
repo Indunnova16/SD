@@ -1,5 +1,5 @@
 <div data-lesson-id="{{ lesson.id }}"
-     x-data="{ editingLesson: false, showQuizAssign: false, showQuestionEditor: false }">
+     x-data="{ editingLesson: {% if lesson_form.errors %}true{% else %}false{% endif %}, showQuizAssign: false, showQuestionEditor: false }">
     {% if quiz_error %}
         <div class="alert alert-error text-xs mb-2 py-2">{{ quiz_error }}</div>
     {% endif %}
@@ -201,13 +201,17 @@
                         <!-- Duration -->
                         <div class="form-control">
                             <label class="label py-1">
-                                <span class="label-text text-xs">Duracion (minutos)</span>
+                                <span class="label-text text-xs">
+                                    Duracion (minutos)
+                                    <span class="text-error" x-show="lessonType !== 'attendance'" x-cloak>*</span>
+                                </span>
                             </label>
                             <input type="number"
                                    name="duration"
                                    value="{{ lesson.duration|default:0 }}"
                                    class="input input-bordered input-sm w-full"
                                    min="0"
+                                   :required="lessonType !== 'attendance'"
                                    placeholder="Minutos">
                         </div>
                         <!-- Is Mandatory -->

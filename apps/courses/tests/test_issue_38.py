@@ -108,7 +108,10 @@ class BuilderAddQuizLessonIssue38Tests(TestCase):
                 "title": title,
                 "lesson_type": "quiz",
                 "is_mandatory": "on",
-                "duration": "0",
+                # SD#62 A2: duration>0 ahora es obligatorio tambien para
+                # quiz (antes solo se pedia "0" porque el campo estaba
+                # oculto en el form -- A1/A2 lo hacen visible+requerido).
+                "duration": "10",
                 "quiz_questions": json.dumps(quiz_questions),
             },
             HTTP_HX_REQUEST="true",
