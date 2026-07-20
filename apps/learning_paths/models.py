@@ -80,13 +80,16 @@ class LearningPath(models.Model):
 
     @property
     def total_duration(self):
-        """Calculate total duration from all courses (in minutes)."""
-        from django.db.models import F, Sum
+        """Calculate total duration from all courses (in minutes).
 
-        result = self.path_courses.aggregate(
-            total=Sum(F("course__total_duration"), output_field=models.IntegerField())
+        `Course.total_duration` is itself a Python `@property` (aggregates
+        lesson durations), not a DB field/annotation — an `F()`/`Sum()`
+        aggregate can't traverse it, so this sums in Python instead.
+        """
+        return sum(
+            pc.course.total_duration
+            for pc in self.path_courses.select_related("course")
         )
-        return result["total"] or 0
 
 
 class PathCourse(models.Model):
