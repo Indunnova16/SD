@@ -30,6 +30,28 @@ lecciones/módulos/cursos/rutas/certificados.
       dedicados en apps/learning_paths/tests/test_issue_62.py y
       apps/certifications/tests/test_issue_62.py.
 
+  A5: bug encontrado por E2E real (journey i62_a2_duration_required_reject_
+      and_accept) contra el canary: tras un submit invalido (duration=0),
+      el input duration quedaba invisible/no interactuable en el form
+      re-renderizado -- timeout 30s en el fill de reintento. Causa raiz
+      (confirmada con Playwright headless contra runserver local, NO
+      solo lectura de codigo): NO era un problema de Alpine no re-
+      inicializando el <form> swapeado (Alpine SI lo procesaba bien --
+      x-cloak se removia correctamente del bloque Duracion). El problema
+      real: `@htmx:after-request="if(event.detail.successful) {
+      showAddLesson = false; }"` en lesson_form.html cerraba el panel
+      "Agregar Leccion" (x-show="showAddLesson", en module_card.html)
+      ante CUALQUIER respuesta 2xx -- y builder_add_lesson devuelve un
+      200 plano (solo con headers HX-Retarget/HX-Reswap) tanto para el
+      guardado exitoso como para el form invalido. Con el panel entero
+      en display:none, el form re-renderizado (con su .alert-error y el
+      input duration) quedaba oculto tras su propio contenedor, aunque
+      el form en si estuviera perfectamente inicializado. Fix: solo
+      cerrar el panel si la respuesta NO trae el header HX-Retarget
+      (que el servidor emite exclusivamente en el path de error). Test
+      de template (no sustituye el E2E real, que es quien detecta wiring
+      HTMX/Alpine) en LessonFormAfterRequestPanelCollapseTests.
+
 NOTA (detect_hot_files.py): apps/courses/tests.py es compartido entre
 varios issues de este RUN — este archivo de test es POR-ISSUE
 (test_issue_62.py), nunca se apendea a tests.py.
@@ -134,6 +156,75 @@ class LessonFormQuizDurationVisibilityTests(TestCase):
             ".includes(lessonType)",
             html,
         )
+
+
+# --------------------------------------------------------------------------
+# A5 — el after-request handler no debe cerrar el panel "Agregar Leccion"
+# ante una respuesta de error (HX-Retarget) re-renderizada con status 200.
+# --------------------------------------------------------------------------
+class LessonFormAfterRequestPanelCollapseTests(TestCase):
+    """A5: el form is_new=True debe cerrar `showAddLesson` (panel del padre,
+    module_card.html) SOLO cuando la respuesta es un guardado real, nunca
+    cuando el servidor re-renderiza el mismo form con errores (200 +
+    HX-Retarget: closest form). Regresion cubierta: E2E real
+    i62_a2_duration_required_reject_and_accept encontro que un submit
+    invalido (duration=0) dejaba el input duration invisible/no
+    interactuable porque el panel padre completo colapsaba a display:none."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = _make_staff_user()
+        cls.course = _make_course(cls.staff)
+        cls.module = Module.objects.create(
+            course=cls.course, title="Modulo 1", description="m", order=0
+        )
+
+    def test_happy_path_after_request_checks_hx_retarget_before_closing_panel(self):
+        html = render_to_string(
+            "courses/partials/builder/lesson_form.html",
+            {"is_new": True, "course": self.course, "module": self.module},
+        )
+        # El handler debe verificar la AUSENCIA del header HX-Retarget antes
+        # de cerrar el panel -- no basta con `event.detail.successful` (2xx),
+        # porque el path de error de builder_add_lesson tambien responde 200.
+        self.assertIn(
+            "if(event.detail.successful && "
+            "!event.detail.xhr.getResponseHeader('HX-Retarget')) "
+            "{ showAddLesson = false; }",
+            html,
+        )
+
+    def test_edge_naive_successful_only_check_is_not_present(self):
+        """Regresion explicita: la version rota (solo `event.detail.
+        successful`, sin chequear HX-Retarget) no debe reaparecer."""
+        html = render_to_string(
+            "courses/partials/builder/lesson_form.html",
+            {"is_new": True, "course": self.course, "module": self.module},
+        )
+        self.assertNotIn(
+            "if(event.detail.successful) { showAddLesson = false; }", html
+        )
+
+    def test_happy_path_edit_form_has_no_after_request_handler(self):
+        """El form de EDICION (is_new=False) no usa showAddLesson -- no debe
+        ganar por error el mismo handler al tocar esta linea."""
+        lesson = Lesson.objects.create(
+            module=self.module,
+            title="Leccion existente",
+            lesson_type=Lesson.Type.VIDEO,
+            duration=10,
+            order=0,
+        )
+        html = render_to_string(
+            "courses/partials/builder/lesson_form.html",
+            {
+                "is_new": False,
+                "lesson": lesson,
+                "course": self.course,
+                "module": self.module,
+            },
+        )
+        self.assertNotIn("showAddLesson", html)
 
 
 # --------------------------------------------------------------------------
