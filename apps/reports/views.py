@@ -486,7 +486,30 @@ from apps.reports.services import ReportService, ScheduledReportService
 @login_required
 @require_GET
 def report_list(request):
-    """Report templates list."""
+    """Report templates list.
+
+    NO gateado por rol (issue #58 F3, correccion sobre el diagnostico F1):
+    F1 propuso agregar `@require_rol(ADMINISTRADOR)` acá razonando que
+    "reports:list solo tiene @login_required, accesible a cualquier rol".
+    Verificado en código que esto es DISEÑO INTENCIONAL de A10, no un bug:
+    `report_list` es la vista "personal" (lista de PLANTILLAS de reporte,
+    sin datos cross-usuario — la data sensible vive detrás de las 10 vistas
+    de dashboard, esas sí Administrador-only) y es ADEMÁS el
+    `redirect_url="reports:list"` de esas 10 vistas + los 3 `scheduled_*` —
+    el "puerto seguro" al que cae cualquier rol denegado. Gatearla:
+    (a) reabriría A10 (contradice `apps/reports/tests/test_views.py::
+    ReportsPersonalViewsRegressionTests.test_report_list_cualquier_rol_ok`,
+    que exige 200 para ejecutor/coordinador/sin_rol), y
+    (b) rompería 6 tests más que hacen `assertRedirects(response,
+    reverse("reports:list"))` (default `target_status_code=200`) desde las
+    vistas admin-only — con este gate, esas aserciones fallarían porque
+    reports:list pasaría a responder 302 en vez de 200 para esos roles.
+    El fix real de la fuga (issue #58, ver `templates/accounts/dashboard.html`
+    y `accounts/views.py::dashboard`) es que el dashboard personal deje de
+    disparar el hx-get de los 9 widgets Administrador-only para roles no
+    Administrador — sin ese hx-get fallando, nunca se llega a embeber esta
+    página (ni ninguna otra) dentro del widget.
+    """
     templates = ReportTemplate.objects.filter(is_active=True).order_by("name")
     context = {"templates": templates}
     return render(request, "reports/report_list.html", context)

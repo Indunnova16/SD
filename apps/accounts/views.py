@@ -33,7 +33,7 @@ from .forms import (
     UserEditForm,
 )
 from .models import JobHistory
-from .permissions import Rol, require_rol
+from .permissions import Rol, require_rol, user_has_rol
 from .services import BulkUploadService, ExportService, PasswordService
 
 logger = logging.getLogger(__name__)
@@ -112,6 +112,14 @@ def dashboard(request):
         "user": request.user,
         "categories": categories,
         "job_profiles": JobProfileType.objects.filter(is_active=True).values_list("code", "name"),
+        # RBAC (issue #58, regresion de fuga de Reportes): los 9 widgets HTMX
+        # de reports:* que este dashboard embebe son Administrador-only en el
+        # backend (@require_rol(Rol.ADMINISTRADOR) en apps/reports/views.py).
+        # El template los gatea con esta bandera para que Ejecutor/Coordinador
+        # ni siquiera disparen el hx-get — antes se disparaban igual, el
+        # require_rol fallaba, y HTMX incrustaba la pagina completa de
+        # redireccion (reports:list) dentro del widget pequeno del dashboard.
+        "es_administrador": user_has_rol(request.user, Rol.ADMINISTRADOR),
     }
     return render(request, "accounts/dashboard.html", context)
 
