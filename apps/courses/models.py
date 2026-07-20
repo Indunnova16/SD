@@ -177,6 +177,13 @@ class Course(models.Model):
         PANAMA = "PA", _("Panamá")
         PERU = "PE", _("Perú")
 
+    class ActivityType(models.TextChoices):
+        CHARLA = "charla", _("Charla")
+        CAPACITACION = "capacitacion", _("Capacitación")
+        SIMULACRO = "simulacro", _("Simulacro")
+        SOCIALIZACION = "socializacion", _("Socialización")
+        OTRA = "otra", _("Otra")
+
     code = models.CharField(_("Código"), max_length=50, unique=True)
     title = models.CharField(_("Título"), max_length=200)
     description = models.TextField(_("Descripción"))
@@ -248,6 +255,34 @@ class Course(models.Model):
         blank=True,
         related_name="courses",
         verbose_name=_("Categoría"),
+    )
+    # SD#63: campos para el reporte de asistencia por curso (formato
+    # FT-HSEQ-60). blank=True (y null=True para instructor, FK) para no
+    # romper los cursos reales ya existentes al migrar -- ninguno de los 3
+    # es obligatorio a nivel de modelo, el gate de A5 los exige solo al
+    # intentar exportar el PDF.
+    project_name = models.CharField(
+        _("Proyecto"),
+        max_length=200,
+        blank=True,
+        default="",
+        help_text=_("Proyecto/obra al que pertenece la actividad (formato FT-HSEQ-60)"),
+    )
+    activity_type = models.CharField(
+        _("Tipo de actividad"),
+        max_length=20,
+        choices=ActivityType.choices,
+        blank=True,
+        default="",
+    )
+    instructor = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses_as_instructor",
+        verbose_name=_("Instructor"),
+        help_text=_("Instructor responsable de la actividad (firma en el reporte de asistencia)"),
     )
     contracts = models.ManyToManyField(
         "accounts.Contract",
