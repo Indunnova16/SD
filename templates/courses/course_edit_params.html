@@ -90,6 +90,46 @@
                             </div>
                         </div>
                         <div class="divider"></div>
+                        <!-- Asistencia por Curso (SD#63, formato FT-HSEQ-60) -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Datos de Asistencia (FT-HSEQ-60)</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Proyecto</span>
+                                    </label>
+                                    {{ form.project_name }}
+                                    {% if form.project_name.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.project_name.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Tipo de actividad</span>
+                                    </label>
+                                    {{ form.activity_type }}
+                                    {% if form.activity_type.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.activity_type.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text">Instructor</span>
+                                    </label>
+                                    {{ form.instructor }}
+                                    {% if form.instructor.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.instructor.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
                         <!-- Course Configuration -->
                         <div>
                             <h3 class="text-lg font-semibold mb-4">Configuracion del Curso</h3>
