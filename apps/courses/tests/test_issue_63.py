@@ -388,3 +388,101 @@ class BuilderHideAttendanceForNewLessonsTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'value="attendance"')
+
+
+# =============================================================================
+# A5 -- Vista+URL export_course_attendance_pdf + gate de validación
+# (issue punto 2)
+# =============================================================================
+
+
+class ExportCourseAttendancePdfTests(TestCase):
+    """Reusa _attendance_export_required (ADMINISTRADOR + COORDINADOR, ya
+    validado en SD#59 A4). Antes de renderizar, exige project_name/
+    activity_type/objectives/instructor -- si falta alguno, redirige a
+    course_full_edit con un mensaje, sin generar un PDF incompleto."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.client = Client()
+
+    def _complete_course(self):
+        course, _module = _make_course(
+            self.administrador,
+            project_name="Proyecto Poda y Tala",
+            activity_type=Course.ActivityType.CAPACITACION,
+            objectives="Capacitar en procedimiento seguro",
+            instructor=self.instructor,
+        )
+        return course
+
+    def test_happy_path_curso_completo_devuelve_pdf(self):
+        course = self._complete_course()
+        signed_user = _make_user()
+        enrollment = Enrollment.objects.create(user=signed_user, course=course)
+        enrollment.completion_signature = _png_file()
+        enrollment.completion_signed_at = timezone.now()
+        enrollment.save()
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+    def test_edge_curso_incompleto_redirige_a_full_edit_con_mensaje(self):
+        """Los 8 cursos reales de prod hoy no tienen estos campos -- deben
+        bloquear el export con un mensaje, no un PDF a medias."""
+        course, _module = _make_course(self.administrador)  # sin los 4 campos
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id]),
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(
+            response, reverse("courses:course_full_edit", args=[course.id])
+        )
+        messages_list = list(response.context["messages"])
+        self.assertTrue(any("Proyecto" in str(m) for m in messages_list))
+        self.assertTrue(any("Instructor" in str(m) for m in messages_list))
+
+    def test_edge_curso_incompleto_no_gatea_duration_hours(self):
+        """duration_hours NO forma parte del gate -- decision de scope: un
+        curso completo en los otros 4 campos pero sin modulos/lecciones
+        (0 horas) SI debe poder exportar el PDF."""
+        course = self._complete_course()
+        self.assertEqual(course.duration_hours, 0)
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+
+    def test_happy_path_coordinador_tambien_exporta(self):
+        course = self._complete_course()
+        self.client.force_login(self.coordinador)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+
+    def test_edge_ejecutor_es_bloqueado(self):
+        course = self._complete_course()
+        self.client.force_login(self.ejecutor)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id])
+        )
+        self.assertEqual(response.status_code, 302)

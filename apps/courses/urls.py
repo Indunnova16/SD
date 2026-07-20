@@ -67,6 +67,12 @@ urlpatterns = [
         views.sign_course_completion,
         name="sign_course_completion",
     ),
+    # Asistencia por curso (SD#63, formato FT-HSEQ-60)
+    path(
+        "attendance-reports/<int:course_id>/export-pdf/",
+        views.export_course_attendance_pdf,
+        name="export_course_attendance_pdf",
+    ),
     # Parametrizacion hub
     path("parametrizacion/", views.parametrizacion_hub, name="parametrizacion"),
     # Course admin management (Parametrizacion)

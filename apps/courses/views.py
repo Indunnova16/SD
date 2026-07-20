@@ -2427,3 +2427,98 @@ def export_attendance_pdf(request, course_id, lesson_id):
     filename = f"asistencia_{lesson.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+def _course_attendance_missing_fields(course):
+    """Campos del curso requeridos para exportar el reporte de asistencia
+    por curso (SD#63, A5): project_name, activity_type, objectives,
+    instructor. Devuelve la lista de etiquetas legibles de los que faltan
+    (lista vacia = curso completo). `duration_hours` NO se gatea aqui --
+    decision de scope: se calcula automaticamente de la suma de lecciones,
+    un curso recien creado sin modulos/lecciones aun puede exportar el
+    reporte con 0 horas.
+    """
+    missing = []
+    if not course.project_name:
+        missing.append("Proyecto")
+    if not course.activity_type:
+        missing.append("Tipo de actividad")
+    if not course.objectives:
+        missing.append("Objetivo")
+    if not course.instructor_id:
+        missing.append("Instructor")
+    return missing
+
+
+@login_required
+def export_course_attendance_pdf(request, course_id):
+    """Export the course-level attendance roster PDF (SD#63, formato
+    FT-HSEQ-60). Reusa `_attendance_export_required` -- mismo gate
+    ADMINISTRADOR + COORDINADOR ya validado en SD#59 A4, ningun rol nuevo.
+
+    Antes de renderizar valida que el curso tenga los 4 campos requeridos
+    (project_name, activity_type, objectives, instructor -- issue #63 punto
+    2, `_course_attendance_missing_fields`). Si falta alguno, NO genera un
+    PDF incompleto: redirige a `course_full_edit` (el UNICO de los 3 forms
+    de curso con los 4 campos gateados a la vez -- decision de esta
+    planificacion) con un mensaje de error listando los campos faltantes.
+
+    La firma que alimenta el roster es `Enrollment.completion_signature`
+    (via `_build_course_attendance_summary`, A4) -- decision de arquitectura
+    F2: reusa el mecanismo de firma que YA existe para todo curso via
+    `sign_course_completion`, sin depender de ninguna leccion manual de tipo
+    Asistencia.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    from io import BytesIO
+
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+
+    course = get_object_or_404(Course, pk=course_id)
+
+    missing = _course_attendance_missing_fields(course)
+    if missing:
+        messages.error(
+            request,
+            "Complete los siguientes campos del curso antes de descargar el "
+            f"reporte de asistencia: {', '.join(missing)}.",
+        )
+        return redirect("courses:course_full_edit", course_id=course.id)
+
+    summary = _build_course_attendance_summary(course)
+
+    instructor_signature_url = ""
+    if course.instructor and course.instructor.signature:
+        try:
+            instructor_signature_url = course.instructor.signature.url
+        except Exception:
+            instructor_signature_url = ""
+
+    context = {
+        "course": course,
+        "rows": summary["rows"],
+        "total_inscritos": summary["total_inscritos"],
+        "total_presentes": summary["total_presentes"],
+        "total_ausentes": summary["total_ausentes"],
+        "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+        "instructor_signature_url": instructor_signature_url,
+    }
+
+    html_string = render_to_string("courses/course_attendance_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF de asistencia del curso.")
+        return redirect("courses:course_full_edit", course_id=course.id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = f"asistencia_curso_{course.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
