@@ -1,22 +1,17 @@
 """
 Tests for SD#62 A4 — LearningPath.duration_hours (nueva @property).
 
-Bug preexistente confirmado por F2 (inspeccion de codigo): `total_duration`
-agrega `Sum(F("course__total_duration"))`, pero `Course.total_duration` es
-una @property de Python, NO una columna/relacion de BD -- el ORM no puede
-resolver `course__total_duration` como campo y levanta `FieldError` en
-tiempo de query (reproducido aqui como regresion pineada: ver
-`LearningPathTotalDurationPreexistingBugTests` mas abajo). Ese bug queda
-FUERA de alcance de SD#62 (afecta tambien el campo `total_duration` de la
-API, un contrato mas amplio) -- se deja intacto a proposito. `duration_hours`
-es una property NUEVA con un aggregate correcto sobre la cadena FK real
+`total_duration` tenia un bug preexistente (`Sum(F("course__total_duration"))`
+sobre una @property de Python, ajeno a SD#62) que quedaba fuera de alcance de
+este issue -- corregido aparte en PR #65 (fix root-cause de las 3 fallas
+preexistentes que bloqueaban el gate de SD#62/#63). `duration_hours` es una
+property NUEVA con un aggregate correcto sobre la cadena FK real
 (`path_courses__course__modules__lessons__duration`), usada por
 path_detail.html en lugar de `total_duration`.
 """
 
 from datetime import date
 
-from django.core.exceptions import FieldError
 from django.test import TestCase
 
 from apps.accounts.models import User
@@ -121,18 +116,3 @@ class LearningPathDurationHoursTests(TestCase):
 
         # 60 + 30 = 90 min -> 1.5 h.
         self.assertEqual(path.duration_hours, 1.5)
-
-
-class LearningPathTotalDurationPreexistingBugTests(TestCase):
-    """Regresion pineada (NO un fix de SD#62): `total_duration` sigue roto
-    a proposito -- confirma el diagnostico de F2 y evita que alguien lo
-    "arregle sin querer" reusando su logica dentro de duration_hours (el
-    propio PLAN de SD#62 pidio explicitamente NO reusarla). El fix de
-    `total_duration` (y del campo homonimo en la API) queda fuera de
-    alcance de este issue."""
-
-    def test_total_duration_still_raises_fielderror_pending_separate_fix(self):
-        staff = _make_user()
-        path = _make_path(staff)
-        with self.assertRaises(FieldError):
-            _ = path.total_duration
