@@ -43,7 +43,16 @@ Context: lesson_form (for new), lesson (for edit), course, module, is_new
                 <option value="interactive">Interactivo</option>
                 <option value="audio">Audio</option>
                 <option value="presential">Presencial</option>
-                <option value="attendance">Asistencia</option>
+                {% if not is_new %}
+                    {# SD#63 A7: "Asistencia" se oculta SOLO al crear una leccion NUEVA -- #}
+                    {# cierra la causa raiz de los duplicados (el cliente configurando #}
+                    {# manualmente asistencia por curso) sin arriesgar corromper el tipo #}
+                    {# de las lecciones "Asistencia" reales que ya existen en prod: un #}
+                    {# <select> sin <option> que matchee el value guardado renderiza sin #}
+                    {# seleccion, y al reabrir para editar quedaria sin este tipo salvo #}
+                    {# que el usuario lo cambie explicitamente. #}
+                    <option value="attendance">Asistencia</option>
+                {% endif %}
             </select>
         </div>
         <!-- Duration (hide for quiz) -->

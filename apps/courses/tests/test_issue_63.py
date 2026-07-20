@@ -318,3 +318,73 @@ class BuildCourseAttendanceSummaryTests(TestCase):
         self.assertEqual(summary["total_inscritos"], 3)
         self.assertEqual(summary["total_presentes"], 3)
         self.assertEqual(summary["porcentaje_asistencia"], 100.0)
+
+
+# =============================================================================
+# A7 -- Builder: ocultar opción "Asistencia" SOLO para lecciones NUEVAS
+# =============================================================================
+
+
+class BuilderHideAttendanceForNewLessonsTests(TestCase):
+    """La opción 'Asistencia' del <select name=lesson_type> se oculta al
+    crear una lección NUEVA (is_new=True), pero se preserva al editar una
+    lección Asistencia ya existente (is_new=False) -- decisión de
+    arquitectura F2: cierra la causa raíz de los duplicados sin arriesgar
+    corromper el tipo de lecciones reales ya existentes en prod."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, self.module = _make_course(self.administrador)
+        self.attendance_lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia legacy",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_happy_path_builder_nueva_leccion_no_ofrece_asistencia(self):
+        response = self.client.get(
+            reverse("courses:course_builder", args=[self.course.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        # El modulo existe -> module_card.html se incluye -> el partial
+        # is_new=True de "agregar leccion" esta en el DOM (oculto por Alpine,
+        # pero presente en el HTML fuente que ve el test client).
+        self.assertContains(response, 'name="lesson_type"')
+        self.assertNotContains(response, 'value="attendance"')
+
+    def test_edge_editar_leccion_asistencia_existente_la_conserva(self):
+        response = self.client.get(
+            reverse(
+                "courses:builder_edit_lesson",
+                args=[self.course.id, self.module.id, self.attendance_lesson.id],
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="attendance"')
+        self.assertContains(response, ">Asistencia<")
+
+    def test_edge_editar_leccion_no_asistencia_existente_si_ofrece_la_opcion(self):
+        """El gate de A7 es exclusivamente is_new (creacion) vs edicion, NO
+        el lesson_type de la leccion que se esta editando -- por diseno
+        (snippet literal de F2): editar CUALQUIER leccion existente
+        (is_new=False), sea o no de tipo Asistencia, sigue ofreciendo la
+        opcion en el <select>. Solo la creacion de una leccion NUEVA la
+        oculta. Documenta el alcance real del fix para que no se asuma un
+        filtrado mas fino por accidente en un cambio futuro."""
+        video_lesson = Lesson.objects.create(
+            module=self.module,
+            title="Video existente",
+            lesson_type=Lesson.Type.VIDEO,
+            order=1,
+        )
+        response = self.client.get(
+            reverse(
+                "courses:builder_edit_lesson",
+                args=[self.course.id, self.module.id, video_lesson.id],
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="attendance"')
