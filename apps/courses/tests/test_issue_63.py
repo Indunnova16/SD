@@ -695,3 +695,162 @@ class RbacRegressionAttendanceViewsTests(TestCase):
                     200,
                     f"{name} deberia permitir (200) a un Administrador, obtuvo {response.status_code}",
                 )
+
+
+# =============================================================================
+# A10 -- Tests unitarios consolidados + smoke E2E (via Django test client)
+# =============================================================================
+#
+# NOTA sobre "dato real de prod (curso id=63)": F3 NO recibe credenciales de
+# BD prod por diseño (ver _common.md -- solo F2/F5 las reciben; F1/F3 nunca).
+# El journey mutativo m1_i63_gate_bloquea_y_pdf_curso_real del RUN (F5/E2E
+# post-deploy, run_e2e_or_die.py) es quien reproduce el escenario contra el
+# curso real id=63 "INDUCCIÓN PODA Y TALA" con sus 2 enrollments ya firmados
+# via completion_signature (confirmado en BD prod por F2). Este archivo
+# cubre la contraparte determinista con fixtures propias -- ambos together
+# son la cobertura completa exigida por el protocolo (unit local + E2E
+# contra dato real).
+
+
+class ConsolidatedSmokeE2ETests(TestCase):
+    """Happy path consolidado: lista -> detalle -> export PDF sobre el MISMO
+    curso, verificando que los 3 vean datos consistentes entre si (A6 + A5
+    + A4 integrados)."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.administrador,
+            title="Curso Smoke E2E A10",
+            project_name="Proyecto Smoke",
+            activity_type=Course.ActivityType.SOCIALIZACION,
+            instructor=self.instructor,
+        )
+        for i in range(3):
+            user = _make_user()
+            enrollment = Enrollment.objects.create(user=user, course=self.course)
+            if i < 1:  # 1 de 3 firmado -> 33.3%
+                enrollment.completion_signature = _png_file()
+                enrollment.completion_signed_at = timezone.now()
+                enrollment.save()
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_happy_path_lista_detalle_export_consistentes(self):
+        list_response = self.client.get(reverse("courses:attendance_reports"))
+        self.assertEqual(list_response.status_code, 200)
+        self.assertContains(list_response, "Curso Smoke E2E A10")
+
+        detail_response = self.client.get(
+            reverse("courses:course_attendance_report_detail", args=[self.course.id])
+        )
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertFalse(detail_response.context["missing_fields"])
+        self.assertEqual(detail_response.context["total_inscritos"], 3)
+        self.assertEqual(detail_response.context["total_presentes"], 1)
+        # 1/3 -> edge case de redondeo (no 33 ni 34 planos)
+        self.assertEqual(detail_response.context["porcentaje_asistencia"], 33.3)
+
+        export_response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[self.course.id])
+        )
+        self.assertEqual(export_response.status_code, 200)
+        self.assertEqual(export_response["Content-Type"], "application/pdf")
+        content = (
+            export_response.getvalue()
+            if hasattr(export_response, "getvalue")
+            else export_response.content
+        )
+        self.assertTrue(content.startswith(b"%PDF"))
+        self.assertGreater(len(content), 800)
+
+
+class GateEdgeCasesTests(TestCase):
+    """Edge cases adicionales del gate de completitud (A5) no cubiertos por
+    los tests puntuales de A5/A6: completitud PARCIAL (solo algunos de los
+    4 campos)."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_edge_solo_project_name_completo_sigue_bloqueado(self):
+        # objectives="" override explicito: _make_course defaultea
+        # objectives="obj", este caso necesita los otros 3 campos vacios
+        # para probar que 1 campo completo (project_name) no alcanza.
+        course, _module = _make_course(
+            self.administrador, project_name="Solo esto esta completo", objectives=""
+        )
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id]),
+            follow=True,
+        )
+        self.assertRedirects(
+            response, reverse("courses:course_full_edit", args=[course.id])
+        )
+        messages_list = list(response.context["messages"])
+        joined = " ".join(str(m) for m in messages_list)
+        self.assertNotIn("Proyecto", joined)  # este SI esta completo
+        self.assertIn("Instructor", joined)
+        self.assertIn("Tipo de actividad", joined)
+        self.assertIn("Objetivo", joined)
+
+    def test_edge_falta_solo_instructor_lo_lista(self):
+        course, _module = _make_course(
+            self.administrador,
+            project_name="P",
+            activity_type=Course.ActivityType.SIMULACRO,
+        )
+        # objectives ya viene con default "obj" en _make_course
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id]),
+            follow=True,
+        )
+        self.assertRedirects(
+            response, reverse("courses:course_full_edit", args=[course.id])
+        )
+        messages_list = list(response.context["messages"])
+        joined = " ".join(str(m) for m in messages_list)
+        self.assertIn("Instructor", joined)
+        self.assertNotIn("Proyecto,", joined)
+
+
+class LegacyAttendanceFlowUntouchedTests(TestCase):
+    """Regresion (decision de arquitectura F2 #2 y #4): el flujo LEGACY
+    per-lección (Lesson.Type.ATTENDANCE + attendance_pdf.html +
+    export_attendance_pdf) sigue intacto y funcionando -- este sprint NO lo
+    retira ni lo migra, solo deja de ofrecerlo al CREAR una lección nueva
+    (A7)."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, self.module = _make_course(self.administrador)
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia legacy A10",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        signer = _make_user()
+        Enrollment.objects.create(user=signer, course=self.course)
+        sig = AttendanceSignature.objects.create(lesson=self.lesson, user=signer)
+        sig.signature_image.save("sig.png", _png_file(), save=True)
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_edge_legacy_export_attendance_pdf_sigue_funcionando(self):
+        response = self.client.get(
+            reverse("courses:export_attendance_pdf", args=[self.course.id, self.lesson.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+
+    def test_edge_legacy_attendance_lesson_view_sigue_funcionando(self):
+        Enrollment.objects.create(user=self.administrador, course=self.course)
+        response = self.client.get(
+            reverse("courses:attendance_lesson", args=[self.course.id, self.lesson.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sesión Asistencia legacy A10")
