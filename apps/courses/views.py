@@ -2243,6 +2243,76 @@ def _build_attendance_summary(course, lesson):
     }
 
 
+def _build_course_attendance_summary(course):
+    """Build the course-level attendance summary for the SD#63 report
+    (formato FT-HSEQ-60).
+
+    Paralelo a ``_build_attendance_summary(course, lesson)`` -- NO lo
+    reemplaza, ese helper sigue siendo la fuente del roster de UNA lección
+    de tipo Asistencia (flujo legacy). Este helper recorre TODAS las
+    inscripciones del curso y deriva "presente" de la firma de finalización
+    del curso (``Enrollment.completion_signature``, capturada por
+    ``sign_course_completion`` -- decisión de arquitectura F2: reusar el
+    mecanismo de firma que YA existe para todo curso, sin construir uno
+    nuevo).
+
+    Returns a dict with:
+      - rows: list of per-enrollee dicts {user, full_name, document_number,
+        job_position, estado ("Presente"/"Ausente"), presente (bool),
+        signed_at (``completion_signed_at``), signature_image_url}
+      - total_inscritos, total_presentes, total_ausentes
+      - porcentaje_asistencia: presentes / inscritos * 100, rounded to 1
+        decimal (0.0 if there are no enrollees -- no ZeroDivisionError,
+        misma fórmula que ``_build_attendance_summary``)
+    """
+    enrollments = (
+        Enrollment.objects.filter(course=course)
+        .select_related("user")
+        .order_by("user__first_name", "user__last_name", "user__document_number")
+    )
+
+    rows = []
+    total_presentes = 0
+    for enrollment in enrollments:
+        user = enrollment.user
+        presente = bool(enrollment.completion_signature)
+        if presente:
+            total_presentes += 1
+        signature_image_url = ""
+        if presente:
+            try:
+                signature_image_url = enrollment.completion_signature.url
+            except Exception:
+                signature_image_url = ""
+        rows.append(
+            {
+                "user": user,
+                "full_name": user.get_full_name() or user.document_number,
+                "document_number": user.document_number,
+                "job_position": user.job_position,
+                "presente": presente,
+                "estado": "Presente" if presente else "Ausente",
+                "signed_at": enrollment.completion_signed_at,
+                "signature_image_url": signature_image_url,
+            }
+        )
+
+    total_inscritos = len(rows)
+    total_ausentes = total_inscritos - total_presentes
+    if total_inscritos:
+        porcentaje_asistencia = round(total_presentes / total_inscritos * 100, 1)
+    else:
+        porcentaje_asistencia = 0.0
+
+    return {
+        "rows": rows,
+        "total_inscritos": total_inscritos,
+        "total_presentes": total_presentes,
+        "total_ausentes": total_ausentes,
+        "porcentaje_asistencia": porcentaje_asistencia,
+    }
+
+
 def _resolve_attendance_responsable(course, lesson):
     """Resolve the "responsable" of an attendance lesson and their signature
     URL, for the PDF footer (SD#51).

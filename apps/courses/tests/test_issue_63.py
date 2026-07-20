@@ -30,6 +30,7 @@ from datetime import date
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.courses.forms import CourseCreateForm, CourseEditParamsForm, CourseFullEditForm
@@ -41,6 +42,7 @@ from apps.courses.models import (
     Lesson,
     Module,
 )
+from apps.courses.views import _build_course_attendance_summary
 
 # Minimal valid 1x1 transparent PNG, same fixture used across courses tests
 # (test_attendance_pdf.py / test_issue_59_a4.py) so ImageField validation
@@ -245,3 +247,74 @@ class CourseEditParamsFormAttendanceFieldsTests(CourseAttendanceFieldsFormTestsB
         data.update({"project_name": "", "activity_type": "", "instructor": ""})
         form = CourseEditParamsForm(data=data, instance=self.course)
         self.assertTrue(form.is_valid(), form.errors)
+
+
+# =============================================================================
+# A4 -- Helper _build_course_attendance_summary(course)
+# =============================================================================
+
+
+class BuildCourseAttendanceSummaryTests(TestCase):
+    """Paralelo a _build_attendance_summary (por-lección) pero a nivel de
+    curso completo, derivando "presente" de Enrollment.completion_signature
+    (SD#63, decisión de arquitectura: reusar la firma de finalización que
+    ya existe para todo curso via sign_course_completion)."""
+
+    def setUp(self):
+        self.creator = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(self.creator)
+
+    def test_happy_path_2_enrollments_1_firmado(self):
+        signed_user = _make_user()
+        unsigned_user = _make_user()
+        signed_enrollment = Enrollment.objects.create(
+            user=signed_user, course=self.course, status=Enrollment.Status.COMPLETED
+        )
+        signed_enrollment.completion_signature = _png_file()
+        signed_enrollment.completion_signed_at = timezone.now()
+        signed_enrollment.save()
+        Enrollment.objects.create(user=unsigned_user, course=self.course)
+
+        summary = _build_course_attendance_summary(self.course)
+
+        self.assertEqual(summary["total_inscritos"], 2)
+        self.assertEqual(summary["total_presentes"], 1)
+        self.assertEqual(summary["total_ausentes"], 1)
+        self.assertEqual(summary["porcentaje_asistencia"], 50.0)
+
+        rows_by_doc = {row["document_number"]: row for row in summary["rows"]}
+        signed_row = rows_by_doc[signed_user.document_number]
+        self.assertTrue(signed_row["presente"])
+        self.assertEqual(signed_row["estado"], "Presente")
+        self.assertIsNotNone(signed_row["signed_at"])
+        self.assertTrue(signed_row["signature_image_url"])
+        self.assertEqual(signed_row["job_position"], signed_user.job_position)
+
+        unsigned_row = rows_by_doc[unsigned_user.document_number]
+        self.assertFalse(unsigned_row["presente"])
+        self.assertEqual(unsigned_row["estado"], "Ausente")
+        self.assertIsNone(unsigned_row["signed_at"])
+        self.assertEqual(unsigned_row["signature_image_url"], "")
+
+    def test_edge_0_inscritos_no_zero_division_error(self):
+        summary = _build_course_attendance_summary(self.course)
+
+        self.assertEqual(summary["total_inscritos"], 0)
+        self.assertEqual(summary["total_presentes"], 0)
+        self.assertEqual(summary["total_ausentes"], 0)
+        self.assertEqual(summary["porcentaje_asistencia"], 0.0)
+        self.assertEqual(summary["rows"], [])
+
+    def test_edge_todos_firmados_100_porciento(self):
+        for _i in range(3):
+            user = _make_user()
+            enrollment = Enrollment.objects.create(user=user, course=self.course)
+            enrollment.completion_signature = _png_file()
+            enrollment.completion_signed_at = timezone.now()
+            enrollment.save()
+
+        summary = _build_course_attendance_summary(self.course)
+
+        self.assertEqual(summary["total_inscritos"], 3)
+        self.assertEqual(summary["total_presentes"], 3)
+        self.assertEqual(summary["porcentaje_asistencia"], 100.0)
