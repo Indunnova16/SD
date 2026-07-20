@@ -588,3 +588,40 @@ class CourseAttendanceReportDetailTests(TestCase):
         self.client.force_login(self.coordinador)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+
+
+# =============================================================================
+# A8 -- Navbar: link "Asistencia por Curso" (desktop + movil)
+# =============================================================================
+
+
+class NavbarAttendanceReportsLinkTests(TestCase):
+    """Issue #63 (comentario de seguimiento 2026-07-17): el link "Asistencia
+    por Curso" debe verse en el navbar (Operaciones) para Coordinador y
+    Administrador, igual que "Eventos de asistencia" ya se ve para
+    Administrador."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.client = Client()
+        self.url = reverse("courses:list")
+
+    def test_happy_path_coordinador_ve_el_link(self):
+        self.client.force_login(self.coordinador)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Asistencia por Curso")
+
+    def test_happy_path_administrador_ve_el_link(self):
+        self.client.force_login(self.administrador)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Asistencia por Curso")
+
+    def test_edge_ejecutor_no_ve_el_link(self):
+        self.client.force_login(self.ejecutor)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Asistencia por Curso")
