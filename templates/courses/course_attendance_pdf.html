@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Lista de Asistencia - {{ course.title }}</title>
+        <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            color: #1a1a1a;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+            margin-bottom: 18px;
+        }
+        .header h1 {
+            font-size: 15pt;
+            color: #2563eb;
+            margin: 0 0 4px 0;
+        }
+        .header .format-code {
+            font-size: 8pt;
+            color: #666;
+            margin: 0;
+        }
+        .section-title {
+            background-color: #2563eb;
+            color: #fff;
+            padding: 6px 12px;
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 16px 0 10px 0;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .info-table td {
+            border: 1px solid #d1d5db;
+            padding: 5px 8px;
+            vertical-align: top;
+            width: 50%;
+        }
+        .info-table .label {
+            font-size: 8pt;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-table .value {
+            font-size: 10pt;
+            font-weight: bold;
+        }
+        .info-table .signature-cell {
+            text-align: center;
+        }
+        /* Summary cards (totals + percentage) */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+        .summary-table td {
+            border: 1px solid #d1d5db;
+            padding: 8px;
+            text-align: center;
+            width: 25%;
+        }
+        .summary-table .summary-label {
+            font-size: 8pt;
+            color: #666;
+            text-transform: uppercase;
+        }
+        .summary-table .summary-value {
+            font-size: 15pt;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        /* Signers table */
+        .signers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        .signers-table th {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+        .signers-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            vertical-align: middle;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+        .badge-presente { background-color: #d1fae5; color: #065f46; }
+        .badge-ausente { background-color: #fee2e2; color: #991b1b; }
+        .signature-img {
+            max-height: 36px;
+            max-width: 110px;
+        }
+        .empty {
+            color: #9ca3af;
+            font-style: italic;
+        }
+        .efficacy-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin-top: 4px;
+        }
+        .efficacy-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+        }
+        .footer {
+            margin-top: 18px;
+            border-top: 1px solid #d1d5db;
+            padding-top: 8px;
+            font-size: 8pt;
+            color: #888;
+            text-align: center;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Lista de Asistencia por Curso</h1>
+            <p class="format-code">Formato FT-HSEQ-60 · Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}</p>
+        </div>
+
+        <table class="info-table">
+            <tr>
+                <td>
+                    <div class="label">Fecha</div>
+                    <div class="value">{{ generated_at|date:"d/m/Y" }}</div>
+                </td>
+                <td>
+                    <div class="label">Proyecto</div>
+                    <div class="value">{% if course.project_name %}{{ course.project_name }}{% else %}<span class="empty">No definido</span>{% endif %}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">Tema</div>
+                    <div class="value">{{ course.title }}</div>
+                </td>
+                <td>
+                    <div class="label">Tipo de actividad</div>
+                    <div class="value">{% if course.activity_type %}{{ course.get_activity_type_display }}{% else %}<span class="empty">No definido</span>{% endif %}</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <div class="label">Objetivo</div>
+                    <div class="value">{% if course.objectives %}{{ course.objectives }}{% else %}<span class="empty">No definido</span>{% endif %}</div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <div class="label">Tiempo (horas)</div>
+                    <div class="value">{{ course.duration_hours }}</div>
+                </td>
+                <td class="signature-cell">
+                    <div class="label">Instructor</div>
+                    <div class="value">{% if course.instructor %}{{ course.instructor.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
+                    {% if instructor_signature_url %}
+                        <img class="signature-img" src="{{ instructor_signature_url }}" alt="Firma del instructor">
+                    {% else %}
+                        <div style="border-top: 1px solid #1a1a1a; margin-top: 20px; padding-top: 4px; font-size:8pt; color:#666;">Firma del instructor</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">Resumen de Asistencia</div>
+        <table class="summary-table">
+            <tr>
+                <td>
+                    <div class="summary-label">Inscritos</div>
+                    <div class="summary-value">{{ total_inscritos }}</div>
+                </td>
+                <td>
+                    <div class="summary-label">Presentes</div>
+                    <div class="summary-value">{{ total_presentes }}</div>
+                </td>
+                <td>
+                    <div class="summary-label">Ausentes</div>
+                    <div class="summary-value">{{ total_ausentes }}</div>
+                </td>
+                <td>
+                    <div class="summary-label">% Asistencia</div>
+                    <div class="summary-value">{{ porcentaje_asistencia }}%</div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section-title">Firmantes</div>
+        <table class="signers-table">
+            <thead>
+                <tr>
+                    <th style="width: 6%;">No.</th>
+                    <th style="width: 24%;">Nombre</th>
+                    <th style="width: 14%;">Cédula</th>
+                    <th style="width: 18%;">Cargo</th>
+                    <th style="width: 18%;">Estado</th>
+                    <th style="width: 20%;">Firma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.full_name }}</td>
+                    <td>{{ row.document_number }}</td>
+                    <td>{{ row.job_position|default:"—" }}</td>
+                    <td>
+                        {% if row.presente %}
+                            <span class="badge badge-presente">Presente</span>
+                        {% else %}
+                            <span class="badge badge-ausente">Ausente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.signature_image_url %}
+                            <img class="signature-img" src="{{ row.signature_image_url }}" alt="Firma">
+                        {% elif row.presente %}
+                            <span class="empty">Firmado ✓</span>
+                        {% else %}
+                            <span class="empty">Sin firma</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="section-title">Eficacia de la Capacitación</div>
+        <table class="efficacy-table">
+            <tr>
+                <td style="width: 50%;"><strong>1.0 — 3.4</strong>: Requiere refuerzo</td>
+                <td style="width: 50%;"><strong>3.5 — 5.0</strong>: Aprueba</td>
+            </tr>
+        </table>
+
+        <div class="footer">
+            Documento generado automáticamente — {{ course.title }} · Reporte de asistencia por curso (FT-HSEQ-60)
+        </div>
+    </body>
+</html>
