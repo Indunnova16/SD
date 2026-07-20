@@ -101,6 +101,59 @@
                             </div>
                         </div>
                         <div class="divider"></div>
+                        <!-- Asistencia por Curso (SD#63, formato FT-HSEQ-60) -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Datos de Asistencia (FT-HSEQ-60)</h3>
+                            <div class="alert alert-info mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     class="stroke-current shrink-0 w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <span>Proyecto, Tipo de actividad, Instructor y Objetivo son obligatorios para poder descargar el reporte de asistencia en PDF.</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Proyecto</span>
+                                    </label>
+                                    {{ form.project_name }}
+                                    {% if form.project_name.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.project_name.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control">
+                                    <label class="label">
+                                        <span class="label-text">Tipo de actividad</span>
+                                    </label>
+                                    {{ form.activity_type }}
+                                    {% if form.activity_type.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.activity_type.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                </div>
+                                <div class="form-control md:col-span-2">
+                                    <label class="label">
+                                        <span class="label-text">Instructor</span>
+                                    </label>
+                                    {{ form.instructor }}
+                                    {% if form.instructor.errors %}
+                                        <label class="label">
+                                            <span class="label-text-alt text-error">{{ form.instructor.errors.0 }}</span>
+                                        </label>
+                                    {% endif %}
+                                    <label class="label">
+                                        <span class="label-text-alt">Firma en el encabezado del reporte de asistencia</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="divider"></div>
                         <!-- Course Configuration -->
                         <div>
                             <h3 class="text-lg font-semibold mb-4">Configuracion del Curso</h3>

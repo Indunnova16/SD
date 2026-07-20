@@ -112,6 +112,11 @@
                                         <a href="{% url 'attendance:face_event_list' %}">🪪 Eventos de asistencia</a>
                                     </li>
                                 {% endif %}
+                                {% if user.rol == 'ADMINISTRADOR' or user.rol == 'COORDINADOR' %}
+                                    <li>
+                                        <a href="{% url 'courses:attendance_reports' %}">🧾 Asistencia por Curso</a>
+                                    </li>
+                                {% endif %}
                             </ul>
                         </details>
                     </li>
@@ -299,6 +304,10 @@
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📷 Asistencia facial (QR)</a>
                     <a href="{% url 'attendance:face_event_list' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🪪 Eventos de asistencia</a>
+                {% endif %}
+                {% if user.rol == 'ADMINISTRADOR' or user.rol == 'COORDINADOR' %}
+                    <a href="{% url 'courses:attendance_reports' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🧾 Asistencia por Curso</a>
                 {% endif %}
                 <!-- Gamificacion -->
                 <div class="px-3 pt-3 pb-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

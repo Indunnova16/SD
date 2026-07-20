@@ -5,12 +5,15 @@ Forms for courses app.
 from decimal import Decimal
 
 from django import forms
+from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from apps.assessments.models import Assessment
 
 from .models import AttendanceSignature, Category, Course, JobProfileType, Lesson, Module
+
+User = get_user_model()
 
 
 def get_profile_choices():
@@ -86,6 +89,9 @@ class CourseCreateForm(forms.ModelForm):
             "objectives",
             "course_type",
             "category",
+            "project_name",
+            "activity_type",
+            "instructor",
             "target_profiles",
             "validity_months",
             "status",
@@ -101,6 +107,14 @@ class CourseCreateForm(forms.ModelForm):
             ),
             "course_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "category": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "project_name": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Proyecto/obra (formato FT-HSEQ-60)",
+                }
+            ),
+            "activity_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "instructor": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "validity_months": forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
@@ -110,6 +124,15 @@ class CourseCreateForm(forms.ModelForm):
         self.fields["category"].queryset = Category.objects.filter(is_active=True)
         self.fields["category"].empty_label = "Sin categoria"
         self.fields["target_profiles"].choices = get_profile_choices()
+        # SD#63 A2: instructor solo entre usuarios activos -- un usuario
+        # desactivado no deberia poder quedar seleccionado como instructor de
+        # un curso nuevo (los ya asignados antes de desactivarse se
+        # preservan via SET_NULL/edicion, no se fuerza aqui).
+        self.fields["instructor"].queryset = User.objects.filter(is_active=True).order_by(
+            "first_name", "last_name"
+        )
+        self.fields["instructor"].empty_label = "Sin asignar"
+        self.fields["instructor"].required = False
 
     def clean_code(self):
         code = self.cleaned_data.get("code")
@@ -139,6 +162,9 @@ class CourseEditParamsForm(forms.ModelForm):
             "description",
             "course_type",
             "category",
+            "project_name",
+            "activity_type",
+            "instructor",
             "target_profiles",
             "validity_months",
             "status",
@@ -150,6 +176,14 @@ class CourseEditParamsForm(forms.ModelForm):
             ),
             "course_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "category": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "project_name": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Proyecto/obra (formato FT-HSEQ-60)",
+                }
+            ),
+            "activity_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "instructor": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "validity_months": forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
         }
@@ -159,6 +193,11 @@ class CourseEditParamsForm(forms.ModelForm):
         self.fields["category"].queryset = Category.objects.filter(is_active=True)
         self.fields["category"].empty_label = "Sin categoria"
         self.fields["target_profiles"].choices = get_profile_choices()
+        self.fields["instructor"].queryset = User.objects.filter(is_active=True).order_by(
+            "first_name", "last_name"
+        )
+        self.fields["instructor"].empty_label = "Sin asignar"
+        self.fields["instructor"].required = False
         if self.instance and self.instance.pk:
             self.initial["target_profiles"] = self.instance.target_profiles or []
 
@@ -189,6 +228,9 @@ class CourseFullEditForm(forms.ModelForm):
             "banner_image",
             "theme_color",
             "category",
+            "project_name",
+            "activity_type",
+            "instructor",
             "target_profiles",
             "validity_months",
             "status",
@@ -204,6 +246,14 @@ class CourseFullEditForm(forms.ModelForm):
             ),
             "course_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "category": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "project_name": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Proyecto/obra (formato FT-HSEQ-60)",
+                }
+            ),
+            "activity_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "instructor": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "validity_months": forms.NumberInput(attrs={"class": "input input-bordered w-full"}),
             "status": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "thumbnail": forms.ClearableFileInput(
@@ -222,6 +272,11 @@ class CourseFullEditForm(forms.ModelForm):
         self.fields["category"].queryset = Category.objects.filter(is_active=True)
         self.fields["category"].empty_label = "Sin categoria"
         self.fields["target_profiles"].choices = get_profile_choices()
+        self.fields["instructor"].queryset = User.objects.filter(is_active=True).order_by(
+            "first_name", "last_name"
+        )
+        self.fields["instructor"].empty_label = "Sin asignar"
+        self.fields["instructor"].required = False
         if self.instance and self.instance.pk:
             self.initial["target_profiles"] = self.instance.target_profiles or []
 

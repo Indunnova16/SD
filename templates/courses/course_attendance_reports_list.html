@@ -1,0 +1,82 @@
+{% extends "base/dashboard.html" %}
+{% block page_title %}Asistencia por Curso{% endblock %}
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Reporte de asistencia automatico por curso (formato FT-HSEQ-60), a partir de la firma de finalizacion de cada inscrito
+    </p>
+{% endblock %}
+{% block dashboard_content %}
+    <!-- Filters -->
+    <div class="card bg-base-100 shadow mb-6">
+        <div class="card-body">
+            <form method="get" class="flex gap-4 items-end">
+                <div class="form-control flex-1">
+                    <label class="label">
+                        <span class="label-text">Buscar</span>
+                    </label>
+                    <input type="text"
+                           name="search"
+                           value="{{ search }}"
+                           placeholder="Titulo o codigo del curso..."
+                           class="input input-bordered input-sm w-full">
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                {% if search %}
+                    <a href="{% url 'courses:attendance_reports' %}" class="btn btn-ghost btn-sm">Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <!-- Table -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Curso</th>
+                            <th>Proyecto</th>
+                            <th>Instructor</th>
+                            <th>Inscritos</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                            <tr>
+                                <td class="font-mono text-xs">{{ course.code }}</td>
+                                <td>{{ course.title }}</td>
+                                <td>
+                                    {% if course.project_name %}
+                                        {{ course.project_name }}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">Sin definir</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if course.instructor %}
+                                        {{ course.instructor.get_full_name }}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ course.enrollments_count }}</td>
+                                <td class="text-right">
+                                    <a href="{% url 'courses:course_attendance_report_detail' course.id %}"
+                                       class="btn btn-ghost btn-xs">
+                                        Ver reporte
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-gray-400 py-8">No hay cursos registrados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
