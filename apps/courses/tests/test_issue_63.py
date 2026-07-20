@@ -625,3 +625,73 @@ class NavbarAttendanceReportsLinkTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Asistencia por Curso")
+
+
+# =============================================================================
+# A9 -- Test de regresión RBAC consolidado sobre las 3 vistas nuevas
+# =============================================================================
+
+
+class RbacRegressionAttendanceViewsTests(TestCase):
+    """Issue #63 punto 4: "ya implementado, no romperlo al mover la lógica
+    fuera de la lección manual" -- EJECUTOR bloqueado, COORDINADOR y
+    ADMINISTRADOR permitidos, en las 3 vistas NUEVAS de este sprint
+    (attendance_reports, course_attendance_report_detail,
+    export_course_attendance_pdf). Consolidado en un solo lugar (no
+    duplica los tests funcionales de A5/A6, es el guard-rail RBAC
+    dedicado -- mismo patrón que test_issue_59_a4.py)."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.administrador,
+            project_name="Proyecto RBAC A9",
+            activity_type=Course.ActivityType.OTRA,
+            instructor=self.instructor,
+        )
+        self.client = Client()
+        self.urls = {
+            "attendance_reports": reverse("courses:attendance_reports"),
+            "course_attendance_report_detail": reverse(
+                "courses:course_attendance_report_detail", args=[self.course.id]
+            ),
+            "export_course_attendance_pdf": reverse(
+                "courses:export_course_attendance_pdf", args=[self.course.id]
+            ),
+        }
+
+    def test_edge_ejecutor_bloqueado_en_las_3_vistas(self):
+        self.client.force_login(self.ejecutor)
+        for name, url in self.urls.items():
+            with self.subTest(view=name):
+                response = self.client.get(url)
+                self.assertEqual(
+                    response.status_code,
+                    302,
+                    f"{name} deberia redirigir (302) a un Ejecutor, obtuvo {response.status_code}",
+                )
+
+    def test_happy_path_coordinador_permitido_en_las_3_vistas(self):
+        self.client.force_login(self.coordinador)
+        for name, url in self.urls.items():
+            with self.subTest(view=name):
+                response = self.client.get(url)
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                    f"{name} deberia permitir (200) a un Coordinador, obtuvo {response.status_code}",
+                )
+
+    def test_happy_path_administrador_permitido_en_las_3_vistas(self):
+        self.client.force_login(self.administrador)
+        for name, url in self.urls.items():
+            with self.subTest(view=name):
+                response = self.client.get(url)
+                self.assertEqual(
+                    response.status_code,
+                    200,
+                    f"{name} deberia permitir (200) a un Administrador, obtuvo {response.status_code}",
+                )
