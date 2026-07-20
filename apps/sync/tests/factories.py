@@ -14,6 +14,7 @@ import factory
 from factory.django import DjangoModelFactory
 
 from apps.courses.models import Course
+from apps.courses.tests.factories import JobProfileTypeFactory
 from apps.sync.models import (
     OfflinePackage,
     PackageDownload,
@@ -38,7 +39,7 @@ class UserFactory(DjangoModelFactory):
     document_type = "CC"
     document_number = factory.Sequence(lambda n: f"{50000000 + n}")
     job_position = "Technician"
-    job_profile = "LINIERO"
+    job_profile = factory.SubFactory(JobProfileTypeFactory)
     hire_date = factory.LazyFunction(lambda: date.today() - timedelta(days=365))
     is_active = True
 

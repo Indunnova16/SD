@@ -271,8 +271,17 @@ def submit_attempt(request, attempt_id):
         AssessmentAttempt,
         pk=attempt_id,
         user=request.user,
-        status=AssessmentAttempt.Status.IN_PROGRESS,
     )
+
+    # SD#61: idempotencia — un reenvio (doble-clic, boton Atras + submit,
+    # timer + click manual coincidente) sobre un attempt que YA fue
+    # enviado no debe re-procesar respuestas ni re-calificar; solo
+    # redirige al resultado ya calculado. Antes este metodo filtraba
+    # status=IN_PROGRESS en el get_object_or_404 de arriba, asi que un
+    # 2do POST al mismo attempt_id (ya SUBMITTED) no matcheaba el
+    # queryset y Django lanzaba un Http404 crudo en vez de redirigir.
+    if attempt.status != AssessmentAttempt.Status.IN_PROGRESS:
+        return redirect("assessments:result", attempt_id=attempt_id)
 
     import json as json_module
 
