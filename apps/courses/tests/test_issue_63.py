@@ -486,3 +486,105 @@ class ExportCourseAttendancePdfTests(TestCase):
             reverse("courses:export_course_attendance_pdf", args=[course.id])
         )
         self.assertEqual(response.status_code, 302)
+
+
+# =============================================================================
+# A6 -- Vistas+URLs course-level: lista + detalle de asistencia por curso
+# =============================================================================
+
+
+class CourseAttendanceReportsListTests(TestCase):
+    """course_attendance_reports_list (name=attendance_reports) -- mismo
+    gate ADMINISTRADOR+COORDINADOR que el roster/export per-leccion."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.course, _module = _make_course(self.administrador, title="Curso Listado A6")
+        self.client = Client()
+        self.url = reverse("courses:attendance_reports")
+
+    def test_happy_path_administrador_ve_la_lista(self):
+        self.client.force_login(self.administrador)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Curso Listado A6")
+
+    def test_happy_path_coordinador_ve_la_lista(self):
+        self.client.force_login(self.coordinador)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_edge_ejecutor_bloqueado(self):
+        self.client.force_login(self.ejecutor)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_edge_busqueda_filtra_por_titulo(self):
+        _make_course(self.administrador, title="Otro Curso Distinto")
+        self.client.force_login(self.administrador)
+        response = self.client.get(self.url, {"search": "Listado A6"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Curso Listado A6")
+        self.assertNotContains(response, "Otro Curso Distinto")
+
+
+class CourseAttendanceReportDetailTests(TestCase):
+    """course_attendance_report_detail -- roster on-screen + boton
+    descargar. Mismo gate que la lista."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.administrador,
+            project_name="Proyecto Detalle",
+            activity_type=Course.ActivityType.CHARLA,
+            instructor=self.instructor,
+        )
+        self.client = Client()
+        self.url = reverse("courses:course_attendance_report_detail", args=[self.course.id])
+
+    def test_happy_path_muestra_roster_correcto(self):
+        signed_user = _make_user(first_name="Firmante", last_name="Uno")
+        unsigned_user = _make_user(first_name="Pendiente", last_name="Dos")
+        signed_enrollment = Enrollment.objects.create(user=signed_user, course=self.course)
+        signed_enrollment.completion_signature = _png_file()
+        signed_enrollment.completion_signed_at = timezone.now()
+        signed_enrollment.save()
+        Enrollment.objects.create(user=unsigned_user, course=self.course)
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_inscritos"], 2)
+        self.assertEqual(response.context["total_presentes"], 1)
+        self.assertContains(response, "Firmante Uno")
+        self.assertContains(response, "Pendiente Dos")
+        self.assertContains(response, "Descargar PDF")
+
+    def test_edge_curso_incompleto_muestra_alerta_y_oculta_boton(self):
+        incomplete_course, _m = _make_course(self.administrador)  # sin los 4 campos
+        url = reverse("courses:course_attendance_report_detail", args=[incomplete_course.id])
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["missing_fields"])
+        self.assertContains(response, "Reporte incompleto")
+        self.assertNotContains(response, "Descargar PDF")
+
+    def test_edge_ejecutor_bloqueado(self):
+        self.client.force_login(self.ejecutor)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_happy_path_coordinador_accede(self):
+        self.client.force_login(self.coordinador)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)

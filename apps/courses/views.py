@@ -2522,3 +2522,55 @@ def export_course_attendance_pdf(request, course_id):
     filename = f"asistencia_curso_{course.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+@login_required
+def course_attendance_reports_list(request):
+    """Listado de cursos con acceso a su reporte de asistencia (SD#63 --
+    issue punto 5 del comentario de seguimiento del cliente 2026-07-17:
+    link "Asistencia por Curso" en el navbar, A8). Gateada
+    ADMINISTRADOR + COORDINADOR, el mismo set ya validado en SD#59 A4 para
+    el roster/export per-lección (``_attendance_export_required``).
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    courses = (
+        Course.objects.select_related("instructor", "category")
+        .annotate(enrollments_count=Count("enrollments"))
+        .order_by("title")
+    )
+
+    search = request.GET.get("search")
+    if search:
+        courses = courses.filter(Q(title__icontains=search) | Q(code__icontains=search))
+
+    context = {"courses": courses, "search": search or ""}
+    return render(request, "courses/course_attendance_reports_list.html", context)
+
+
+@login_required
+def course_attendance_report_detail(request, course_id):
+    """Detalle on-screen del roster de asistencia de un curso (SD#63): tabla
+    de inscritos con estado Presente/Ausente derivado de
+    ``Enrollment.completion_signature`` + botón para descargar el PDF
+    (reusa ``export_course_attendance_pdf``, A5, incluyendo su mismo gate de
+    completitud). Mismo gate de rol que la lista.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    course = get_object_or_404(Course, pk=course_id)
+    summary = _build_course_attendance_summary(course)
+    missing_fields = _course_attendance_missing_fields(course)
+
+    context = {
+        "course": course,
+        "rows": summary["rows"],
+        "total_inscritos": summary["total_inscritos"],
+        "total_presentes": summary["total_presentes"],
+        "total_ausentes": summary["total_ausentes"],
+        "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "missing_fields": missing_fields,
+    }
+    return render(request, "courses/course_attendance_report_detail.html", context)
