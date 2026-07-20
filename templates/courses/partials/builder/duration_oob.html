@@ -1,0 +1,14 @@
+{% comment %}
+SD#62 A3 — HTMX out-of-band swap fragments that refresh the module and
+course duration badges (rendered in module_card.html / course_builder.html)
+after builder_add_lesson / builder_edit_lesson / builder_delete_lesson,
+without a full page reload. Rendered by `_duration_oob_fragment()`
+(apps/courses/views.py) and appended as a plain string to the main
+lesson_item.html fragment of the HX-Request response.
+{% endcomment %}
+<span class="text-xs text-gray-400"
+      id="module-duration-{{ module.id }}"
+      hx-swap-oob="true">{{ module.duration_hours }} h</span>
+<span class="badge badge-outline"
+      id="course-duration-badge"
+      hx-swap-oob="true">Duración total: {{ course.duration_hours }} h</span>

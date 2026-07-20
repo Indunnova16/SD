@@ -29,6 +29,7 @@
                             {% if module.description %}<p class="text-sm text-gray-500 mt-1">{{ module.description }}</p>{% endif %}
                             <div class="flex gap-2 mt-1">
                                 <span class="text-xs text-gray-400">{{ module.lessons.count }} leccion{{ module.lessons.count|pluralize:"es" }}</span>
+                                <span class="text-xs text-gray-400" id="module-duration-{{ module.id }}">{{ module.duration_hours }} h</span>
                             </div>
                         </div>
                     </div>

@@ -31,6 +31,7 @@
                                 {{ course.get_status_display }}
                             </span>
                             {% if course.category %}<span class="badge badge-ghost">{{ course.category.name }}</span>{% endif %}
+                            <span class="badge badge-outline" id="course-duration-badge">Duración total: {{ course.duration_hours }} h</span>
                         </div>
                         {% if course.description %}<p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ course.description }}</p>{% endif %}
                     </div>

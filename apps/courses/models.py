@@ -339,6 +339,17 @@ class Module(models.Model):
     def __str__(self):
         return f"{self.course.code} - {self.title}"
 
+    @property
+    def duration_hours(self):
+        """Module duration in hours (rounded to 1 decimal), analogous to
+        Course.duration_hours (SD#62 A3). `Lesson.duration` is stored in
+        minutes."""
+        from django.db.models import Sum
+
+        result = self.lessons.aggregate(total=Sum("duration"))
+        total_minutes = result["total"] or 0
+        return round(total_minutes / 60, 1)
+
 
 class Lesson(models.Model):
     """

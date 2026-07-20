@@ -1068,6 +1068,20 @@ def _get_available_assessments(course):
     ).order_by("title")
 
 
+def _duration_oob_fragment(module, course):
+    """Render the module + course duration badges as HTMX out-of-band swap
+    fragments (SD#62 A3), so builder_add_lesson/builder_edit_lesson/
+    builder_delete_lesson can refresh the "N h" totals live without a full
+    page reload. Appended (as a plain string) to the main lesson_item.html
+    fragment of the HX-Request response."""
+    from django.template.loader import render_to_string
+
+    return render_to_string(
+        "courses/partials/builder/duration_oob.html",
+        {"module": module, "course": course},
+    )
+
+
 def _get_builder_context(course):
     """Get common context for builder templates."""
     modules = course.modules.prefetch_related("lessons__assessments").order_by("order")
@@ -1347,8 +1361,9 @@ def builder_add_lesson(request, course_id, module_id):
                     messages.error(request, quiz_error)
 
             if request.headers.get("HX-Request"):
-                return render(
-                    request,
+                from django.template.loader import render_to_string
+
+                html = render_to_string(
                     "courses/partials/builder/lesson_item.html",
                     {
                         "lesson": lesson,
@@ -1357,7 +1372,10 @@ def builder_add_lesson(request, course_id, module_id):
                         "available_assessments": _get_available_assessments(course),
                         "quiz_error": quiz_error,
                     },
+                    request=request,
                 )
+                html += _duration_oob_fragment(module, course)
+                return HttpResponse(html)
 
     # Form invalid or save error — return form with errors
     if request.headers.get("HX-Request"):
@@ -1447,9 +1465,10 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                 messages.success(request, "Lección actualizada correctamente.")
 
                 if request.headers.get("HX-Request"):
+                    from django.template.loader import render_to_string
+
                     lesson.refresh_from_db()
-                    return render(
-                        request,
+                    html = render_to_string(
                         "courses/partials/builder/lesson_item.html",
                         {
                             "lesson": lesson,
@@ -1457,7 +1476,10 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                             "module": module,
                             "available_assessments": _get_available_assessments(course),
                         },
+                        request=request,
                     )
+                    html += _duration_oob_fragment(module, course)
+                    return HttpResponse(html)
                 return redirect("courses:course_builder", course_id=course.id)
             except Exception as e:
                 import logging
@@ -1563,7 +1585,10 @@ def builder_delete_lesson(request, course_id, module_id, lesson_id):
     lesson.delete()
 
     if request.headers.get("HX-Request"):
-        return HttpResponse("")
+        # SD#62 A3: the deleted lesson row is swapped out to "" (removed);
+        # the OOB fragment refreshes the module/course duration badges to
+        # reflect the lesson no longer counting towards the total.
+        return HttpResponse(_duration_oob_fragment(module, course))
 
     return redirect("courses:course_builder", course_id=course.id)
 

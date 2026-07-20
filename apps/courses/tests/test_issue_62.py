@@ -7,6 +7,12 @@ lecciones/módulos/cursos/rutas/certificados.
       campo quedaba oculto para lecciones tipo Evaluación aunque el modelo
       sí lo guarda. Fix: agregar 'quiz' a ambas listas.
 
+  A3: Module.duration_hours (nueva @property, análoga a Course.duration_
+      hours) + badge en vivo en module_card.html/course_builder.html,
+      refrescado sin reload vía un fragmento OOB (hx-swap-oob) que
+      builder_add_lesson/builder_edit_lesson/builder_delete_lesson
+      agregan a su respuesta HTMX.
+
 NOTA (detect_hot_files.py): apps/courses/tests.py es compartido entre
 varios issues de este RUN — este archivo de test es POR-ISSUE
 (test_issue_62.py), nunca se apendea a tests.py.
@@ -15,10 +21,11 @@ varios issues de este RUN — este archivo de test es POR-ISSUE
 from datetime import date
 
 from django.template.loader import render_to_string
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 
 from apps.accounts.models import User
-from apps.courses.models import Category, Course, Module
+from apps.courses.models import Category, Course, Lesson, Module
 
 _SEQ = [6200]
 
@@ -109,3 +116,97 @@ class LessonFormQuizDurationVisibilityTests(TestCase):
             ".includes(lessonType)",
             html,
         )
+
+
+# --------------------------------------------------------------------------
+# A3 — Module.duration_hours + contador en vivo (OOB) en el builder.
+# --------------------------------------------------------------------------
+class ModuleDurationHoursTests(TestCase):
+    """A3 (modelo): Module.duration_hours, analogo a Course.duration_hours
+    (mismos valores/redondeo usados en apps/courses/tests/test_issue_43.py)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = _make_staff_user()
+        cls.course = _make_course(cls.staff)
+
+    def test_happy_path_zero_lessons_is_zero(self):
+        module = Module.objects.create(
+            course=self.course, title="Vacio", description="", order=0
+        )
+        self.assertEqual(module.duration_hours, 0.0)
+
+    def test_edge_sum_and_round_matches_course_duration_hours_logic(self):
+        module = Module.objects.create(
+            course=self.course, title="Con lecciones", description="", order=1
+        )
+        # 40 + 60 = 100 min -> 1.6666... -> redondea a 1.7 (mismo caso que
+        # test_issue_43.py test_duration_hours_rounds_to_one_decimal).
+        Lesson.objects.create(
+            module=module, title="L1", lesson_type=Lesson.Type.VIDEO, duration=40, order=0
+        )
+        Lesson.objects.create(
+            module=module, title="L2", lesson_type=Lesson.Type.VIDEO, duration=60, order=1
+        )
+        self.assertEqual(module.duration_hours, 1.7)
+
+
+class BuilderDurationOobFragmentTests(TestCase):
+    """A3 (vista): builder_add_lesson/builder_edit_lesson/
+    builder_delete_lesson agregan un fragmento OOB (hx-swap-oob) que
+    refresca los badges de horas del modulo y del curso."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.staff = _make_staff_user()
+        cls.course = _make_course(cls.staff)
+        cls.module = Module.objects.create(
+            course=cls.course, title="Modulo 1", description="m", order=0
+        )
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_happy_path_add_lesson_response_includes_updated_oob_totals(self):
+        self.client.force_login(self.staff)
+        url = reverse(
+            "courses:builder_add_lesson", args=[self.course.id, self.module.id]
+        )
+        response = self.client.post(
+            url,
+            data={
+                "title": "Leccion 1",
+                "lesson_type": Lesson.Type.VIDEO,
+                "duration": "30",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn(f'id="module-duration-{self.module.id}"', content)
+        self.assertIn('id="course-duration-badge"', content)
+        self.assertIn('hx-swap-oob="true"', content)
+        # 30 min = 0.5 h -- LANGUAGE_CODE=es-co localiza el separador
+        # decimal a coma (mismo patron que test_issue_43.py).
+        self.assertIn("0,5 h", content)
+
+    def test_edge_delete_lesson_response_includes_oob_totals_reflecting_removal(self):
+        lesson_a = Lesson.objects.create(
+            module=self.module,
+            title="A borrar",
+            lesson_type=Lesson.Type.VIDEO,
+            duration=60,
+            order=0,
+        )
+        self.client.force_login(self.staff)
+        url = reverse(
+            "courses:builder_delete_lesson",
+            args=[self.course.id, self.module.id, lesson_a.id],
+        )
+        response = self.client.post(url, HTTP_HX_REQUEST="true")
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn(f'id="module-duration-{self.module.id}"', content)
+        # El modulo quedo sin lecciones tras el borrado -> 0.0 h.
+        self.assertIn("0,0 h", content)
