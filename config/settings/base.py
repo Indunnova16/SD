@@ -191,25 +191,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# AWS Rekognition (reconocimiento facial para asistencia — app apps.attendance)
-# Credenciales: mismas de Logisticacargues (misma cuenta AWS). En Cloud Run se
-# inyectan como secrets sd-lms-aws-access-key-id / sd-lms-aws-secret-access-key.
-AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID", default="")
-AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY", default="")
-AWS_REGION = config("AWS_REGION", default="us-east-1")
-# Collection PROPIA de SD (namespace aislado, no se mezcla con logisticacargues-employees).
-REKOGNITION_COLLECTION_ID = config(
-    "REKOGNITION_COLLECTION_ID", default="sd-lms-employees"
-)
-REKOGNITION_MATCH_THRESHOLD = config(
-    "REKOGNITION_MATCH_THRESHOLD", default=90, cast=int
-)
-# Hora de rollover del día laboral (None = día calendario; 22 = turno noche).
-ATTENDANCE_WORKDAY_ROLLOVER_HOUR = config(
-    "ATTENDANCE_WORKDAY_ROLLOVER_HOUR", default=None,
-    cast=lambda v: int(v) if v not in (None, "", "None") else None,
-)
-
 # Cache configuration
 CACHES = {
     "default": {
