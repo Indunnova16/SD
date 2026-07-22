@@ -25,9 +25,11 @@ sub-items de este mismo RUN -- este archivo de test es POR-ISSUE
 (test_issue_63.py), nunca se apendea a tests.py.
 """
 
+import re
 from datetime import date
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.template.loader import render_to_string
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -854,3 +856,330 @@ class LegacyAttendanceFlowUntouchedTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Sesión Asistencia legacy A10")
+
+
+# =============================================================================
+# Reproceso 2026-07-22 -- rediseño de los 2 templates PDF contra el oficial
+# FT-HSEQ-60 (ver F2_OUTPUT.reproceso_analisis: PR #66 hereda branding
+# genérico del aplicativo -- bandas azules, badge Estado, sección "Resumen de
+# Asistencia" -- en vez de partir del formato impreso oficial). Cubre los 5
+# puntos corregidos:
+#   1. blanco y negro (sin #2563eb)
+#   2. Tipo de actividad como fila de casillas (Charla/Capacitación/
+#      Simulacro/Socialización/Otra+Especifique+Tiempo)
+#   3. Firmantes a exactamente 5 columnas (No./Nombre completo/Cédula/
+#      Cargo/Firma, sin "Estado")
+#   4. eliminada la sección "Resumen de Asistencia" (no existe en el oficial)
+#   5. "Eficacia de la Capacitación" completa (texto oficial + los 2 rangos
+#      de escala que ya existían, preservados tal cual)
+# Oráculo: SPRINTS/RUN_2026-07-22_1403/attachments/SD_63/FT-HSEQ-60.md
+# Evidencia visual real (PDFs de prod): F2_OUTPUT.evidencia.
+# =============================================================================
+
+
+def _course_pdf_context(course, rows=None, **overrides):
+    rows = rows or []
+    context = {
+        "course": course,
+        "rows": rows,
+        "total_inscritos": len(rows),
+        "total_presentes": 0,
+        "total_ausentes": len(rows),
+        "porcentaje_asistencia": 0.0,
+        "generated_at": timezone.now(),
+        "request_user": None,
+        "instructor_signature_url": "",
+    }
+    context.update(overrides)
+    return context
+
+
+def _legacy_pdf_context(course, lesson=None, rows=None, **overrides):
+    rows = rows or []
+    context = {
+        "course": course,
+        "lesson": lesson,
+        "rows": rows,
+        "total_inscritos": len(rows),
+        "total_presentes": 0,
+        "total_ausentes": len(rows),
+        "porcentaje_asistencia": 0.0,
+        "generated_at": timezone.now(),
+        "request_user": None,
+        "responsable": None,
+        "responsable_signature_url": "",
+    }
+    context.update(overrides)
+    return context
+
+
+class CourseAttendancePdfOfficialFormatTests(TestCase):
+    """course_attendance_pdf.html contra el oficial FT-HSEQ-60 -- asserts
+    deterministas sobre el HTML pre-render (sin generar el PDF binario)."""
+
+    def setUp(self):
+        self.creator = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.creator,
+            project_name="Proyecto Poda y Tala",
+            activity_type=Course.ActivityType.SIMULACRO,
+            objectives="Capacitar en procedimiento seguro",
+        )
+        self.row = {
+            "user": self.creator,
+            "full_name": self.creator.get_full_name(),
+            "document_number": self.creator.document_number,
+            "job_position": self.creator.job_position,
+            "presente": True,
+            "estado": "Presente",
+            "signed_at": timezone.now(),
+            "signature_image_url": "",
+        }
+
+    def test_happy_path_sin_bandas_azules(self):
+        html = render_to_string(
+            "courses/course_attendance_pdf.html", _course_pdf_context(self.course)
+        )
+        self.assertNotIn("#2563eb", html)
+
+    def test_happy_path_sin_resumen_de_asistencia(self):
+        html = render_to_string(
+            "courses/course_attendance_pdf.html", _course_pdf_context(self.course)
+        )
+        self.assertNotIn("Resumen de Asistencia", html)
+        self.assertNotIn("% Asistencia", html)
+
+    def test_happy_path_firmantes_5_columnas_exactas_sin_estado(self):
+        html = render_to_string(
+            "courses/course_attendance_pdf.html",
+            _course_pdf_context(self.course, rows=[self.row]),
+        )
+        self.assertIn(">No.<", html)
+        self.assertIn("Nombre completo", html)
+        self.assertIn("Cédula", html)
+        self.assertIn("Cargo", html)
+        self.assertNotIn(">Estado<", html)
+        self.assertNotIn("badge-presente", html)
+        self.assertNotIn("badge-ausente", html)
+
+    def test_happy_path_tipo_de_actividad_marca_la_opcion_real(self):
+        html = render_to_string(
+            "courses/course_attendance_pdf.html",
+            _course_pdf_context(self.course, rows=[self.row]),
+        )
+        for label in ("Charla", "Capacitación", "Simulacro", "Socialización", "Otra"):
+            self.assertIn(label, html)
+        match = re.search(
+            r'activity-checkbox">X</td>\s*<td class="activity-label">([^<]+)</td>', html
+        )
+        self.assertIsNotNone(match, "ninguna casilla de tipo de actividad quedo marcada")
+        self.assertEqual(match.group(1), "Simulacro")
+        self.assertEqual(html.count('activity-checkbox">X<'), 1)
+
+    def test_edge_sin_activity_type_ninguna_casilla_marcada(self):
+        course, _m = _make_course(self.creator)  # activity_type vacio
+        html = render_to_string("courses/course_attendance_pdf.html", _course_pdf_context(course))
+        self.assertEqual(html.count('activity-checkbox">X<'), 0)
+
+    def test_happy_path_eficacia_de_la_capacitacion_completa(self):
+        html = render_to_string(
+            "courses/course_attendance_pdf.html", _course_pdf_context(self.course)
+        )
+        self.assertIn("Se determina por medio de evaluación", html)
+        self.assertIn(
+            "Promedio de los resultados de la evaluación realizados a los "
+            "trabajadores que asistieron a la capacitación.",
+            html,
+        )
+        # Rangos de escala (NOTA1 del oficial) preservados tal cual
+        self.assertIn("Requiere refuerzo", html)
+        self.assertIn("Aprueba", html)
+
+
+class LegacyAttendancePdfOfficialFormatTests(TestCase):
+    """attendance_pdf.html (legacy per-lección) -- mismo rediseño oficial.
+    Confirma ademas que la vista SI pasa el objeto Course completo al
+    contexto de este template (``export_attendance_pdf``,
+    apps/courses/views.py: ``"course": course,``), por lo que
+    ``course.activity_type``/``course.duration_hours`` son accesibles sin
+    tocar vista ni modelo -- contrario a lo que F2 asumió en su narrativa
+    ("la lección legacy no tiene esos campos de curso en su contexto de
+    lesson-level"), se agregaron por consistencia ya que el dato SI existe."""
+
+    def setUp(self):
+        self.creator = _make_user(
+            rol=User.Rol.ADMINISTRADOR, is_staff=True, job_position="Ingeniero HSEQ"
+        )
+        self.course, self.module = _make_course(
+            self.creator, activity_type=Course.ActivityType.CHARLA
+        )
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia legacy",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        self.row = {
+            "user": self.creator,
+            "full_name": self.creator.get_full_name(),
+            "document_number": self.creator.document_number,
+            "presente": True,
+            "estado": "Presente",
+            "signed_at": timezone.now(),
+            "signature_image_url": "",
+        }
+
+    def test_happy_path_sin_bandas_azules(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson),
+        )
+        self.assertNotIn("#2563eb", html)
+
+    def test_happy_path_sin_resumen_de_asistencia(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson),
+        )
+        self.assertNotIn("Resumen de Asistencia", html)
+
+    def test_happy_path_firmantes_5_columnas_exactas(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        self.assertIn(">No.<", html)
+        self.assertIn("Nombre completo", html)
+        self.assertIn("Cédula", html)
+        self.assertIn("Cargo", html)
+        self.assertNotIn(">Estado<", html)
+        self.assertNotIn("Fecha y hora de firma", html)
+        # Cargo sale de row.user.job_position -- el dict de fila de
+        # _build_attendance_summary YA trae el objeto user completo, no
+        # requirió tocar la vista.
+        self.assertIn("Ingeniero HSEQ", html)
+
+    def test_happy_path_tipo_de_actividad_y_eficacia_agregados_por_consistencia(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        match = re.search(
+            r'activity-checkbox">X</td>\s*<td class="activity-label">([^<]+)</td>', html
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), "Charla")
+        self.assertIn("Se determina por medio de evaluación", html)
+
+    def test_edge_firma_del_responsable_no_se_toco(self):
+        """Fuera de scope de los 5 fixes -- regresión: la sección se
+        preserva intacta (SD#51)."""
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, responsable=self.creator),
+        )
+        self.assertIn("Firma del Responsable", html)
+        self.assertIn(self.creator.get_full_name(), html)
+
+
+def _extract_pdf_text(testcase, pdf_bytes):
+    """Genera texto real con pdftotext (poppler) a partir de bytes de PDF --
+    confirma que xhtml2pdf/pisa efectivamente soporta el markup nuevo
+    (colspan mixto en .activity-type-table), no solo que el HTML fuente sea
+    correcto. Se salta (no falla) si pdftotext no está en el entorno."""
+    import shutil
+    import subprocess
+    import tempfile
+
+    pdftotext = shutil.which("pdftotext")
+    if not pdftotext:
+        testcase.skipTest("pdftotext no disponible en este entorno")
+    with tempfile.NamedTemporaryFile(suffix=".pdf") as f:
+        f.write(pdf_bytes)
+        f.flush()
+        result = subprocess.run(
+            [pdftotext, "-layout", f.name, "-"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    return result.stdout
+
+
+class CoursePdfRealRenderTests(TestCase):
+    """Genera el PDF real (misma ruta que la vista: xhtml2pdf/pisa) para el
+    reporte por-curso y extrae texto -- valida que el motor de render, no
+    solo el HTML fuente, produzca las 5 correcciones."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.administrador,
+            title="Curso Render Real 63",
+            project_name="Proyecto Render",
+            activity_type=Course.ActivityType.CAPACITACION,
+            instructor=self.instructor,
+        )
+        signed_user = _make_user(job_position="Operario")
+        enrollment = Enrollment.objects.create(user=signed_user, course=self.course)
+        enrollment.completion_signature = _png_file()
+        enrollment.completion_signed_at = timezone.now()
+        enrollment.save()
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_happy_path_pdf_real_contiene_las_5_correcciones(self):
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[self.course.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+        text_lower = _extract_pdf_text(self, content).lower()
+        self.assertNotIn("resumen de asistencia", text_lower)
+        self.assertNotIn("estado", text_lower)
+        self.assertIn("capacit", text_lower)  # CAPACITACIÓN marcada
+        self.assertIn("firmantes", text_lower)
+        self.assertIn("cargo", text_lower)
+        self.assertIn("eficacia", text_lower)
+
+
+class LegacyPdfRealRenderTests(TestCase):
+    """Mismo chequeo de render real sobre el flujo legacy per-lección."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, self.module = _make_course(
+            self.administrador, activity_type=Course.ActivityType.OTRA
+        )
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia legacy render",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        signer = _make_user(job_position="Supervisor")
+        Enrollment.objects.create(user=signer, course=self.course)
+        sig = AttendanceSignature.objects.create(lesson=self.lesson, user=signer)
+        sig.signature_image.save("sig.png", _png_file(), save=True)
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def test_happy_path_pdf_real_contiene_las_correcciones(self):
+        response = self.client.get(
+            reverse("courses:export_attendance_pdf", args=[self.course.id, self.lesson.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+        text_lower = _extract_pdf_text(self, content).lower()
+        self.assertNotIn("resumen de asistencia", text_lower)
+        self.assertNotIn("fecha y hora de firma", text_lower)
+        self.assertNotIn("estado", text_lower)
+        self.assertIn("cargo", text_lower)
+        self.assertIn("supervisor", text_lower)
+        self.assertIn("firmantes", text_lower)
+        self.assertIn("eficacia", text_lower)
