@@ -99,17 +99,11 @@ jobs:
             --max-retries 0 --task-timeout 300 --quiet
           gcloud run jobs execute sd-lms-axes-reset --region ${{ env.REGION }} --wait
 
-      - name: Index Faces in AWS Rekognition (idempotente — solo pendientes)
-        run: |
-          gcloud run jobs deploy sd-lms-index-faces \
-            --image ${{ env.IMAGE }}:${{ github.sha }} \
-            --region ${{ env.REGION }} \
-            --set-cloudsql-instances ${{ env.CLOUDSQL }} \
-            --set-env-vars "DJANGO_SETTINGS_MODULE=config.settings.cloudrun,DB_NAME=sd_lms,DB_USER=postgres,DB_HOST=/cloudsql/${{ env.CLOUDSQL }},GS_BUCKET_NAME=sd-lms-media,AWS_REGION=us-east-1,REKOGNITION_COLLECTION_ID=sd-lms-employees,REKOGNITION_MATCH_THRESHOLD=90" \
-            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest,AWS_ACCESS_KEY_ID=sd-lms-aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=sd-lms-aws-secret-access-key:latest" \
-            --command "python" --args "manage.py,index_faces" \
-            --max-retries 0 --task-timeout 600 --quiet
-          gcloud run jobs execute sd-lms-index-faces --region ${{ env.REGION }} --wait
+      # Removed (issue #64): apps/attendance (asistencia facial QR + AWS Rekognition)
+      # fue eliminado completo, incluyendo manage.py index_faces — este step ya no
+      # tiene comando que ejecutar. El Cloud Run Job sd-lms-index-faces preexistente
+      # queda huérfano en GCP (no se borra automáticamente acá, requiere borrado
+      # manual aparte si se quiere limpiar del todo).
 
       # Disabled: Clear Existing Courses (was deleting data on every deploy)
       # To clear manually: gcloud run jobs execute sd-lms-clear-courses --region us-central1 --wait
