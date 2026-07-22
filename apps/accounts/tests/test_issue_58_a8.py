@@ -1,12 +1,15 @@
 """Tests for issue #58 sub-item A8 — Filtrado de datos: Operaciones.
 
-Gatea el LISTADO administrativo de `preop_talks` (`talk_list`/`talks_table`),
-`lessons_learned` (`lesson_list`/`lesson_grid`) y `attendance`
-(`face_event_list`) para Ejecutor (403 explícito, `require_rol(...,
-raise_exception=True)`), dejando el listado completo visible para
-Coordinador/Administrador — ocultamiento BINARIO (PLAN A8: "oculto para
-Ejecutor, completo para Coordinador/Admin", a diferencia de A6/A7 que son
-propio/equipo/todos).
+Gatea el LISTADO administrativo de `preop_talks` (`talk_list`/`talks_table`) y
+`lessons_learned` (`lesson_list`/`lesson_grid`) para Ejecutor (403 explícito,
+`require_rol(..., raise_exception=True)`), dejando el listado completo
+visible para Coordinador/Administrador — ocultamiento BINARIO (PLAN A8:
+"oculto para Ejecutor, completo para Coordinador/Admin", a diferencia de
+A6/A7 que son propio/equipo/todos).
+
+NOTA (issue #64): los tests de `attendance:face_event_list`/`mobile_face_qr`
+que vivían en este archivo se eliminaron junto con el módulo `apps.attendance`
+(borrado completo, reemplazado por `apps.courses.AttendanceSignature`, #63).
 
 `talks_table`/`lesson_grid` reciben el MISMO gate que `talk_list`/`lesson_list`
 aunque el PLAN solo nombra estos últimos explícitamente: son la MISMA data
@@ -66,9 +69,8 @@ def _make_user(rol=None, **overrides):
 
 
 class OperacionesListadoAdministrativoTests(TestCase):
-    """`preop_talks:list`/`table`, `lessons_learned:list`/`grid`,
-    `attendance:face_event_list` — 403 para Ejecutor, 200 para
-    Coordinador/Administrador (PLAN A8)."""
+    """`preop_talks:list`/`table`, `lessons_learned:list`/`grid` — 403 para
+    Ejecutor, 200 para Coordinador/Administrador (PLAN A8)."""
 
     def setUp(self):
         self.client = Client()
@@ -154,51 +156,6 @@ class OperacionesListadoAdministrativoTests(TestCase):
         self.client.force_login(self.administrador)
         response = self.client.get(reverse("lessons_learned:list"))
         self.assertEqual(response.status_code, 200)
-
-    # --- attendance:face_event_list --------------------------------------
-
-    def test_attendance_face_event_list_ejecutor_bloqueado_403(self):
-        """Cambia de 302 (A4: `_staff_required`/`user_passes_test`) a 403
-        (A8: `require_rol(..., raise_exception=True)`) — ver actualización
-        del test homónimo en `test_issue_58_a4.py`."""
-        self.client.force_login(self.ejecutor)
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 403)
-
-    def test_attendance_face_event_list_coordinador_ok(self):
-        """A8 amplía el acceso a COORDINADOR (antes ADMINISTRADOR-only vía
-        `_staff_required`, straight-swap de A4) — es la corrección real de
-        este sub-item para el módulo Operaciones."""
-        self.client.force_login(self.coordinador)
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_attendance_face_event_list_administrador_ok(self):
-        self.client.force_login(self.administrador)
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_attendance_face_event_list_anonimo_redirige_login_no_403(self):
-        """Anónimo: `login_required` sigue redirigiendo (302) — el 403 nuevo
-        es SOLO para autenticado-con-rol-incorrecto, no para no-autenticado."""
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 302)
-
-    # --- attendance: mobile_face_qr / reindex_user_face SIN cambio -------
-
-    def test_attendance_mobile_face_qr_coordinador_sigue_bloqueado(self):
-        """Fuera del alcance de A8 (el PLAN solo pide ampliar el LISTADO,
-        `face_event_list`) — sigue ADMINISTRADOR-only vía `_staff_required`,
-        sin cambio. Regresión: A8 NO debe ampliar esto por accidente."""
-        self.client.force_login(self.coordinador)
-        response = self.client.get(reverse("attendance:mobile_face_qr"))
-        self.assertEqual(response.status_code, 302)
-
-    def test_attendance_mobile_face_qr_administrador_ok(self):
-        self.client.force_login(self.administrador)
-        response = self.client.get(reverse("attendance:mobile_face_qr"))
-        self.assertEqual(response.status_code, 200)
-
 
 class OperacionesPropiaParticipacionRegresionTests(TestCase):
     """Regresión anti-romper-flujo-diario (PLAN A8): el Ejecutor sigue

@@ -60,7 +60,6 @@ urlpatterns = [
     path("api/v1/occupational-profiles/", include("apps.occupational_profiles.api.urls")),
     # Web views (HTMX)
     path("accounts/", include("apps.accounts.urls")),
-    path("attendance/", include("apps.attendance.urls")),
     path("courses/", include("apps.courses.urls")),
     path("learning-paths/", include("apps.learning_paths.urls")),
     path("assessments/", include("apps.assessments.urls")),
