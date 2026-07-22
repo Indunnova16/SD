@@ -8,11 +8,14 @@ Cubre:
     hay `redirect_url` ni modo alternativo).
   - `RolRequiredMixin` sobre una CBV mínima construida en el propio test
     (ninguna vista real del issue #58 es CBV — ver docstring del módulo).
-  - Regresión de integración: representantes reales de los 8 archivos que
-    A4 migró de `is_staff` a `rol` (`accounts`, `courses`, `certifications`,
-    `preop_talks`, `lessons_learned`, `attendance`, `reports`,
-    `gamification`) — un ADMINISTRADOR sigue pasando, un EJECUTOR (y en los
-    gates admin-only, un COORDINADOR) queda bloqueado.
+  - Regresión de integración: representantes reales de los archivos que A4
+    migró de `is_staff` a `rol` (`accounts`, `courses`, `certifications`,
+    `preop_talks`, `lessons_learned`, `reports`, `gamification`) — un
+    ADMINISTRADOR sigue pasando, un EJECUTOR (y en los gates admin-only, un
+    COORDINADOR) queda bloqueado. (`attendance` migró en su momento pero el
+    módulo se borró completo en issue #64, reemplazado por
+    `apps.courses.AttendanceSignature` #63 — sus tests representantes se
+    quitaron de aquí y de `test_issue_58_a8.py`.)
   - Regresión "legacy": un usuario con `is_staff=True` pero `rol=None`
     (estado real de cualquier fila existente en producción entre el deploy
     de A1 y que corra el backfill, o cualquier fixture de test antigua que
@@ -403,25 +406,6 @@ class MigratedViewsRegressionTests(TestCase):
         )
         lesson.refresh_from_db()
         self.assertEqual(lesson.status, LessonLearned.Status.APPROVED)
-
-    # --- 6. attendance/views.py — _staff_required(view) via user_passes_test
-
-    def test_attendance_face_event_list_administrador_ok(self):
-        self.client.force_login(self.administrador)
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 200)
-
-    def test_attendance_face_event_list_ejecutor_bloqueado(self):
-        """Actualizado por issue #58 sub-item A8: `face_event_list` dejó de
-        usar `_staff_required` (ADMINISTRADOR-only vía `user_passes_test` →
-        302) y ahora usa `require_rol(COORDINADOR, ADMINISTRADOR,
-        raise_exception=True)` → 403 explícito, ampliando además el acceso a
-        COORDINADOR. Ver `apps/accounts/tests/test_issue_58_a8.py` para el
-        resto de la regresión de A8 sobre este módulo (preop_talks,
-        lessons_learned, attendance)."""
-        self.client.force_login(self.ejecutor)
-        response = self.client.get(reverse("attendance:face_event_list"))
-        self.assertEqual(response.status_code, 403)
 
     # --- 7. reports/views.py — @user_passes_test(_is_administrador) -----
 

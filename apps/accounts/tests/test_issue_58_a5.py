@@ -5,10 +5,14 @@ Cubre:
     partial `templates/partials/navbar.html`) contra 3 fixtures de rol
     EJECUTOR/COORDINADOR/ADMINISTRADOR: los ítems admin-only (Gestión de
     Usuarios, Parametrización, Reportes y Analytics, Manual de
-    Administrador, Asistencia facial (QR), Eventos de asistencia) solo
-    aparecen para ADMINISTRADOR — SIN ampliación a COORDINADOR todavía
-    (A5 es un swap 1:1 de `is_staff` a `rol == 'ADMINISTRADOR'`, igual que
-    hizo A4 en las vistas; ampliar a COORDINADOR es scope de A6-A10).
+    Administrador) solo aparecen para ADMINISTRADOR — SIN ampliación a
+    COORDINADOR todavía (A5 es un swap 1:1 de `is_staff` a
+    `rol == 'ADMINISTRADOR'`, igual que hizo A4 en las vistas; ampliar a
+    COORDINADOR es scope de A6-A10).
+    (Asistencia facial (QR)/Eventos de asistencia se probaban acá también;
+    se quitaron en issue #64 junto con el borrado completo de
+    `apps.attendance`, reemplazado por `apps.courses.AttendanceSignature`
+    #63.)
   - "Notificaciones" presente para los 3 roles (decisión Miguel #4 del
     PLAN — bandeja personal, nunca se gatea por rol).
   - Regresión central: un usuario legacy `is_staff=True` con `rol=None`
@@ -91,12 +95,6 @@ class NavbarRolGatingTests(TestCase):
         self.assertIn("Manual de Administrador", html)
         self.assertNotIn("Manual del Trabajador", html)
 
-    def test_administrador_ve_asistencia_facial_y_eventos(self):
-        admin = _make_user(rol=Rol.ADMINISTRADOR)
-        html = self._render_navbar(admin)
-        self.assertIn("Asistencia facial (QR)", html)
-        self.assertIn("Eventos de asistencia", html)
-
     def test_administrador_ve_notificaciones(self):
         admin = _make_user(rol=Rol.ADMINISTRADOR)
         html = self._render_navbar(admin)
@@ -121,12 +119,6 @@ class NavbarRolGatingTests(TestCase):
         html = self._render_navbar(ejecutor)
         self.assertIn("Manual del Trabajador", html)
         self.assertNotIn("Manual de Administrador", html)
-
-    def test_ejecutor_no_ve_asistencia_facial_ni_eventos(self):
-        ejecutor = _make_user(rol=Rol.EJECUTOR)
-        html = self._render_navbar(ejecutor)
-        self.assertNotIn("Asistencia facial (QR)", html)
-        self.assertNotIn("Eventos de asistencia", html)
 
     def test_ejecutor_ve_notificaciones(self):
         ejecutor = _make_user(rol=Rol.EJECUTOR)
