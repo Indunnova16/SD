@@ -104,14 +104,6 @@
                                 <li>
                                     <a href="{% url 'lessons_learned:list' %}">💡 Lecciones Aprendidas</a>
                                 </li>
-                                {% if user.rol == 'ADMINISTRADOR' %}
-                                    <li>
-                                        <a href="{% url 'attendance:mobile_face_qr' %}">📷 Asistencia facial (QR)</a>
-                                    </li>
-                                    <li>
-                                        <a href="{% url 'attendance:face_event_list' %}">🪪 Eventos de asistencia</a>
-                                    </li>
-                                {% endif %}
                                 {% if user.rol == 'ADMINISTRADOR' or user.rol == 'COORDINADOR' %}
                                     <li>
                                         <a href="{% url 'courses:attendance_reports' %}">🧾 Asistencia por Curso</a>
@@ -299,12 +291,6 @@
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💬 Charlas Pre-Op</a>
                 <a href="{% url 'lessons_learned:list' %}"
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💡 Lecciones Aprendidas</a>
-                {% if user.rol == 'ADMINISTRADOR' %}
-                    <a href="{% url 'attendance:mobile_face_qr' %}"
-                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📷 Asistencia facial (QR)</a>
-                    <a href="{% url 'attendance:face_event_list' %}"
-                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🪪 Eventos de asistencia</a>
-                {% endif %}
                 {% if user.rol == 'ADMINISTRADOR' or user.rol == 'COORDINADOR' %}
                     <a href="{% url 'courses:attendance_reports' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🧾 Asistencia por Curso</a>
