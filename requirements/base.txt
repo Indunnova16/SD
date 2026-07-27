@@ -78,6 +78,9 @@ channels-redis>=4.2.0
 # HTMX integration
 django-htmx>=1.17.3
 
+# HTTP client (portal de feedback -> GitHub REST API)
+requests>=2.31,<3
+
 # Timezone
 pytz>=2024.1
 
