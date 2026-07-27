@@ -1,0 +1,15 @@
+<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real. -->
+{% extends "feedback/base.html" %}
+
+{% block content %}
+<h1>Nuevo ticket</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p>
+        <label for="id_imagenes">Imágenes</label>
+        <input type="file" id="id_imagenes" name="imagenes" multiple accept="image/*">
+    </p>
+    <button type="submit">Enviar</button>
+</form>
+{% endblock %}

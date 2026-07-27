@@ -14,6 +14,7 @@ from unittest.mock import Mock, patch
 import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from apps.feedback.github_client import (
     LABEL_PORTAL_WEB,
@@ -407,3 +408,146 @@ class EncolarSincronizacionTicketTestCase(TestCase):
 
         self.assertEqual(len(callbacks), 1)
         mock_sincronizar.assert_called_once_with(ticket.pk)
+
+
+class ViewsTestCase(TestCase):
+    """Tests del sub-item A5 — vistas públicas (lista/nuevo/detalle) + urls.
+
+    El portal es público/anónimo: todas las requests usan `self.client`
+    normal, sin login. No se testea de nuevo el flujo completo de
+    `sincronizar_ticket`/`procesar_archivos_subidos` (ya cubierto por A4) —
+    solo que `nuevo_view` los orquesta correctamente.
+    """
+
+    def _datos_validos(self, **overrides):
+        datos = {
+            "nombre_reportante": "Ana Pérez",
+            "asunto": "El botón de descarga no funciona",
+            "descripcion": "Al hacer click en descargar el certificado no pasa nada.",
+            "website": "",
+        }
+        datos.update(overrides)
+        return datos
+
+    def _ticket(self, **overrides):
+        datos = dict(
+            nombre_reportante="Carlos Ruiz",
+            asunto="Sugerencia de mejora",
+            descripcion="Sería útil poder filtrar los cursos por categoría.",
+        )
+        datos.update(overrides)
+        return FeedbackTicket.objects.create(**datos)
+
+    # -- lista_view --------------------------------------------------
+
+    def test_lista_view_200_sin_tickets(self):
+        response = self.client.get(reverse("feedback:lista"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["page_obj"]), 0)
+
+    def test_lista_view_200_con_tickets(self):
+        self._ticket(asunto="Primer ticket")
+        self._ticket(asunto="Segundo ticket")
+
+        response = self.client.get(reverse("feedback:lista"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["page_obj"]), 2)
+
+    # -- nuevo_view (GET) ---------------------------------------------
+
+    def test_nuevo_view_get_200_form_en_contexto(self):
+        response = self.client.get(reverse("feedback:nuevo"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsInstance(response.context["form"], NuevoTicketForm)
+
+    # -- nuevo_view (POST) ---------------------------------------------
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_nuevo_view_post_happy_path_crea_ticket_y_redirige_a_detalle(
+        self, mock_client_cls
+    ):
+        mock_client = mock_client_cls.return_value
+        mock_client.crear_issue.return_value = {
+            "number": 10,
+            "html_url": "https://github.com/Indunnova16/SD/issues/10",
+            "id": 1,
+        }
+        datos = self._datos_validos()
+
+        response = self.client.post(reverse("feedback:nuevo"), data=datos)
+
+        ticket = FeedbackTicket.objects.filter(asunto=datos["asunto"]).first()
+        self.assertIsNotNone(ticket)
+        self.assertTrue(
+            FeedbackTicket.objects.filter(
+                asunto=datos["asunto"],
+                nombre_reportante=datos["nombre_reportante"],
+            ).exists()
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url, reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
+        )
+
+    def test_nuevo_view_post_honeypot_poblado_no_crea_ticket_y_rerenderiza(self):
+        response = self.client.post(
+            reverse("feedback:nuevo"),
+            data=self._datos_validos(website="http://spam-bot.example.com"),
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(FeedbackTicket.objects.exists())
+        self.assertFalse(response.context["form"].is_valid())
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_nuevo_view_post_con_imagen_valida_crea_ticket_y_attachment(
+        self, mock_client_cls
+    ):
+        mock_client = mock_client_cls.return_value
+        mock_client.crear_issue.return_value = {
+            "number": 11,
+            "html_url": "https://github.com/Indunnova16/SD/issues/11",
+            "id": 2,
+        }
+        archivo = SimpleUploadedFile("foto.png", PNG_1X1, content_type="image/png")
+        datos = self._datos_validos()
+
+        response = self.client.post(
+            reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 1
+        )
+
+    @patch("apps.feedback.views.encolar_sincronizacion_ticket")
+    def test_nuevo_view_dispara_encolar_sincronizacion_ticket(self, mock_encolar):
+        datos = self._datos_validos()
+
+        self.client.post(reverse("feedback:nuevo"), data=datos)
+
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+        mock_encolar.assert_called_once_with(ticket.id)
+
+    # -- detalle_view --------------------------------------------------
+
+    def test_detalle_view_200_ticket_existente(self):
+        ticket = self._ticket()
+
+        response = self.client.get(
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["ticket"], ticket)
+
+    def test_detalle_view_404_ticket_inexistente(self):
+        response = self.client.get(
+            reverse("feedback:detalle", kwargs={"ticket_id": 999999})
+        )
+
+        self.assertEqual(response.status_code, 404)

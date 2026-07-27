@@ -1,0 +1,29 @@
+<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real. -->
+{% extends "feedback/base.html" %}
+
+{% block content %}
+<h1>portal de SD - Cursos</h1>
+<p><a href="{% url 'feedback:nuevo' %}">Nuevo ticket</a></p>
+
+<ul>
+    {% for ticket in page_obj %}
+    <li>
+        <a href="{% url 'feedback:detalle' ticket.id %}">{{ ticket.asunto }}</a>
+        — {{ ticket.nombre_reportante }}
+    </li>
+    {% empty %}
+    <li>Todavía no hay tickets registrados.</li>
+    {% endfor %}
+</ul>
+
+{% if page_obj.has_other_pages %}
+<div>
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+    {% endif %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

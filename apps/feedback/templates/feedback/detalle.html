@@ -1,0 +1,21 @@
+<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real y el
+     aviso discreto (no técnico) cuando ticket.sincronizado_github es False. -->
+{% extends "feedback/base.html" %}
+
+{% block content %}
+<h1>{{ ticket.asunto }}</h1>
+<p>Reportado por {{ ticket.nombre_reportante }}</p>
+<p>{{ ticket.descripcion }}</p>
+
+{% if not ticket.sincronizado_github %}
+<p>Seguimos procesando tu reporte.</p>
+{% endif %}
+
+<ul>
+    {% for adjunto in adjuntos %}
+    <li><img src="{{ adjunto.imagen.url }}" alt="{{ adjunto.nombre_original }}"></li>
+    {% endfor %}
+</ul>
+
+<p><a href="{% url 'feedback:lista' %}">Volver al tablero</a></p>
+{% endblock %}

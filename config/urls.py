@@ -69,6 +69,7 @@ urlpatterns = [
     path("notifications/", include("apps.notifications.urls")),
     path("reports/", include("apps.reports.urls")),
     path("gamification/", include("apps.gamification.urls")),
+    path("feedback/", include("apps.feedback.urls")),
 ]
 
 # Debug toolbar (only in debug mode)
