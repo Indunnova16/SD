@@ -66,6 +66,7 @@ LOCAL_APPS = [
     "apps.gamification",
     "apps.occupational_profiles",
     "apps.inspections",
+    "apps.feedback",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -369,3 +370,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 # Email configuration (override in production)
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@sd-lms.com")
+
+# Portal público de feedback/tickets (apps.feedback) — sincronización con GitHub
+GITHUB_FEEDBACK_TOKEN = config("GITHUB_FEEDBACK_TOKEN", default="")
+GITHUB_FEEDBACK_REPO = config("GITHUB_FEEDBACK_REPO", default="Indunnova16/SD")
+FEEDBACK_MAX_ATTACHMENTS = config("FEEDBACK_MAX_ATTACHMENTS", default=10, cast=int)
+FEEDBACK_MAX_ATTACHMENT_BYTES = config(
+    "FEEDBACK_MAX_ATTACHMENT_BYTES", default=10 * 1024 * 1024, cast=int
+)
