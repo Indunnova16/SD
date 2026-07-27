@@ -8,9 +8,11 @@ sincronización con GitHub. Tests de A2-A8 (github_client, forms, services,
 views) se agregan a este mismo archivo en sub-items posteriores.
 """
 
+import base64
 from unittest.mock import Mock, patch
 
 import requests
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
 from apps.feedback.github_client import (
@@ -20,7 +22,12 @@ from apps.feedback.github_client import (
     GitHubFeedbackClient,
 )
 from apps.feedback.forms import NuevoTicketForm
-from apps.feedback.models import FeedbackTicket
+from apps.feedback.models import FeedbackAttachment, FeedbackTicket
+from apps.feedback.services import (
+    encolar_sincronizacion_ticket,
+    procesar_archivos_subidos,
+    sincronizar_ticket,
+)
 
 
 class ModelsTestCase(TestCase):
@@ -224,3 +231,179 @@ class NuevoTicketFormTestCase(TestCase):
         form = NuevoTicketForm(data=datos)
         self.assertFalse(form.is_valid())
         self.assertIn("asunto", form.errors)
+
+
+# PNG real de 1x1 pixel (transparente) — usado para probar el camino feliz
+# de procesar_archivos_subidos sin depender de un archivo externo.
+PNG_1X1 = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
+    "+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
+
+
+class ProcesarArchivosSubidosTestCase(TestCase):
+    """Tests del sub-item A4 — validación explícita de imágenes subidas.
+
+    Cubre el hallazgo de F2: `FeedbackAttachment.objects.create(imagen=...)`
+    fuera de un `ModelForm` no ejecuta `full_clean()`, por lo que
+    `procesar_archivos_subidos` debe validar content_type + tamaño +
+    contenido real (Pillow) de forma explícita, best-effort por archivo.
+    """
+
+    def _ticket(self):
+        return FeedbackTicket.objects.create(
+            nombre_reportante="Ana Pérez",
+            asunto="El botón de descarga no funciona",
+            descripcion="Al hacer click en descargar el certificado no pasa nada.",
+        )
+
+    def test_archivo_imagen_valida_crea_un_attachment(self):
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile("foto.png", PNG_1X1, content_type="image/png")
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(len(creados), 1)
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 1
+        )
+        self.assertEqual(creados[0].nombre_original, "foto.png")
+
+    def test_archivo_content_type_no_imagen_no_crea_attachment_ni_lanza(self):
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile(
+            "documento.pdf",
+            b"%PDF-1.4 contenido de prueba, no es una imagen",
+            content_type="application/pdf",
+        )
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(creados, [])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+    def test_archivo_content_type_spoofeado_bytes_corruptos_no_crea_attachment(
+        self,
+    ):
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile(
+            "malicioso.png",
+            b"esto no es una imagen real, son bytes de texto disfrazados de png",
+            content_type="image/png",
+        )
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(creados, [])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+    @override_settings(FEEDBACK_MAX_ATTACHMENT_BYTES=10)
+    def test_archivo_excede_tamano_maximo_no_crea_attachment(self):
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile("foto.png", PNG_1X1, content_type="image/png")
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(creados, [])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+    @override_settings(FEEDBACK_MAX_ATTACHMENTS=2)
+    def test_mas_de_max_attachments_solo_procesa_los_primeros_n(self):
+        ticket = self._ticket()
+        archivos = [
+            SimpleUploadedFile(f"foto{i}.png", PNG_1X1, content_type="image/png")
+            for i in range(4)
+        ]
+
+        creados = procesar_archivos_subidos(ticket, archivos)
+
+        self.assertEqual(len(creados), 2)
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 2
+        )
+
+
+class SincronizarTicketTestCase(TestCase):
+    """Tests del sub-item A4 — sincronizar_ticket (idempotencia + resiliencia)."""
+
+    def _ticket(self, **overrides):
+        datos = dict(
+            nombre_reportante="Carlos Ruiz",
+            asunto="Sugerencia de mejora",
+            descripcion="Sería útil poder filtrar los cursos por categoría.",
+        )
+        datos.update(overrides)
+        return FeedbackTicket.objects.create(**datos)
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_happy_path_deja_ticket_sincronizado(self, mock_client_cls):
+        ticket = self._ticket()
+        mock_client = mock_client_cls.return_value
+        mock_client.crear_issue.return_value = {
+            "number": 55,
+            "html_url": "https://github.com/Indunnova16/SD/issues/55",
+            "id": 123,
+        }
+
+        resultado = sincronizar_ticket(ticket.pk)
+
+        self.assertTrue(resultado)
+        mock_client.asegurar_label_portal_web.assert_called_once()
+        mock_client.crear_issue.assert_called_once()
+        ticket.refresh_from_db()
+        self.assertTrue(ticket.sincronizado_github)
+        self.assertEqual(ticket.github_issue_number, 55)
+        self.assertEqual(
+            ticket.github_url, "https://github.com/Indunnova16/SD/issues/55"
+        )
+        self.assertEqual(ticket.error_sincronizacion, "")
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_idempotente_no_llama_de_nuevo_si_ya_tiene_issue(self, mock_client_cls):
+        ticket = self._ticket(
+            github_issue_number=99,
+            github_url="https://github.com/Indunnova16/SD/issues/99",
+            sincronizado_github=True,
+        )
+
+        resultado = sincronizar_ticket(ticket.pk)
+
+        self.assertTrue(resultado)
+        mock_client_cls.assert_not_called()
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_error_github_no_propaga_deja_ticket_con_error(self, mock_client_cls):
+        ticket = self._ticket()
+        mock_client = mock_client_cls.return_value
+        mock_client.crear_issue.side_effect = GitHubClientError("GitHub caído")
+
+        resultado = sincronizar_ticket(ticket.pk)  # NO debe lanzar
+
+        self.assertFalse(resultado)
+        ticket.refresh_from_db()
+        self.assertFalse(ticket.sincronizado_github)
+        self.assertIn("GitHub caído", ticket.error_sincronizacion)
+        self.assertIsNone(ticket.github_issue_number)
+
+
+class EncolarSincronizacionTicketTestCase(TestCase):
+    """Tests del sub-item A4 — encolar_sincronizacion_ticket vía on_commit."""
+
+    @patch("apps.feedback.services.sincronizar_ticket")
+    def test_dispara_sincronizar_ticket_solo_tras_commit(self, mock_sincronizar):
+        with self.captureOnCommitCallbacks(execute=True) as callbacks:
+            ticket = FeedbackTicket.objects.create(
+                nombre_reportante="Diana",
+                asunto="Prueba de encolado",
+                descripcion="Verifica que la sincronización se dispare on_commit.",
+            )
+            encolar_sincronizacion_ticket(ticket.pk)
+
+        self.assertEqual(len(callbacks), 1)
+        mock_sincronizar.assert_called_once_with(ticket.pk)
