@@ -1,28 +1,50 @@
-<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real. -->
 {% extends "feedback/base.html" %}
 
-{% block content %}
-<h1>portal de SD - Cursos</h1>
-<p><a href="{% url 'feedback:nuevo' %}">Nuevo ticket</a></p>
+{% block title %}portal de SD - Cursos{% endblock %}
 
-<ul>
+{% block content %}
+<div class="flex items-center justify-between mb-6 gap-4 flex-wrap">
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Tickets reportados</h2>
+    <a href="{% url 'feedback:nuevo' %}" class="btn btn-primary">
+        + Nuevo ticket
+    </a>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden">
     {% for ticket in page_obj %}
-    <li>
-        <a href="{% url 'feedback:detalle' ticket.id %}">{{ ticket.asunto }}</a>
-        — {{ ticket.nombre_reportante }}
-    </li>
+    <a href="{% url 'feedback:detalle' ticket.id %}"
+       class="block px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+        <div class="flex items-center justify-between gap-4">
+            <div class="min-w-0">
+                <p class="font-medium text-gray-900 dark:text-white truncate">{{ ticket.asunto }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    Reportado por {{ ticket.nombre_reportante }} · {{ ticket.created_at|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+            {% if ticket.sincronizado_github %}
+            <span class="badge badge-success badge-outline shrink-0">Sincronizado</span>
+            {% else %}
+            <span class="badge badge-ghost shrink-0">Procesando</span>
+            {% endif %}
+        </div>
+    </a>
     {% empty %}
-    <li>Todavía no hay tickets registrados.</li>
+    <p class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+        Todavía no hay tickets registrados.
+    </p>
     {% endfor %}
-</ul>
+</div>
 
 {% if page_obj.has_other_pages %}
-<div>
+<div class="join flex justify-center mt-6">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+    <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">« Anterior</a>
     {% endif %}
+    <span class="join-item btn btn-sm btn-disabled">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+    <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">Siguiente »</a>
     {% endif %}
 </div>
 {% endif %}

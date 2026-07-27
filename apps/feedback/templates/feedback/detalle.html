@@ -1,21 +1,44 @@
-<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real y el
-     aviso discreto (no técnico) cuando ticket.sincronizado_github es False. -->
 {% extends "feedback/base.html" %}
 
+{% block title %}{{ ticket.asunto }} - portal de SD - Cursos{% endblock %}
+
 {% block content %}
-<h1>{{ ticket.asunto }}</h1>
-<p>Reportado por {{ ticket.nombre_reportante }}</p>
-<p>{{ ticket.descripcion }}</p>
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="{% url 'feedback:lista' %}" class="link link-primary text-sm">« Volver al tablero</a>
+    </div>
 
-{% if not ticket.sincronizado_github %}
-<p>Seguimos procesando tu reporte.</p>
-{% endif %}
+    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ ticket.asunto }}</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        Reportado por <span class="font-medium">{{ ticket.nombre_reportante }}</span>
+        · {{ ticket.created_at|date:"d/m/Y H:i" }}
+    </p>
 
-<ul>
-    {% for adjunto in adjuntos %}
-    <li><img src="{{ adjunto.imagen.url }}" alt="{{ adjunto.nombre_original }}"></li>
-    {% endfor %}
-</ul>
+    {% if not ticket.sincronizado_github %}
+    <!-- Aviso discreto y NO técnico (requisito literal A6): nunca exponer
+         ticket.error_sincronizacion crudo al usuario público. -->
+    <div class="alert alert-info mb-6" role="status" aria-live="polite">
+        <span>Tu ticket fue registrado, estamos procesando la sincronización.</span>
+    </div>
+    {% endif %}
 
-<p><a href="{% url 'feedback:lista' %}">Volver al tablero</a></p>
+    <div class="mb-8">
+        <p class="whitespace-pre-line text-gray-800 dark:text-gray-200">{{ ticket.descripcion }}</p>
+    </div>
+
+    {% if adjuntos %}
+    <div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Imágenes adjuntas</h3>
+        <div class="ticket-adjuntos grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {% for adjunto in adjuntos %}
+            <a href="{{ adjunto.imagen.url }}" target="_blank" rel="noopener" class="block">
+                <img src="{{ adjunto.imagen.url }}"
+                     alt="{{ adjunto.nombre_original|default:ticket.asunto }}"
+                     class="rounded-lg shadow object-cover w-full h-32">
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

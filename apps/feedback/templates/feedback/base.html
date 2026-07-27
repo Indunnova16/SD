@@ -1,25 +1,164 @@
+{% load static %}
 <!DOCTYPE html>
 <!--
-    PLACEHOLDER minimal — sub-item A6 reemplaza este archivo con el layout
-    standalone real (Tailwind CDN + DaisyUI + Alpine dark-mode, espejo de
-    templates/accounts/base_auth.html) y el branding "portal de SD - Cursos".
-    Existe acá solo para que las vistas de A5 (lista/nuevo/detalle) tengan un
-    template real para renderizar y sus tests puedan correr.
+    Layout standalone del portal público "portal de SD - Cursos" (sub-item A6,
+    issue #71). Espejo del patrón de templates/accounts/base_auth.html (login
+    público de SD): Tailwind CDN + DaisyUI + Alpine para dark-mode.
+
+    A propósito NO extiende el shell autenticado de la app (sin sidebar, sin
+    navbar de sesión, sin logout) — esta superficie es 100% pública/anónima,
+    sin sesión SD (ver views.py de A5: ninguna vista acá usa
+    @login_required).
 -->
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}portal de SD - Cursos{% endblock %}</title>
-</head>
-<body>
-    {% if messages %}
-    <ul>
-        {% for message in messages %}
-        <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
-    {% endif %}
-    {% block content %}{% endblock %}
-</body>
+<html lang="es"
+      class="h-full"
+      x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }"
+      :class="{ 'dark': darkMode }"
+      :data-theme="darkMode ? 'dark' : 'light'">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="csrf-token" content="{{ csrf_token }}">
+        <title>{% block title %}portal de SD - Cursos{% endblock %}</title>
+        <!-- Theme initialization (prevents flash of wrong theme) -->
+        <script>
+        (function() {
+            var d = localStorage.getItem('darkMode') === 'true';
+            if (d) document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
+        })();
+        </script>
+        <!-- Tailwind CSS & DaisyUI -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ffa4a9',
+                            100: '#ff8f95',
+                            200: '#ff737b',
+                            300: '#ff4651',
+                            400: '#ff101e',
+                            500: '#e4020f',
+                            600: '#bb0a14',
+                            700: '#9c0e16',
+                            800: '#740e14',
+                            900: '#500d11',
+                            950: '#1a0607',
+                        },
+                        secondary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                    },
+                },
+            },
+        }
+        </script>
+        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css"
+              rel="stylesheet"
+              type="text/css" />
+        <!-- Alpine.js (dark-mode toggle) -->
+        <script defer
+                src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <style>
+        [x-cloak] { display: none !important; }
+
+        html[data-theme="light"] {
+            color-scheme: light;
+            --p: 57.79% 0.2357 28.2;
+            --pc: 89.824% 0.04714 28.2;
+            --s: 69.71% 0.329 342.55;
+            --sc: 98.71% 0.0106 342.55;
+            --a: 76.76% 0.184 183.61;
+            --ac: 15.352% 0.0368 183.61;
+            --n: 32.1785% 0.02476 255.701624;
+            --nc: 89.4994% 0.011585 252.096176;
+            --b1: 100% 0 0;
+            --b2: 96.1151% 0 0;
+            --b3: 92.4169% 0.00108 197.137559;
+            --bc: 27.8078% 0.029596 256.847952;
+            --in: 72.06% 0.191 231.6;
+            --su: 64.8% 0.150 160;
+            --wa: 84.71% 0.199 83.87;
+            --er: 71.76% 0.221 22.18;
+            --inc: 0% 0 0;
+            --suc: 0% 0 0;
+            --wac: 0% 0 0;
+            --erc: 0% 0 0;
+        }
+        html[data-theme="dark"] {
+            color-scheme: dark;
+            --p: 74.36% 0.1492 28.2;
+            --pc: 13.138% 0.02984 28.2;
+            --s: 74.8% 0.26 342.55;
+            --sc: 14.96% 0.052 342.55;
+            --a: 74.51% 0.167 183.61;
+            --ac: 14.902% 0.0334 183.61;
+            --n: 31.3815% 0.021108 254.139175;
+            --nc: 74.6477% 0.0216 264.435964;
+            --b1: 25.3267% 0.015896 252.417568;
+            --b2: 23.2607% 0.013807 253.100675;
+            --b3: 21.1484% 0.01165 254.087939;
+            --bc: 74.6477% 0.0216 264.435964;
+            --in: 72.06% 0.191 231.6;
+            --su: 64.8% 0.150 160;
+            --wa: 84.71% 0.199 83.87;
+            --er: 71.76% 0.221 22.18;
+            --inc: 0% 0 0;
+            --suc: 0% 0 0;
+            --wac: 0% 0 0;
+            --erc: 0% 0 0;
+        }
+        </style>
+    </head>
+    <body class="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
+        <header class="bg-gradient-to-r from-primary-600 to-primary-900 text-white shadow-lg">
+            <div class="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">portal de SD - Cursos</h1>
+                    <p class="text-primary-200 text-sm mt-1">Reportá un problema o una sugerencia</p>
+                </div>
+                <button type="button"
+                        class="btn btn-ghost btn-sm text-white"
+                        aria-label="Cambiar tema claro/oscuro"
+                        @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode); document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')">
+                    <span x-show="!darkMode">🌙</span>
+                    <span x-show="darkMode" x-cloak>☀️</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% else %}alert-info{% endif %}"
+                             role="status"
+                             aria-live="polite">
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6">
+            <p>&copy; 2026 S.D. S.A.S. — portal de SD - Cursos</p>
+        </footer>
+        {% block extra_js %}{% endblock %}
+    </body>
 </html>

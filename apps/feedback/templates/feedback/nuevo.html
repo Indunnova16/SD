@@ -1,15 +1,87 @@
-<!-- PLACEHOLDER minimal (ver base.html) — A6 le da el branding real. -->
 {% extends "feedback/base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Nuevo ticket - portal de SD - Cursos{% endblock %}
 
 {% block content %}
-<h1>Nuevo ticket</h1>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <p>
-        <label for="id_imagenes">Imágenes</label>
-        <input type="file" id="id_imagenes" name="imagenes" multiple accept="image/*">
-    </p>
-    <button type="submit">Enviar</button>
-</form>
+<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
+    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Reportar un nuevo ticket</h2>
+
+    <form method="post" enctype="multipart/form-data" id="form-nuevo-ticket" novalidate>
+        {% csrf_token %}
+
+        <div class="form-control mb-4">
+            <label class="label" for="{{ form.nombre_reportante.id_for_label }}">
+                <span class="label-text font-medium">Nombre</span>
+            </label>
+            {% if form.nombre_reportante.errors %}
+                {{ form.nombre_reportante|add_class:"input input-bordered w-full input-error" }}
+            {% else %}
+                {{ form.nombre_reportante|add_class:"input input-bordered w-full" }}
+            {% endif %}
+            {% for error in form.nombre_reportante.errors %}
+            <div class="label" aria-live="polite">
+                <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-control mb-4">
+            <label class="label" for="{{ form.asunto.id_for_label }}">
+                <span class="label-text font-medium">Asunto</span>
+            </label>
+            {% if form.asunto.errors %}
+                {{ form.asunto|add_class:"input input-bordered w-full input-error" }}
+            {% else %}
+                {{ form.asunto|add_class:"input input-bordered w-full" }}
+            {% endif %}
+            {% for error in form.asunto.errors %}
+            <div class="label" aria-live="polite">
+                <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-control mb-4">
+            <label class="label" for="{{ form.descripcion.id_for_label }}">
+                <span class="label-text font-medium">Descripción</span>
+            </label>
+            {% if form.descripcion.errors %}
+                {{ form.descripcion|add_class:"textarea textarea-bordered w-full textarea-error"|attr:"rows:5" }}
+            {% else %}
+                {{ form.descripcion|add_class:"textarea textarea-bordered w-full"|attr:"rows:5" }}
+            {% endif %}
+            {% for error in form.descripcion.errors %}
+            <div class="label" aria-live="polite">
+                <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-control mb-6">
+            <label class="label" for="id_imagenes">
+                <span class="label-text font-medium">Imágenes (opcional)</span>
+            </label>
+            <input type="file"
+                   id="id_imagenes"
+                   name="imagenes"
+                   multiple
+                   accept="image/*"
+                   class="file-input file-input-bordered w-full">
+            <div class="label">
+                <span class="label-text-alt text-gray-500 dark:text-gray-400">
+                    Podés adjuntar una o varias fotos.
+                </span>
+            </div>
+        </div>
+
+        <!-- Honeypot anti-spam (NuevoTicketForm.website, sub-item A3): campo
+             invisible para un humano vía el estilo inline que ya trae el
+             widget (position:absolute;left:-9999px). No se agrega ningún
+             ocultamiento adicional a nivel de template — sigue en el DOM. -->
+        {{ form.website }}
+
+        <button type="submit" class="btn btn-primary w-full">Enviar</button>
+    </form>
+</div>
 {% endblock %}
