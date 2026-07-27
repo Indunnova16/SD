@@ -2469,6 +2469,7 @@ def export_attendance_pdf(request, course_id, lesson_id):
         "responsable": responsable,
         "responsable_signature_url": responsable_signature_url,
     }
+    context.update(_attendance_pdf_branding_context())
 
     html_string = render_to_string("courses/attendance_pdf.html", context)
 

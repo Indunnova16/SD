@@ -16,9 +16,13 @@
         }
         .header {
             text-align: center;
-            border-bottom: 2px solid #1a1a1a;
+            border-bottom: 2px solid {{ brand_accent|default:"#1a1a1a" }};
             padding-bottom: 10px;
             margin-bottom: 18px;
+        }
+        .header .brand-logo {
+            max-height: 40px;
+            margin-bottom: 6px;
         }
         .header h1 {
             font-size: 17pt;
@@ -143,6 +147,9 @@
     </head>
     <body>
         <div class="header">
+            {% if logo_data_uri %}
+            <img class="brand-logo" src="{{ logo_data_uri }}" alt="Logo">
+            {% endif %}
             <h1>Lista de Asistencia</h1>
             <p>{{ course.title }}</p>
             <p>Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}</p>
@@ -189,10 +196,11 @@
             <thead>
                 <tr>
                     <th style="width: 6%;">No.</th>
-                    <th style="width: 30%;">Nombre completo</th>
-                    <th style="width: 16%;">Cédula</th>
-                    <th style="width: 20%;">Cargo</th>
-                    <th style="width: 28%;">Firma</th>
+                    <th style="width: 26%;">Nombre completo</th>
+                    <th style="width: 14%;">Cédula</th>
+                    <th style="width: 16%;">Cargo</th>
+                    <th style="width: 16%;">Fecha de firma</th>
+                    <th style="width: 22%;">Firma</th>
                 </tr>
             </thead>
             <tbody>
@@ -202,6 +210,9 @@
                     <td>{{ row.full_name }}</td>
                     <td>{{ row.document_number }}</td>
                     <td>{{ row.user.job_position|default:"—" }}</td>
+                    <td>
+                        {% if row.signed_at %}{{ row.signed_at|date:"d/m/Y H:i" }}{% else %}<span class="empty">—</span>{% endif %}
+                    </td>
                     <td>
                         {% if row.signature_image_url %}
                             <img class="signature-img" src="{{ row.signature_image_url }}" alt="Firma">
@@ -214,7 +225,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
+                    <td colspan="6" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
                 </tr>
                 {% endfor %}
             </tbody>

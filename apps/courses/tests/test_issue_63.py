@@ -921,6 +921,11 @@ def _legacy_pdf_context(course, lesson=None, rows=None, **overrides):
         "request_user": None,
         "responsable": None,
         "responsable_signature_url": "",
+        # SD#63 A3 -- branding compartido (logo + acento), mismos defaults
+        # que _attendance_pdf_branding_context() en producción; los tests
+        # de branding pisan estas claves explícitamente via overrides.
+        "logo_data_uri": "",
+        "brand_accent": "#e4020f",
     }
     context.update(overrides)
     return context
@@ -1063,6 +1068,10 @@ class LegacyAttendancePdfOfficialFormatTests(TestCase):
         self.assertNotIn("Resumen de Asistencia", html)
 
     def test_happy_path_firmantes_5_columnas_exactas(self):
+        """Bounce 2026-07-27: el cliente ahora pide DELIBERADAMENTE una 6a
+        columna "Fecha de firma" -- este test (correccion valida del bounce
+        anterior, que fijaba el formato del oracle FT-HSEQ-60 a 5 columnas)
+        se actualiza a la nueva realidad de 6 columnas, no se borra."""
         html = render_to_string(
             "courses/attendance_pdf.html",
             _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
@@ -1071,8 +1080,9 @@ class LegacyAttendancePdfOfficialFormatTests(TestCase):
         self.assertIn("Nombre completo", html)
         self.assertIn("Cédula", html)
         self.assertIn("Cargo", html)
+        self.assertIn("Fecha de firma", html)
         self.assertNotIn(">Estado<", html)
-        self.assertNotIn("Fecha y hora de firma", html)
+        self.assertEqual(html.count("<th "), 6)
         # Cargo sale de row.user.job_position -- el dict de fila de
         # _build_attendance_summary YA trae el objeto user completo, no
         # requirió tocar la vista.
@@ -1493,3 +1503,127 @@ class ExportCourseAttendancePdfIndividualTests(TestCase):
         self.assertEqual(tbody_html.count("<tr>"), 2)
         self.assertIn(user_a.get_full_name(), tbody_html)
         self.assertIn(user_b.get_full_name(), tbody_html)
+
+
+# =============================================================================
+# A3 -- Legado (attendance_pdf.html): logo + acento #e4020f + columna
+# "Fecha de firma". Mismo tratamiento que A2 (course_attendance_pdf.html)
+# pero sobre el template legacy per-lección y `export_attendance_pdf` --
+# evita repetir el patron exacto de bounce 1 (arreglar solo el flujo nuevo
+# y dejar el legado desactualizado). Wiring real cubierto por
+# `LegacyPdfRealRenderTests` (arriba, pre-existente) contra la vista real;
+# esta clase cubre el HTML-fuente vía `_legacy_pdf_context()`.
+# =============================================================================
+
+
+class LegacyAttendancePdfBrandingTests(TestCase):
+    """attendance_pdf.html -- logo + acento de marca + columna de fecha de
+    firma, mismos requisitos que A2 aplicados al flujo legacy."""
+
+    def setUp(self):
+        self.creator = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, self.module = _make_course(
+            self.creator, activity_type=Course.ActivityType.CHARLA
+        )
+        self.lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia legacy branding",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            order=0,
+        )
+        self.signed_at = timezone.now()
+        self.row = {
+            "user": self.creator,
+            "full_name": self.creator.get_full_name(),
+            "document_number": self.creator.document_number,
+            "presente": True,
+            "estado": "Presente",
+            "signed_at": self.signed_at,
+            "signature_image_url": "",
+        }
+
+    def test_happy_path_logo_embebido(self):
+        context = _attendance_pdf_branding_context()
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(
+                self.course,
+                lesson=self.lesson,
+                rows=[self.row],
+                logo_data_uri=context["logo_data_uri"],
+            ),
+        )
+        self.assertIn("data:image/png;base64,", html)
+
+    def test_happy_path_acento_de_marca_presente(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        self.assertIn("#e4020f", html)
+
+    def test_happy_path_columna_fecha_de_firma_con_valor_real(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        self.assertIn("Fecha de firma", html)
+        # localtime -- el filtro `date` de Django convierte a TIME_ZONE local
+        # antes de formatear, comparar en UTC crudo desfasa el assert.
+        self.assertIn(timezone.localtime(self.signed_at).strftime("%H:%M"), html)
+
+    def test_edge_fecha_de_firma_ausente_renderiza_placeholder_sin_error(self):
+        row_sin_firma = dict(self.row, signed_at=None)
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[row_sin_firma]),
+        )
+        self.assertIn("Fecha de firma", html)
+        self.assertIn("—", html)
+
+    def test_edge_logo_ausente_html_valido_sin_img(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(
+                self.course, lesson=self.lesson, rows=[self.row], logo_data_uri=""
+            ),
+        )
+        self.assertNotIn("<img class=\"brand-logo\"", html)
+        # el resto del documento sigue renderizando sin error
+        self.assertIn("Lista de Asistencia", html)
+
+    def test_regresion_sin_azul_bounce_2(self):
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        self.assertNotIn("#2563eb", html)
+
+    def test_happy_path_render_real_via_vista_contiene_columna_de_fecha(self):
+        """A diferencia de los tests de arriba (render_to_string directo
+        contra el template), este pega la vista real `export_attendance_pdf`
+        -- confirma que el wiring `context.update(_attendance_pdf_branding_context())`
+        efectivamente llega al PDF servido, no solo al template en aislado
+        (#328 -- caso NOVAPCR: template bien, vista real sin el wiring)."""
+        signer = _make_user(job_position="Operario Render")
+        Enrollment.objects.create(user=signer, course=self.course)
+        sig = AttendanceSignature.objects.create(lesson=self.lesson, user=signer)
+        sig.signature_image.save("sig.png", _png_file(), save=True)
+        client = Client()
+        client.force_login(self.creator)
+
+        response = client.get(
+            reverse("courses:export_attendance_pdf", args=[self.course.id, self.lesson.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+        text = _extract_pdf_text(self, content)
+        # "Fecha de firma" es el encabezado nuevo -- columna ancha, sale sin
+        # wrap. El cargo del firmante ("Operario Render") sí puede envolver
+        # en 2 líneas por el ancho reducido de esa columna -- se checkea por
+        # palabras sueltas para no depender del layout exacto de pdftotext.
+        self.assertIn("Fecha de firma", text)
+        self.assertIn("Operario", text)
+        self.assertIn("Render", text)
