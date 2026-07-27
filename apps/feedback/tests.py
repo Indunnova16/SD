@@ -19,6 +19,7 @@ from apps.feedback.github_client import (
     GitHubClientError,
     GitHubFeedbackClient,
 )
+from apps.feedback.forms import NuevoTicketForm
 from apps.feedback.models import FeedbackTicket
 
 
@@ -177,3 +178,49 @@ class GithubClientTestCase(TestCase):
     def test_token_vacio_tras_strip_levanta_github_client_error(self):
         with self.assertRaises(GitHubClientError):
             GitHubFeedbackClient()
+
+
+class NuevoTicketFormTestCase(TestCase):
+    """Tests del sub-item A3 (NuevoTicketForm con honeypot anti-spam)."""
+
+    def _datos_validos(self, **overrides):
+        datos = {
+            "nombre_reportante": "Ana Pérez",
+            "asunto": "El botón de descarga no funciona",
+            "descripcion": "Al hacer click en descargar el certificado no pasa nada.",
+            "website": "",
+        }
+        datos.update(overrides)
+        return datos
+
+    def test_form_valido_con_los_4_campos_reales_y_honeypot_vacio(self):
+        form = NuevoTicketForm(data=self._datos_validos())
+        self.assertTrue(form.is_valid())
+
+    def test_honeypot_poblado_invalida_el_form_con_mensaje_generico(self):
+        form = NuevoTicketForm(
+            data=self._datos_validos(website="http://spam-bot.example.com")
+        )
+        self.assertFalse(form.is_valid())
+        errores = " ".join(form.errors.get("website", []))
+        self.assertTrue(errores)
+        errores_lower = errores.lower()
+        for palabra_delatora in ("bot", "honeypot", "spam"):
+            self.assertNotIn(palabra_delatora, errores_lower)
+
+    def test_nombre_reportante_de_un_caracter_es_invalido(self):
+        form = NuevoTicketForm(data=self._datos_validos(nombre_reportante="A"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("nombre_reportante", form.errors)
+
+    def test_descripcion_muy_corta_es_invalida(self):
+        form = NuevoTicketForm(data=self._datos_validos(descripcion="muy corta"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("descripcion", form.errors)
+
+    def test_falta_asunto_es_invalido(self):
+        datos = self._datos_validos()
+        del datos["asunto"]
+        form = NuevoTicketForm(data=datos)
+        self.assertFalse(form.is_valid())
+        self.assertIn("asunto", form.errors)
