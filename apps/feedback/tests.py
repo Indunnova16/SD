@@ -551,3 +551,206 @@ class ViewsTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(
+    GITHUB_FEEDBACK_TOKEN="ghp_test-token-a8", GITHUB_FEEDBACK_REPO="Indunnova16/SD"
+)
+class IntegracionEndToEndTestCase(TestCase):
+    """Tests del sub-item A8 — integración end-to-end de la cadena real.
+
+    A diferencia de las clases anteriores (GithubClientTestCase,
+    ProcesarArchivosSubidosTestCase/SincronizarTicketTestCase, ViewsTestCase),
+    que testean cada capa aislada mockeando la clase/función de la capa
+    vecina, estos tests ejercitan la cadena COMPLETA real:
+
+        request HTTP POST -> nuevo_view -> NuevoTicketForm ->
+        FeedbackTicket/FeedbackAttachment -> procesar_archivos_subidos ->
+        encolar_sincronizacion_ticket (transaction.on_commit) ->
+        sincronizar_ticket -> GitHubFeedbackClient -> github_client.py ->
+        requests.post
+
+    El ÚNICO mock es `apps.feedback.github_client.requests.post` — el punto
+    más bajo posible (la llamada HTTP saliente real). Nada intermedio se
+    mockea: si algún nombre de campo/parámetro no coincidiera entre capas
+    (el tipo de bug que un test unitario aislado no caza), estos tests
+    fallarían.
+
+    Necesita `@override_settings(GITHUB_FEEDBACK_TOKEN=...)` porque
+    `GITHUB_FEEDBACK_TOKEN` no tiene default en settings de test (default=""
+    en base.py) y `sincronizar_ticket` instancia `GitHubFeedbackClient()`
+    SIN pasar token/repo explícitos — usa `settings.GITHUB_FEEDBACK_TOKEN`
+    directo. Sin este override el constructor real levanta
+    `GitHubClientError` ANTES de siquiera llamar a `requests.post`, y el
+    mock nunca se invoca (se descubrió escribiendo este test).
+    """
+
+    def _datos_validos(self, **overrides):
+        datos = {
+            "nombre_reportante": "Ana Pérez",
+            "asunto": "El botón de descarga no funciona",
+            "descripcion": "Al hacer click en descargar el certificado no pasa nada.",
+            "website": "",
+        }
+        datos.update(overrides)
+        return datos
+
+    def _mock_response(self, status_code, json_data=None, text=""):
+        response = Mock()
+        response.status_code = status_code
+        response.json.return_value = json_data or {}
+        response.text = text
+        return response
+
+    def _issues_call(self, mock_post):
+        """Devuelve el `call()` de `mock_post` dirigido al endpoint
+        `/issues` (descarta la llamada previa a `/labels` que hace
+        `asegurar_label_portal_web`, para no confundir los payloads)."""
+        llamadas = [
+            llamada
+            for llamada in mock_post.call_args_list
+            if llamada.args and llamada.args[0].endswith("/issues")
+        ]
+        self.assertEqual(
+            len(llamadas), 1, "se esperaba exactamente 1 POST al endpoint /issues"
+        )
+        return llamadas[0]
+
+    @patch("apps.feedback.github_client.requests.post")
+    def test_happy_path_completo_http_hasta_github(self, mock_post):
+        """POST real -> view -> form -> modelo -> services -> github_client
+        -> requests.post (único mock). Verifica ticket+adjunto en BD,
+        sincronización marcada True con el número de issue del mock, y que
+        el payload real enviado a GitHub trae intactos los datos del form.
+        """
+        mock_post.return_value = self._mock_response(
+            201,
+            json_data={
+                "number": 77,
+                "html_url": "https://github.com/Indunnova16/SD/issues/77",
+                "id": 555,
+            },
+        )
+        archivo = SimpleUploadedFile(
+            "captura.png", PNG_1X1, content_type="image/png"
+        )
+        datos = self._datos_validos()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]}
+            )
+
+        # (a) el FeedbackTicket existe en BD con los datos correctos
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+        self.assertEqual(ticket.nombre_reportante, datos["nombre_reportante"])
+        self.assertEqual(ticket.descripcion, datos["descripcion"])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id}),
+        )
+
+        # (b) el FeedbackAttachment fue creado y asociado al ticket
+        adjuntos = FeedbackAttachment.objects.filter(ticket=ticket)
+        self.assertEqual(adjuntos.count(), 1)
+        self.assertEqual(adjuntos.first().nombre_original, "captura.png")
+
+        # (c) sincronizado_github == True, github_issue_number poblado con
+        # el valor exacto que devolvió el mock de GitHub
+        ticket.refresh_from_db()
+        self.assertTrue(ticket.sincronizado_github)
+        self.assertEqual(ticket.github_issue_number, 77)
+        self.assertEqual(
+            ticket.github_url, "https://github.com/Indunnova16/SD/issues/77"
+        )
+        self.assertEqual(ticket.error_sincronizacion, "")
+
+        # (d) el payload real que llegó a requests.post trae intacto lo que
+        # el usuario mandó por el form — la prueba de que TODA la cadena de
+        # datos (form -> modelo -> services -> github_client) llegó bien.
+        issues_call = self._issues_call(mock_post)
+        payload = issues_call.kwargs["json"]
+        self.assertEqual(payload["title"], f"[Portal] {datos['asunto']}")
+        self.assertIn(datos["descripcion"], payload["body"])
+        self.assertIn(datos["nombre_reportante"], payload["body"])
+        self.assertIn("captura.png", payload["body"])
+        self.assertEqual(payload["labels"], ["portal-web"])
+        self.assertEqual(payload["assignees"], ["Indunnova"])
+
+    @patch("apps.feedback.github_client.requests.post")
+    def test_resiliencia_end_to_end_github_caido_no_pierde_el_ticket(
+        self, mock_post
+    ):
+        """Si GitHub falla (red caída), el ticket del usuario NO se pierde:
+        queda en BD con sincronizado_github=False + error_sincronizacion
+        poblado, y la vista sigue respondiendo 302 al usuario (nunca 500),
+        mostrando el ticket igual aunque la sync a GitHub haya fallado."""
+        mock_post.side_effect = requests.exceptions.ConnectionError(
+            "no se pudo conectar a api.github.com"
+        )
+        datos = self._datos_validos()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(reverse("feedback:nuevo"), data=datos)
+
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id}),
+        )
+
+        self.assertFalse(ticket.sincronizado_github)
+        self.assertIsNone(ticket.github_issue_number)
+        self.assertTrue(ticket.error_sincronizacion)
+
+        # el detalle del ticket sigue siendo accesible (200) pese a que la
+        # sincronización con GitHub falló — nunca un 500 al usuario.
+        detalle_response = self.client.get(
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
+        )
+        self.assertEqual(detalle_response.status_code, 200)
+        self.assertContains(detalle_response, datos["asunto"])
+
+    @patch("apps.feedback.github_client.requests.post")
+    def test_flujo_completo_navegacion_lista_y_detalle_con_imagen(
+        self, mock_post
+    ):
+        """Crea un ticket con imagen (mock exitoso) y confirma que aparece
+        en `feedback:lista` y que su `feedback:detalle` muestra el asunto Y
+        la imagen adjunta en el HTML de respuesta."""
+        mock_post.return_value = self._mock_response(
+            201,
+            json_data={
+                "number": 88,
+                "html_url": "https://github.com/Indunnova16/SD/issues/88",
+                "id": 666,
+            },
+        )
+        archivo = SimpleUploadedFile(
+            "evidencia.png", PNG_1X1, content_type="image/png"
+        )
+        datos = self._datos_validos(
+            asunto="El certificado no descarga en Safari"
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(
+                reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]}
+            )
+
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+
+        lista_response = self.client.get(reverse("feedback:lista"))
+        self.assertEqual(lista_response.status_code, 200)
+        self.assertContains(lista_response, datos["asunto"])
+
+        detalle_response = self.client.get(
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
+        )
+        self.assertEqual(detalle_response.status_code, 200)
+        self.assertContains(detalle_response, datos["asunto"])
+
+        adjunto = FeedbackAttachment.objects.get(ticket=ticket)
+        self.assertContains(detalle_response, adjunto.imagen.url)
