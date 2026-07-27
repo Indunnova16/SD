@@ -79,7 +79,8 @@ class CourseDurationHoursTest(TestCase):
     def test_duration_hours_rounds_to_one_decimal(self):
         course = self._make_course(code="ISSUE43-DUR-003")
         module = Module.objects.create(course=course, title="Modulo 1", order=1)
-        # 100 minutes -> 100/60 = 1.6666... -> rounds to 1.7
+        # 100 minutes -> 100/60 = 1.6666... -> rounds UP to nearest 0.5 -> 2.0
+        # (SD#62: duration_hours now always rounds up to the nearest half hour)
         Lesson.objects.create(
             module=module,
             title="Leccion 1",
@@ -87,7 +88,7 @@ class CourseDurationHoursTest(TestCase):
             duration=100,
             order=1,
         )
-        self.assertEqual(course.duration_hours, 1.7)
+        self.assertEqual(course.duration_hours, 2.0)
 
     def test_certificate_template_renders_duration_hours_not_estimated_duration(self):
         """

@@ -106,8 +106,9 @@ class CertificateDurationHoursDisplayTest(TestCase):
         return render_to_string("certifications/certificate_template.html", context)
 
     def test_happy_path_positive_duration_renders_value(self):
-        """Happy path: a normal positive duration (0.3h, 18 min of lesson —
-        mirrors the real prod course id=63) renders '0.3 horas'."""
+        """Happy path: a normal positive duration (18 min of lesson —
+        mirrors the real prod course id=63 — rounds UP to 0.5h per SD#62)
+        renders '0.5 horas'."""
         course = _make_course(self.admin, code="ISSUE59-A1-POS")
         module = Module.objects.create(course=course, title="M1", description="d", order=0)
         Lesson.objects.create(
@@ -117,12 +118,12 @@ class CertificateDurationHoursDisplayTest(TestCase):
             duration=18,
             order=0,
         )
-        self.assertEqual(course.duration_hours, 0.3)
+        self.assertEqual(course.duration_hours, 0.5)
 
         html = self._render(course)
         # es-co locale renders the decimal separator as ',' (Django L10N) —
         # this already matched pre-fix behavior for non-zero values.
-        self.assertIn("0,3 horas", html)
+        self.assertIn("0,5 horas", html)
         self.assertNotIn("N/A horas", html)
 
     def test_edge_zero_duration_from_lessons_renders_zero_not_na(self):

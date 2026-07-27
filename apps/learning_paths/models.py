@@ -5,6 +5,8 @@ Learning path models for SD LMS.
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from apps.courses.utils import round_up_to_half
+
 
 class LearningPath(models.Model):
     """
@@ -113,7 +115,7 @@ class LearningPath(models.Model):
             total=Sum("course__modules__lessons__duration")
         )
         total_minutes = result["total"] or 0
-        return round(total_minutes / 60, 1)
+        return round_up_to_half(total_minutes / 60)
 
 
 class PathCourse(models.Model):
