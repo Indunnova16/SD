@@ -154,7 +154,7 @@
             {% if logo_data_uri %}
                 <img class="header-logo" src="{{ logo_data_uri }}" alt="Logo SD SAS">
             {% endif %}
-            <h1>Lista de Asistencia por Curso</h1>
+            <h1>{% if is_individual %}Reporte Individual de Asistencia{% else %}Lista de Asistencia por Curso{% endif %}</h1>
             <p class="format-code">Formato FT-HSEQ-60 · Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}</p>
         </div>
 

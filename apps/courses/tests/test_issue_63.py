@@ -1334,3 +1334,162 @@ class CourseAttendancePdfBrandingAndSignedAtColumnTests(TestCase):
     def test_edge_roster_vacio_colspan_ajustado_a_6(self):
         html = self._render(_course_pdf_context(self.course, rows=[]))
         self.assertIn('colspan="6"', html)
+
+
+# =============================================================================
+# A4 -- PDF Individual (feature nueva): vista + URL + boton. Decision de
+# arquitectura F2 (no reabierta): reusa course_attendance_pdf.html
+# parametrizado con rows=[fila_unica] + is_individual=True -- NO se crea un
+# template course_attendance_pdf_individual.html nuevo, el Individual hereda
+# logo/color/columna "Fecha de firma" de A2 gratis.
+# =============================================================================
+
+
+class ExportCourseAttendancePdfIndividualTests(TestCase):
+    """export_course_attendance_pdf_individual (name=
+    export_course_attendance_pdf_individual). Mismo gate ADMINISTRADOR +
+    COORDINADOR y mismo gate de completitud de curso que
+    export_course_attendance_pdf (A2) -- `user_id` se resuelve contra el
+    roster de ESE curso especifico via _build_course_attendance_summary, no
+    un lookup global de User."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.coordinador = _make_user(rol=User.Rol.COORDINADOR)
+        self.ejecutor = _make_user(rol=User.Rol.EJECUTOR)
+        self.instructor = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.client = Client()
+
+    def _complete_course(self):
+        course, _module = _make_course(
+            self.administrador,
+            project_name="Proyecto Poda y Tala Individual",
+            activity_type=Course.ActivityType.CAPACITACION,
+            objectives="Capacitar en procedimiento seguro",
+            instructor=self.instructor,
+        )
+        return course
+
+    def test_happy_path_user_inscrito_devuelve_pdf_con_1_fila_de_firmante(self):
+        course = self._complete_course()
+        signed_user = _make_user(job_position="Operario Uno")
+        other_enrolled = _make_user(job_position="Operario Dos")
+        enrollment = Enrollment.objects.create(user=signed_user, course=course)
+        enrollment.completion_signature = _png_file()
+        enrollment.completion_signed_at = timezone.now()
+        enrollment.save()
+        Enrollment.objects.create(user=other_enrolled, course=course)
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse(
+                "courses:export_course_attendance_pdf_individual",
+                args=[course.id, signed_user.id],
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+        # HTML fuente (pre-render final): reconstruye el MISMO contexto que
+        # arma la vista (misma llamada a _build_course_attendance_summary +
+        # el mismo filtro por user.id) y lo renderiza con
+        # get_template(...).render(context), igual que A2 -- confirma
+        # EXACTAMENTE 1 fila de firmante, no las 2 del roster completo.
+        summary = _build_course_attendance_summary(course)
+        row = next(r for r in summary["rows"] if r["user"].id == signed_user.id)
+        html = get_template("courses/course_attendance_pdf.html").render(
+            _course_pdf_context(course, rows=[row], is_individual=True)
+        )
+        tbody_html = html[html.index("<tbody>") : html.index("</tbody>")]
+        self.assertEqual(tbody_html.count("<tr>"), 1)
+        self.assertIn(signed_user.get_full_name(), tbody_html)
+        self.assertNotIn(other_enrolled.get_full_name(), tbody_html)
+        self.assertIn("Reporte Individual de Asistencia", html)
+
+    def test_edge_user_no_inscrito_en_este_curso_da_404(self):
+        """Un user_id valido que existe como User pero esta inscrito en
+        OTRO curso (no en `course`) debe dar 404 -- NUNCA un lookup global
+        de User que ignore el curso, ni un PDF vacio con 200."""
+        course = self._complete_course()
+        other_course = self._complete_course()
+        outsider = _make_user()
+        Enrollment.objects.create(user=outsider, course=other_course)
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse(
+                "courses:export_course_attendance_pdf_individual",
+                args=[course.id, outsider.id],
+            )
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_edge_user_id_inexistente_da_404(self):
+        course = self._complete_course()
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse(
+                "courses:export_course_attendance_pdf_individual",
+                args=[course.id, 9_999_999],
+            )
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_edge_ejecutor_es_bloqueado(self):
+        course = self._complete_course()
+        signed_user = _make_user()
+        Enrollment.objects.create(user=signed_user, course=course)
+
+        self.client.force_login(self.ejecutor)
+        response = self.client.get(
+            reverse(
+                "courses:export_course_attendance_pdf_individual",
+                args=[course.id, signed_user.id],
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+
+    def test_happy_path_coordinador_tambien_exporta_individual(self):
+        course = self._complete_course()
+        signed_user = _make_user()
+        Enrollment.objects.create(user=signed_user, course=course)
+
+        self.client.force_login(self.coordinador)
+        response = self.client.get(
+            reverse(
+                "courses:export_course_attendance_pdf_individual",
+                args=[course.id, signed_user.id],
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+
+    def test_regresion_grupal_sigue_devolviendo_todas_las_filas(self):
+        """El endpoint Grupal (export_course_attendance_pdf, A2) sigue
+        devolviendo TODAS las filas del roster -- confirma que A4 no filtro
+        el Grupal por accidente."""
+        course = self._complete_course()
+        user_a = _make_user(job_position="Operario A")
+        user_b = _make_user(job_position="Operario B")
+        Enrollment.objects.create(user=user_a, course=course)
+        Enrollment.objects.create(user=user_b, course=course)
+
+        self.client.force_login(self.administrador)
+        response = self.client.get(
+            reverse("courses:export_course_attendance_pdf", args=[course.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.getvalue() if hasattr(response, "getvalue") else response.content
+        self.assertTrue(content.startswith(b"%PDF"))
+
+        summary = _build_course_attendance_summary(course)
+        self.assertEqual(len(summary["rows"]), 2)
+        html = get_template("courses/course_attendance_pdf.html").render(
+            _course_pdf_context(course, rows=summary["rows"])
+        )
+        tbody_html = html[html.index("<tbody>") : html.index("</tbody>")]
+        self.assertEqual(tbody_html.count("<tr>"), 2)
+        self.assertIn(user_a.get_full_name(), tbody_html)
+        self.assertIn(user_b.get_full_name(), tbody_html)

@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.db import models, transaction
 from django.db.models import Count, Q
-from django.http import FileResponse, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
@@ -2577,6 +2577,87 @@ def export_course_attendance_pdf(request, course_id):
 
     response = HttpResponse(result.getvalue(), content_type="application/pdf")
     filename = f"asistencia_curso_{course.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def export_course_attendance_pdf_individual(request, course_id, user_id):
+    """Export a single-signer attendance PDF for ONE enrollee of a course
+    (SD#63, A4). Reusa el mismo gate ADMINISTRADOR + COORDINADOR de
+    `export_course_attendance_pdf` (`_attendance_export_required`) y el
+    mismo gate de completitud del curso (`_course_attendance_missing_fields`).
+
+    Decision de arquitectura F2 (no reabrir): reusa el mismo template
+    `course_attendance_pdf.html` de `export_course_attendance_pdf`
+    parametrizado con `rows=[fila_unica]` + `is_individual=True` -- evita
+    un 3er repeat del trabajo de branding/columna "Fecha de firma" de A2,
+    el Individual lo hereda gratis.
+
+    `user_id` se resuelve contra el roster de ESE curso especifico via
+    `_build_course_attendance_summary(course)` -- NO un lookup global de
+    `User` que ignore el curso. Un `user_id` que existe como User pero no
+    esta inscrito en ESTE curso (p.ej. inscrito solo en otro) da 404 igual
+    que uno inexistente -- nunca un PDF vacio con 200 ni un 500.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    from io import BytesIO
+
+    from django.template.loader import render_to_string
+    from xhtml2pdf import pisa
+
+    course = get_object_or_404(Course, pk=course_id)
+
+    missing = _course_attendance_missing_fields(course)
+    if missing:
+        messages.error(
+            request,
+            "Complete los siguientes campos del curso antes de descargar el "
+            f"reporte de asistencia: {', '.join(missing)}.",
+        )
+        return redirect("courses:course_full_edit", course_id=course.id)
+
+    summary = _build_course_attendance_summary(course)
+    row = next((r for r in summary["rows"] if r["user"].id == user_id), None)
+    if row is None:
+        raise Http404("El usuario indicado no esta inscrito en este curso.")
+
+    instructor_signature_url = ""
+    if course.instructor and course.instructor.signature:
+        try:
+            instructor_signature_url = course.instructor.signature.url
+        except Exception:
+            instructor_signature_url = ""
+
+    context = {
+        "course": course,
+        "rows": [row],
+        "total_inscritos": 1,
+        "total_presentes": 1 if row["presente"] else 0,
+        "total_ausentes": 0 if row["presente"] else 1,
+        "porcentaje_asistencia": 100.0 if row["presente"] else 0.0,
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+        "instructor_signature_url": instructor_signature_url,
+        "is_individual": True,
+    }
+    context.update(_attendance_pdf_branding_context())
+
+    html_string = render_to_string("courses/course_attendance_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF de asistencia individual.")
+        return redirect("courses:course_attendance_report_detail", course_id=course.id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = (
+        f"asistencia_individual_{course.id}_{user_id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    )
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 

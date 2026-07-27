@@ -79,6 +79,11 @@ urlpatterns = [
         name="export_course_attendance_pdf",
     ),
     path(
+        "attendance-reports/<int:course_id>/export-pdf/<int:user_id>/",
+        views.export_course_attendance_pdf_individual,
+        name="export_course_attendance_pdf_individual",
+    ),
+    path(
         "attendance-reports/<int:course_id>/",
         views.course_attendance_report_detail,
         name="course_attendance_report_detail",

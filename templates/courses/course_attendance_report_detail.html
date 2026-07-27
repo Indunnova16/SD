@@ -104,6 +104,7 @@
                             <th>Cargo</th>
                             <th>Estado</th>
                             <th>Fecha de firma</th>
+                            <th>Descargar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,10 +121,26 @@
                                     {% endif %}
                                 </td>
                                 <td>{% if row.signed_at %}{{ row.signed_at|date:"d/m/Y H:i" }}{% else %}<span class="text-gray-400">—</span>{% endif %}</td>
+                                <td>
+                                    {% if not missing_fields %}
+                                        <a href="{% url 'courses:export_course_attendance_pdf_individual' course.id row.user.id %}"
+                                           class="btn btn-ghost btn-xs"
+                                           title="Descargar individual">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-4 w-4"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Descargar individual
+                                        </a>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center text-gray-400 py-8">No hay inscritos en este curso.</td>
+                                <td colspan="6" class="text-center text-gray-400 py-8">No hay inscritos en este curso.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
