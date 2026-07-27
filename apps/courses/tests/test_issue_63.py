@@ -31,7 +31,7 @@ from datetime import date
 from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.template.loader import render_to_string
+from django.template.loader import get_template, render_to_string
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -895,6 +895,14 @@ def _course_pdf_context(course, rows=None, **overrides):
         "request_user": None,
         "instructor_signature_url": "",
     }
+    # Branding (SD#63, A1/A2) -- wired en produccion via
+    # `context.update(_attendance_pdf_branding_context())` en
+    # `export_course_attendance_pdf`. Defaults aqui reflejan ese wiring real
+    # (logo_data_uri vacio por defecto -- no depende de leer el asset del
+    # disco en cada test -- brand_accent siempre presente) para que los
+    # tests existentes que NO pasan overrides sigan renderizando el mismo
+    # HTML que produccion.
+    context.update({"logo_data_uri": "", "brand_accent": "#e4020f"})
     context.update(overrides)
     return context
 
@@ -954,7 +962,12 @@ class CourseAttendancePdfOfficialFormatTests(TestCase):
         self.assertNotIn("Resumen de Asistencia", html)
         self.assertNotIn("% Asistencia", html)
 
-    def test_happy_path_firmantes_5_columnas_exactas_sin_estado(self):
+    def test_happy_path_firmantes_6_columnas_exactas_sin_estado(self):
+        """Actualizado en el bounce 2026-07-27 (SD#63, A2): el cliente pidio
+        deliberadamente una 6a columna "Fecha de firma" ademas de las 5 del
+        oraculo FT-HSEQ-60 original (No./Nombre completo/Cedula/Cargo/Firma).
+        Sigue sin "Estado" -- eso NO volvio, es el unico punto del bounce 2
+        que se preserva intacto aqui."""
         html = render_to_string(
             "courses/course_attendance_pdf.html",
             _course_pdf_context(self.course, rows=[self.row]),
@@ -963,6 +976,7 @@ class CourseAttendancePdfOfficialFormatTests(TestCase):
         self.assertIn("Nombre completo", html)
         self.assertIn("Cédula", html)
         self.assertIn("Cargo", html)
+        self.assertIn("Fecha de firma", html)
         self.assertNotIn(">Estado<", html)
         self.assertNotIn("badge-presente", html)
         self.assertNotIn("badge-ausente", html)
@@ -1226,3 +1240,97 @@ class AttendancePdfBrandingContextTests(TestCase):
         # brand_accent no depende de la lectura del archivo -- se mantiene
         # aun con el asset ausente.
         self.assertEqual(context["brand_accent"], "#e4020f")
+
+
+# =============================================================================
+# A2 -- Wiring de branding (logo + acento #e4020f) + columna "Fecha de firma"
+# en course_attendance_pdf.html (PDF "Grupal"). Bounce 2026-07-27 (SD#63):
+# el cliente pidio (a) el logo de la empresa en el encabezado, (b) el rojo
+# corporativo como acento (NUNCA como banda de fondo -- eso fue removido
+# explicitamente en el bounce 2 y reintroducirlo seria una regresion), y (c)
+# una 6a columna "Fecha de firma" en la tabla de firmantes. El helper
+# `_attendance_pdf_branding_context()` (A1) ya esta probado de forma aislada
+# arriba -- esta clase prueba el WIRING en el template real (contexto ->
+# HTML), no el helper.
+# =============================================================================
+
+
+class CourseAttendancePdfBrandingAndSignedAtColumnTests(TestCase):
+    """course_attendance_pdf.html con branding (A1) + columna Fecha de firma
+    (A2) via _course_pdf_context(), que ahora incluye logo_data_uri/
+    brand_accent por defecto reflejando el wiring real de
+    export_course_attendance_pdf.
+
+    Usa `get_template(...).render(context)` (equivalente a `render_to_string`,
+    mismo motor de templates) en vez de `render_to_string` directo: aserta
+    explicitamente contra el HTML SERVIDO por el template real, no solo
+    contra el contexto/form -- la superficie que rompio NOVAPCR (#328)."""
+
+    @staticmethod
+    def _render(context):
+        return get_template("courses/course_attendance_pdf.html").render(context)
+
+    def setUp(self):
+        self.creator = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, _module = _make_course(
+            self.creator,
+            project_name="Proyecto Poda y Tala",
+            activity_type=Course.ActivityType.SIMULACRO,
+            objectives="Capacitar en procedimiento seguro",
+        )
+        self.row = {
+            "user": self.creator,
+            "full_name": self.creator.get_full_name(),
+            "document_number": self.creator.document_number,
+            "job_position": self.creator.job_position,
+            "presente": True,
+            "estado": "Presente",
+            "signed_at": timezone.now(),
+            "signature_image_url": "",
+        }
+
+    def test_happy_path_logo_embebido_en_el_header(self):
+        context = _course_pdf_context(
+            self.course,
+            rows=[self.row],
+            logo_data_uri="data:image/png;base64," + base64.b64encode(_PNG_BYTES).decode("ascii"),
+        )
+        html = self._render(context)
+        self.assertIn("data:image/png;base64,", html)
+        self.assertIn('class="header-logo"', html)
+
+    def test_happy_path_acento_de_marca_presente(self):
+        html = self._render(_course_pdf_context(self.course, rows=[self.row]))
+        self.assertIn("#e4020f", html)
+
+    def test_happy_path_columna_fecha_de_firma_con_valor_formateado(self):
+        from django.utils.formats import date_format
+        from django.utils.timezone import template_localtime
+
+        signed_at = timezone.now()
+        row = dict(self.row, signed_at=signed_at)
+        html = self._render(_course_pdf_context(self.course, rows=[row]))
+        self.assertIn("Fecha de firma", html)
+        expected = date_format(template_localtime(signed_at), "d/m/Y H:i")
+        self.assertIn(expected, html)
+
+    def test_edge_signed_at_none_renderiza_placeholder_sin_error(self):
+        row = dict(self.row, signed_at=None)
+        html = self._render(_course_pdf_context(self.course, rows=[row]))
+        self.assertIn("Fecha de firma", html)
+        self.assertIn("—", html)
+
+    def test_edge_logo_data_uri_vacio_no_renderiza_img_roto(self):
+        html = self._render(
+            _course_pdf_context(self.course, rows=[self.row], logo_data_uri="")
+        )
+        self.assertNotIn("data:image/png;base64,", html)
+        self.assertNotIn('class="header-logo"', html)
+
+    def test_regresion_sigue_sin_banda_azul(self):
+        html = self._render(_course_pdf_context(self.course, rows=[self.row]))
+        self.assertNotIn("#2563eb", html)
+
+    def test_edge_roster_vacio_colspan_ajustado_a_6(self):
+        html = self._render(_course_pdf_context(self.course, rows=[]))
+        self.assertIn('colspan="6"', html)

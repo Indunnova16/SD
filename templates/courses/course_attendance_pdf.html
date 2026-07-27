@@ -16,13 +16,17 @@
         }
         .header {
             text-align: center;
-            border-bottom: 2px solid #1a1a1a;
+            border-bottom: 2px solid {{ brand_accent }};
             padding-bottom: 10px;
             margin-bottom: 18px;
         }
+        .header-logo {
+            max-height: 42px;
+            margin-bottom: 6px;
+        }
         .header h1 {
             font-size: 15pt;
-            color: #1a1a1a;
+            color: {{ brand_accent }};
             margin: 0 0 4px 0;
         }
         .header .format-code {
@@ -147,6 +151,9 @@
     </head>
     <body>
         <div class="header">
+            {% if logo_data_uri %}
+                <img class="header-logo" src="{{ logo_data_uri }}" alt="Logo SD SAS">
+            {% endif %}
             <h1>Lista de Asistencia por Curso</h1>
             <p class="format-code">Formato FT-HSEQ-60 · Generado el {{ generated_at|date:"d/m/Y H:i" }} por {{ request_user.get_full_name }}</p>
         </div>
@@ -212,11 +219,12 @@
         <table class="signers-table">
             <thead>
                 <tr>
-                    <th style="width: 6%;">No.</th>
-                    <th style="width: 30%;">Nombre completo</th>
-                    <th style="width: 16%;">Cédula</th>
-                    <th style="width: 20%;">Cargo</th>
-                    <th style="width: 28%;">Firma</th>
+                    <th style="width: 5%;">No.</th>
+                    <th style="width: 25%;">Nombre completo</th>
+                    <th style="width: 14%;">Cédula</th>
+                    <th style="width: 16%;">Cargo</th>
+                    <th style="width: 21%;">Firma</th>
+                    <th style="width: 19%;">Fecha de firma</th>
                 </tr>
             </thead>
             <tbody>
@@ -235,10 +243,11 @@
                             <span class="empty">Sin firma</span>
                         {% endif %}
                     </td>
+                    <td>{{ row.signed_at|date:"d/m/Y H:i"|default:"—" }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
+                    <td colspan="6" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
                 </tr>
                 {% endfor %}
             </tbody>

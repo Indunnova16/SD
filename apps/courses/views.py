@@ -2564,6 +2564,7 @@ def export_course_attendance_pdf(request, course_id):
         "request_user": request.user,
         "instructor_signature_url": instructor_signature_url,
     }
+    context.update(_attendance_pdf_branding_context())
 
     html_string = render_to_string("courses/course_attendance_pdf.html", context)
 
