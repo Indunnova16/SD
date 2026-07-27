@@ -17,6 +17,7 @@ from apps.core.validators import (
     validate_target_profiles,
     validate_url,
 )
+from apps.courses.utils import round_up_to_half
 
 
 def convert_youtube_url_to_embed(url: str, use_nocookie: bool = False) -> str:
@@ -334,7 +335,7 @@ class Course(models.Model):
         previously referenced `course.estimated_duration`, an attribute
         removed from this model, which silently rendered blank).
         """
-        return round(self.total_duration / 60, 1)
+        return round_up_to_half(self.total_duration / 60)
 
 
 class Module(models.Model):
@@ -383,7 +384,7 @@ class Module(models.Model):
 
         result = self.lessons.aggregate(total=Sum("duration"))
         total_minutes = result["total"] or 0
-        return round(total_minutes / 60, 1)
+        return round_up_to_half(total_minutes / 60)
 
 
 class Lesson(models.Model):
