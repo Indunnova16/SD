@@ -367,7 +367,8 @@ class ModuleDurationHoursTests(TestCase):
         module = Module.objects.create(
             course=self.course, title="Con lecciones", description="", order=1
         )
-        # 40 + 60 = 100 min -> 1.6666... -> redondea a 1.7 (mismo caso que
+        # 40 + 60 = 100 min -> 1.6666... -> redondea SIEMPRE hacia arriba al
+        # multiplo de 0.5 mas cercano -> 2.0 (SD#62; mismo caso que
         # test_issue_43.py test_duration_hours_rounds_to_one_decimal).
         Lesson.objects.create(
             module=module, title="L1", lesson_type=Lesson.Type.VIDEO, duration=40, order=0
@@ -375,7 +376,7 @@ class ModuleDurationHoursTests(TestCase):
         Lesson.objects.create(
             module=module, title="L2", lesson_type=Lesson.Type.VIDEO, duration=60, order=1
         )
-        self.assertEqual(module.duration_hours, 1.7)
+        self.assertEqual(module.duration_hours, 2.0)
 
 
 class BuilderDurationOobFragmentTests(TestCase):

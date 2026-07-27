@@ -86,13 +86,14 @@ class LearningPathDurationHoursTests(TestCase):
         Lesson.objects.create(
             module=module, title="L1", lesson_type=Lesson.Type.VIDEO, duration=100, order=0
         )
-        # 100 min -> 1.6666... -> 1.7 h (mismo redondeo que Course.duration_hours).
-        self.assertEqual(course.duration_hours, 1.7)
+        # 100 min -> 1.6666... -> redondea hacia arriba a 2.0 h (SD#62; mismo
+        # redondeo que Course.duration_hours).
+        self.assertEqual(course.duration_hours, 2.0)
 
         path = _make_path(self.staff)
         PathCourse.objects.create(learning_path=path, course=course, order=0)
 
-        self.assertEqual(path.duration_hours, 1.7)
+        self.assertEqual(path.duration_hours, 2.0)
 
     def test_edge_zero_courses_is_zero_no_exception(self):
         path = _make_path(self.staff)
