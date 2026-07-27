@@ -25,8 +25,10 @@ sub-items de este mismo RUN -- este archivo de test es POR-ISSUE
 (test_issue_63.py), nunca se apendea a tests.py.
 """
 
+import base64
 import re
 from datetime import date
+from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.template.loader import render_to_string
@@ -44,7 +46,10 @@ from apps.courses.models import (
     Lesson,
     Module,
 )
-from apps.courses.views import _build_course_attendance_summary
+from apps.courses.views import (
+    _attendance_pdf_branding_context,
+    _build_course_attendance_summary,
+)
 
 # Minimal valid 1x1 transparent PNG, same fixture used across courses tests
 # (test_attendance_pdf.py / test_issue_59_a4.py) so ImageField validation
@@ -1183,3 +1188,41 @@ class LegacyPdfRealRenderTests(TestCase):
         self.assertIn("supervisor", text_lower)
         self.assertIn("firmantes", text_lower)
         self.assertIn("eficacia", text_lower)
+
+
+# =============================================================================
+# A1 -- Helper compartido _attendance_pdf_branding_context() (logo + acento
+# #e4020f). Sub-item aislado de este mismo issue (bounce 2026-07-27): NO se
+# llama todavia desde las vistas PDF -- eso lo hacen A2/A3/A4 en sus propios
+# worktrees, mergeados despues por el orquestador. Testeado aqui de forma
+# aislada, sin depender de ninguna vista.
+# =============================================================================
+
+
+class AttendancePdfBrandingContextTests(TestCase):
+    """Helper puro, sin request/DB -- lee el asset del logo desde disco
+    (apps/certifications/migrations/assets/sd_sas_logo_v2_real.png, confirmado
+    presente en el contenedor de Cloud Run por F2) y arma el data URI +
+    color de marca compartido por las 3 vistas PDF."""
+
+    def test_happy_path_logo_data_uri_decodifica_a_png_valido(self):
+        context = _attendance_pdf_branding_context()
+        self.assertTrue(context["logo_data_uri"].startswith("data:image/png;base64,"))
+        b64_payload = context["logo_data_uri"].split(",", 1)[1]
+        decoded = base64.b64decode(b64_payload)
+        self.assertTrue(decoded.startswith(b"\x89PNG"))
+
+    def test_happy_path_brand_accent_es_el_color_oficial(self):
+        context = _attendance_pdf_branding_context()
+        self.assertEqual(context["brand_accent"], "#e4020f")
+
+    def test_edge_archivo_ausente_no_levanta_excepcion(self):
+        """Si el asset no se puede leer (FileNotFoundError/OSError), el
+        helper NUNCA debe propagar la excepcion -- las vistas PDF deben
+        seguir renderizando sin logo (logo_data_uri=''), nunca 500."""
+        with mock.patch("apps.courses.views.open", side_effect=FileNotFoundError, create=True):
+            context = _attendance_pdf_branding_context()
+        self.assertEqual(context["logo_data_uri"], "")
+        # brand_accent no depende de la lectura del archivo -- se mantiene
+        # aun con el asset ausente.
+        self.assertEqual(context["brand_accent"], "#e4020f")

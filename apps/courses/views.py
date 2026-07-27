@@ -2372,6 +2372,37 @@ def _resolve_attendance_responsable(course, lesson):
     return responsable, responsable_signature_url
 
 
+def _attendance_pdf_branding_context():
+    """Build the shared branding context (logo + accent color) for the
+    attendance PDF exports (SD#63, A1).
+
+    Reads the high-res SD SAS logo asset (committed inside
+    ``apps/certifications/migrations/assets/`` — confirmed present in the
+    Cloud Run container at runtime, see PLAN.md), base64-encodes it and
+    returns it as a data URI ready to drop into an ``<img src="...">`` in
+    the PDF templates.
+
+    Never raises: any failure reading/encoding the asset (missing file,
+    permission error, etc.) falls back to an empty ``logo_data_uri``, so
+    the PDF still renders (just without the logo) instead of 500ing. This
+    helper only builds the context dict — it is wired into the actual PDF
+    views by A2/A3/A4 (Grupal, Legado, Individual).
+    """
+    logo_data_uri = ""
+    logo_path = settings.BASE_DIR / "apps" / "certifications" / "migrations" / "assets" / "sd_sas_logo_v2_real.png"
+    try:
+        with open(logo_path, "rb") as fh:
+            logo_bytes = fh.read()
+        logo_data_uri = "data:image/png;base64," + base64.b64encode(logo_bytes).decode("ascii")
+    except (FileNotFoundError, OSError):
+        logo_data_uri = ""
+
+    return {
+        "logo_data_uri": logo_data_uri,
+        "brand_accent": "#e4020f",
+    }
+
+
 def _attendance_export_required(request):
     """Check if user can export the attendance roster PDF (SD#59, A4).
 
