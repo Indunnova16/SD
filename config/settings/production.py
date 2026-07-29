@@ -3,6 +3,7 @@ Django settings for production environment.
 """
 
 from .base import *  # noqa: F403, F401
+from .csp import CSP_DIRECTIVES
 
 DEBUG = False
 
@@ -16,18 +17,20 @@ SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Content Security Policy - Nonce-based (secure, no unsafe-inline)
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "cdn.jsdelivr.net", "cdn.tailwindcss.com", "unpkg.com")
-CSP_STYLE_SRC = ("'self'", "cdn.jsdelivr.net", "fonts.googleapis.com")
-CSP_IMG_SRC = ("'self'", "data:", "storage.googleapis.com", "*.googleusercontent.com")
-CSP_FONT_SRC = ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net")
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FRAME_ANCESTORS = ("'none'",)
-CSP_FORM_ACTION = ("'self'",)
-
-# Enable nonce for inline scripts and styles
-CSP_INCLUDE_NONCE_IN = ["script-src", "style-src"]
+# Content Security Policy (SD#76).
+# Antes esto eran variables planas CSP_DEFAULT_SRC / CSP_SCRIPT_SRC / ... que
+# django-csp 4.0 (la version instalada) NO lee: quedaron en
+# csp.checks.OUTDATED_SETTINGS, que solo alimenta el check csp.E001. Y como
+# "csp" tampoco estaba en INSTALLED_APPS, ese check ni siquiera se registraba:
+# cero header y cero aviso. Ahora la app esta instalada (ver base.py), asi que
+# reintroducir una CSP_* plana rompe `manage.py check` en vez de ignorarse.
+# La politica real vive en config/settings/csp.py y la comparte cloudrun.py,
+# que es el settings que efectivamente corre en produccion (deploy.yml).
+CSP_ENFORCE = config("CSP_ENFORCE", default=False, cast=bool)  # noqa: F405
+if CSP_ENFORCE:
+    CONTENT_SECURITY_POLICY = {"DIRECTIVES": CSP_DIRECTIVES}
+else:
+    CONTENT_SECURITY_POLICY_REPORT_ONLY = {"DIRECTIVES": CSP_DIRECTIVES}
 
 # Storage backends (Django 5.1+ STORAGES)
 STORAGES = {
