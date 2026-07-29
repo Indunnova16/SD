@@ -895,14 +895,14 @@ def _course_pdf_context(course, rows=None, **overrides):
         "request_user": None,
         "instructor_signature_url": "",
     }
-    # Branding (SD#63, A1/A2) -- wired en produccion via
+    # Branding (SD#63) -- wired en produccion via
     # `context.update(_attendance_pdf_branding_context())` en
-    # `export_course_attendance_pdf`. Defaults aqui reflejan ese wiring real
+    # `export_course_attendance_pdf`. Default aqui refleja ese wiring real
     # (logo_data_uri vacio por defecto -- no depende de leer el asset del
-    # disco en cada test -- brand_accent siempre presente) para que los
-    # tests existentes que NO pasan overrides sigan renderizando el mismo
-    # HTML que produccion.
-    context.update({"logo_data_uri": "", "brand_accent": "#e4020f"})
+    # disco en cada test) para que los tests existentes que NO pasan
+    # overrides sigan renderizando el mismo HTML que produccion. NO hay
+    # `brand_accent`: FT-HSEQ-60 es blanco y negro (bounce 2026-07-28).
+    context.update({"logo_data_uri": ""})
     context.update(overrides)
     return context
 
@@ -921,11 +921,11 @@ def _legacy_pdf_context(course, lesson=None, rows=None, **overrides):
         "request_user": None,
         "responsable": None,
         "responsable_signature_url": "",
-        # SD#63 A3 -- branding compartido (logo + acento), mismos defaults
-        # que _attendance_pdf_branding_context() en producción; los tests
-        # de branding pisan estas claves explícitamente via overrides.
+        # SD#63 -- branding compartido (solo logo), mismo default que
+        # _attendance_pdf_branding_context() en producción; los tests de
+        # branding pisan esta clave explícitamente via overrides. NO hay
+        # `brand_accent`: FT-HSEQ-60 es blanco y negro (bounce 2026-07-28).
         "logo_data_uri": "",
-        "brand_accent": "#e4020f",
     }
     context.update(overrides)
     return context
@@ -1236,9 +1236,14 @@ class AttendancePdfBrandingContextTests(TestCase):
         decoded = base64.b64decode(b64_payload)
         self.assertTrue(decoded.startswith(b"\x89PNG"))
 
-    def test_happy_path_brand_accent_es_el_color_oficial(self):
+    def test_regresion_no_expone_color_de_marca(self):
+        """Bounce 2026-07-28: el cliente rechazo el rojo corporativo en este
+        documento -- FT-HSEQ-60 es un formato regulado blanco y negro. El
+        helper NO debe volver a exponer un acento de marca; si alguien lo
+        reintroduce aqui, los templates volverian a pintarse de rojo."""
         context = _attendance_pdf_branding_context()
-        self.assertEqual(context["brand_accent"], "#e4020f")
+        self.assertNotIn("brand_accent", context)
+        self.assertEqual(set(context), {"logo_data_uri"})
 
     def test_edge_archivo_ausente_no_levanta_excepcion(self):
         """Si el asset no se puede leer (FileNotFoundError/OSError), el
@@ -1247,9 +1252,6 @@ class AttendancePdfBrandingContextTests(TestCase):
         with mock.patch("apps.courses.views.open", side_effect=FileNotFoundError, create=True):
             context = _attendance_pdf_branding_context()
         self.assertEqual(context["logo_data_uri"], "")
-        # brand_accent no depende de la lectura del archivo -- se mantiene
-        # aun con el asset ausente.
-        self.assertEqual(context["brand_accent"], "#e4020f")
 
 
 # =============================================================================
@@ -1266,10 +1268,11 @@ class AttendancePdfBrandingContextTests(TestCase):
 
 
 class CourseAttendancePdfBrandingAndSignedAtColumnTests(TestCase):
-    """course_attendance_pdf.html con branding (A1) + columna Fecha de firma
-    (A2) via _course_pdf_context(), que ahora incluye logo_data_uri/
-    brand_accent por defecto reflejando el wiring real de
-    export_course_attendance_pdf.
+    """course_attendance_pdf.html con branding (solo logo) + columna Fecha de
+    firma via _course_pdf_context(), que incluye logo_data_uri por defecto
+    reflejando el wiring real de export_course_attendance_pdf. El documento NO
+    lleva color de marca: es un formato regulado blanco y negro (bounce
+    2026-07-28), cubierto por los tests de regresion de esta clase.
 
     Usa `get_template(...).render(context)` (equivalente a `render_to_string`,
     mismo motor de templates) en vez de `render_to_string` directo: aserta
@@ -1309,9 +1312,31 @@ class CourseAttendancePdfBrandingAndSignedAtColumnTests(TestCase):
         self.assertIn("data:image/png;base64,", html)
         self.assertIn('class="header-logo"', html)
 
-    def test_happy_path_acento_de_marca_presente(self):
+    def test_regresion_sin_rojo_corporativo_bounce_2026_07_28(self):
+        """El cliente rechazo el acento rojo en este documento: FT-HSEQ-60 es
+        un formato regulado que replica el papel oficial, blanco y negro. El
+        rojo de SD#69 es para la UI general de la app, no para este PDF."""
         html = self._render(_course_pdf_context(self.course, rows=[self.row]))
-        self.assertIn("#e4020f", html)
+        self.assertNotIn("#e4020f", html)
+        self.assertIn("#1a1a1a", html)
+
+    def test_regresion_logo_con_tamano_explicito_no_max_height(self):
+        """xhtml2pdf ignora max-width/max-height sobre <img>: con `max-height`
+        el logo se dibujaba a 524,7 x 349,8 pt (todo el ancho util de la
+        pagina). El tamano debe declararse con width/height explicitos."""
+        html = self._render(
+            _course_pdf_context(
+                self.course,
+                rows=[self.row],
+                logo_data_uri="data:image/png;base64,"
+                + base64.b64encode(_PNG_BYTES).decode("ascii"),
+            )
+        )
+        logo_css = html.split(".header-logo {")[1].split("}")[0]
+        self.assertIn("width: 90pt", logo_css)
+        self.assertIn("height: 60pt", logo_css)
+        self.assertNotIn("max-height", logo_css)
+        self.assertNotIn("max-width", logo_css)
 
     def test_happy_path_columna_fecha_de_firma_con_valor_formateado(self):
         from django.utils.formats import date_format
@@ -1555,12 +1580,29 @@ class LegacyAttendancePdfBrandingTests(TestCase):
         )
         self.assertIn("data:image/png;base64,", html)
 
-    def test_happy_path_acento_de_marca_presente(self):
+    def test_regresion_sin_rojo_corporativo_bounce_2026_07_28(self):
+        """Mismo criterio que el PDF por curso: FT-HSEQ-60 en blanco y negro.
+        Se aplica tambien al legado para no repetir el patron de bounce 1
+        (arreglar una superficie y dejar la otra desactualizada)."""
         html = render_to_string(
             "courses/attendance_pdf.html",
             _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
         )
-        self.assertIn("#e4020f", html)
+        self.assertNotIn("#e4020f", html)
+        self.assertIn("#1a1a1a", html)
+
+    def test_regresion_logo_con_tamano_explicito_no_max_height(self):
+        """Ver equivalente en CourseAttendancePdfBrandingTests: max-* es
+        ignorado por xhtml2pdf y el logo se dibujaba a tamano natural."""
+        html = render_to_string(
+            "courses/attendance_pdf.html",
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row]),
+        )
+        logo_css = html.split(".header .brand-logo {")[1].split("}")[0]
+        self.assertIn("width: 90pt", logo_css)
+        self.assertIn("height: 60pt", logo_css)
+        self.assertNotIn("max-height", logo_css)
+        self.assertNotIn("max-width", logo_css)
 
     def test_happy_path_columna_fecha_de_firma_con_valor_real(self):
         html = render_to_string(

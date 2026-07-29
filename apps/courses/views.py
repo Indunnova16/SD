@@ -2373,8 +2373,8 @@ def _resolve_attendance_responsable(course, lesson):
 
 
 def _attendance_pdf_branding_context():
-    """Build the shared branding context (logo + accent color) for the
-    attendance PDF exports (SD#63, A1).
+    """Build the shared branding context (logo) for the attendance PDF
+    exports (SD#63).
 
     Reads the high-res SD SAS logo asset (committed inside
     ``apps/certifications/migrations/assets/`` — confirmed present in the
@@ -2382,11 +2382,16 @@ def _attendance_pdf_branding_context():
     returns it as a data URI ready to drop into an ``<img src="...">`` in
     the PDF templates.
 
+    Deliberately returns NO accent colour. FT-HSEQ-60 is a regulated form
+    that must replicate the official paper, which is black and white; the
+    corporate red (``#e4020f``, SD#69) belongs to the app's general UI —
+    navbar, buttons, certificates — and was explicitly rejected for this
+    document by the client on 2026-07-28. The templates hardcode
+    ``#1a1a1a``; there is no knob here to reintroduce a brand colour.
+
     Never raises: any failure reading/encoding the asset (missing file,
     permission error, etc.) falls back to an empty ``logo_data_uri``, so
-    the PDF still renders (just without the logo) instead of 500ing. This
-    helper only builds the context dict — it is wired into the actual PDF
-    views by A2/A3/A4 (Grupal, Legado, Individual).
+    the PDF still renders (just without the logo) instead of 500ing.
     """
     logo_data_uri = ""
     logo_path = settings.BASE_DIR / "apps" / "certifications" / "migrations" / "assets" / "sd_sas_logo_v2_real.png"
@@ -2399,7 +2404,6 @@ def _attendance_pdf_branding_context():
 
     return {
         "logo_data_uri": logo_data_uri,
-        "brand_accent": "#e4020f",
     }
 
 

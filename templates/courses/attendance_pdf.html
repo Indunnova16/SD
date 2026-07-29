@@ -14,14 +14,23 @@
             color: #1a1a1a;
             line-height: 1.4;
         }
+        /* FT-HSEQ-60 es un formato regulado: replica el papel oficial, que es
+           blanco y negro. El acento rojo corporativo de SD#69 aplica a la
+           interfaz general de la app, NUNCA a este documento (issue #63,
+           comentario del 2026-07-28). Mismo criterio que el PDF por curso.
+           Hay un test de regresion que falla si ese hex reaparece aqui. */
         .header {
             text-align: center;
-            border-bottom: 2px solid {{ brand_accent|default:"#1a1a1a" }};
+            border-bottom: 2px solid #1a1a1a;
             padding-bottom: 10px;
             margin-bottom: 18px;
         }
+        /* xhtml2pdf ignora max-* sobre <img> (ver nota en
+           course_attendance_pdf.html): con `max-height: 40px` el logo se
+           dibujaba a 524,7 x 349,8 pt. Tamano explicito del membrete oficial. */
         .header .brand-logo {
-            max-height: 40px;
+            width: 90pt;
+            height: 60pt;
             margin-bottom: 6px;
         }
         .header h1 {
@@ -107,9 +116,11 @@
             padding: 6px 8px;
             vertical-align: middle;
         }
+        /* Mismo motivo que .brand-logo: max-* se ignora. Solo ancho, para no
+           deformar firmas de proporciones distintas (ver nota equivalente en
+           course_attendance_pdf.html). */
         .signature-img {
-            max-height: 36px;
-            max-width: 110px;
+            width: 110px;
         }
         .empty {
             color: #9ca3af;
