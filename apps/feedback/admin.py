@@ -20,16 +20,19 @@ class FeedbackTicketAdmin(admin.ModelAdmin):
         "id",
         "asunto",
         "nombre_reportante",
+        "estado",
         "sincronizado_github",
         "created_at",
     ]
-    list_filter = ["sincronizado_github", "created_at"]
+    list_filter = ["estado", "sincronizado_github", "created_at"]
     search_fields = ["asunto", "nombre_reportante", "descripcion"]
     readonly_fields = [
         "github_issue_number",
         "github_url",
         "sincronizado_github",
         "error_sincronizacion",
+        "resuelto_por",
+        "resuelto_at",
         "created_at",
         "updated_at",
     ]
@@ -39,7 +42,7 @@ class FeedbackTicketAdmin(admin.ModelAdmin):
 class FeedbackAttachmentAdmin(admin.ModelAdmin):
     """Admin de diagnóstico para FeedbackAttachment."""
 
-    list_display = ["id", "ticket", "nombre_original", "created_at"]
-    list_filter = ["created_at"]
+    list_display = ["id", "ticket", "tipo", "nombre_original", "mime_type", "created_at"]
+    list_filter = ["tipo", "created_at"]
     search_fields = ["nombre_original", "ticket__asunto"]
     readonly_fields = ["created_at"]

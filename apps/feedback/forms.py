@@ -59,3 +59,38 @@ class NuevoTicketForm(forms.Form):
                 _("No se pudo procesar el formulario, intentá de nuevo.")
             )
         return website
+
+
+class ResolverTicketForm(forms.Form):
+    """Formulario público para marcar un ticket como resuelto.
+
+    Pide el nombre de quien resuelve para dejar trazabilidad: el portal es
+    anónimo (cualquiera con el link puede resolver, igual que en Arcopack),
+    así que el nombre es el único registro de quién cerró el caso. Si se
+    resuelve por error, el equipo puede reabrir el issue desde GitHub.
+    """
+
+    resuelto_por = forms.CharField(
+        label=_("Tu nombre"),
+        min_length=2,
+        max_length=120,
+        required=True,
+    )
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "style": "position:absolute;left:-9999px",
+                "tabindex": "-1",
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    def clean_website(self):
+        website = self.cleaned_data.get("website", "")
+        if website:
+            raise forms.ValidationError(
+                _("No se pudo procesar el formulario, intentá de nuevo.")
+            )
+        return website
