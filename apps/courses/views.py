@@ -24,6 +24,7 @@ from .forms import (
     CourseCreateForm,
     CourseEditParamsForm,
     CourseFullEditForm,
+    CourseScheduleForm,
     JobProfileTypeForm,
     LessonBuilderForm,
     ModuleBuilderForm,
@@ -33,16 +34,18 @@ from .models import (
     AttendanceSignature,
     Category,
     Course,
+    CourseSchedule,
     Enrollment,
     JobProfileType,
     Lesson,
     LessonEvidence,
     LessonProgress,
     Module,
+    ScheduleAssignment,
 )
 from apps.accounts.permissions import Rol, require_rol, user_has_rol
 
-from .services import EnrollmentService
+from .services import CourseScheduleService, EnrollmentService
 from .utils import get_client_ip
 
 
@@ -518,6 +521,25 @@ def my_courses(request):
     status_filter = request.GET.get("status")
     if status_filter:
         enrollments = enrollments.filter(status=status_filter)
+
+    enrollments = list(enrollments)
+
+    # SD#73: adjuntar la convocatoria (si la hay) a cada inscripcion, para
+    # poder mostrarle a la persona "se le asigno este curso y tiene hasta tal
+    # fecha" (requisito 3 del issue). Es INFORMATIVO: la fecha sugerida de la
+    # programacion no vive en `Enrollment.due_date` justamente para no
+    # disparar el vencimiento duro de `tasks.check_enrollment_deadlines`, que
+    # bloquearia el curso -- el cliente pidio que se pueda seguir haciendo
+    # despues de la fecha.
+    schedule_by_course = {}
+    for assignment in (
+        ScheduleAssignment.objects.filter(user=user)
+        .select_related("schedule")
+        .order_by("-schedule__created_at")
+    ):
+        schedule_by_course.setdefault(assignment.schedule.course_id, assignment.schedule)
+    for enrollment in enrollments:
+        enrollment.convocatoria = schedule_by_course.get(enrollment.course_id)
 
     context = {
         "enrollments": enrollments,
@@ -2684,7 +2706,7 @@ def course_attendance_reports_list(request):
     if search:
         courses = courses.filter(Q(title__icontains=search) | Q(code__icontains=search))
 
-    context = {"courses": courses, "search": search or ""}
+    context = {"courses": courses, "search": search or "", "active_tab": "cursos"}
     return render(request, "courses/course_attendance_reports_list.html", context)
 
 
@@ -2713,3 +2735,280 @@ def course_attendance_report_detail(request, course_id):
         "missing_fields": missing_fields,
     }
     return render(request, "courses/course_attendance_report_detail.html", context)
+
+
+# ---------------------------------------------------------------------------
+# SD#73 -- Programación de cursos (convocatoria a grupo de personas)
+#
+# El comentario del cliente (2026-07-28, manda sobre el body) pide que la
+# Programación NO sea una página nueva del navbar sino que viva DENTRO de la
+# sección de Asistencia (#63): "yo programo y luego veo la asistencia".
+# Por eso todas estas vistas cuelgan de `attendance-reports/programaciones/…`
+# y reusan `_attendance_export_required` (ADMINISTRADOR + COORDINADOR), el
+# mismo gate ya vigente en el resto de la sección.
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def schedule_list(request):
+    """Listado de programaciones (pestaña "Programaciones" de Asistencia).
+
+    Mismo gate de rol que el resto de la sección (`_attendance_export_required`,
+    ADMINISTRADOR + COORDINADOR) -- no se introduce un set de roles nuevo.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    schedules = (
+        CourseSchedule.objects.select_related("course", "responsable")
+        .annotate(convocados_count=Count("assignments"))
+        .order_by("-created_at")
+    )
+
+    search = request.GET.get("search")
+    if search:
+        schedules = schedules.filter(
+            Q(name__icontains=search)
+            | Q(course__title__icontains=search)
+            | Q(course__code__icontains=search)
+        )
+
+    context = {
+        "schedules": schedules,
+        "search": search or "",
+        "active_tab": "programaciones",
+    }
+    return render(request, "courses/course_schedule_list.html", context)
+
+
+@login_required
+def schedule_search_people(request):
+    """Buscador de personas para armar la convocatoria (requisito 2 del issue).
+
+    El cliente pidió explícitamente "buscador, no una lista larga sin filtro".
+    Devuelve un partial HTMX (mismo patrón que `course_admin_list`), buscando
+    por nombre, apellido, cédula y cargo. Exige >=2 caracteres para no devolver
+    la nómina completa, y topa en 50 resultados.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    User = get_user_model()
+    query = (request.GET.get("q") or "").strip()
+
+    results = []
+    if len(query) >= 2:
+        results = list(
+            User.objects.filter(is_active=True)
+            .filter(
+                Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(document_number__icontains=query)
+                | Q(job_position__icontains=query)
+            )
+            .order_by("first_name", "last_name")[:50]
+        )
+
+    context = {"results": results, "query": query, "too_short": len(query) < 2}
+    return render(request, "courses/partials/schedule_people_results.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def schedule_create(request):
+    """Crear una programación y convocar al grupo.
+
+    La programación se crea sobre un curso YA existente: el `Course` no se toca.
+    La convocatoria en sí la resuelve `CourseScheduleService` (audiencia ->
+    `ScheduleAssignment` + reuso del `Enrollment` + notificación).
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    if request.method == "POST":
+        form = CourseScheduleForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                schedule = form.save(commit=False)
+                schedule.created_by = request.user
+                schedule.save()
+
+                audience = CourseScheduleService.resolve_audience(
+                    users=form.cleaned_data.get("users"),
+                    job_profiles=form.cleaned_data.get("job_profiles"),
+                    job_positions=form.cleaned_data.get("job_positions"),
+                )
+                result = CourseScheduleService.convocar(schedule, audience)
+
+            messages.success(
+                request,
+                f"Programación '{schedule.name}' creada: "
+                f"{len(result['convocados'])} persona(s) convocada(s).",
+            )
+            return redirect("courses:schedule_detail", schedule_id=schedule.id)
+        messages.error(request, "Revise los datos de la programación.")
+    else:
+        form = CourseScheduleForm(initial={"course": request.GET.get("course") or None})
+
+    context = {"form": form, "schedule": None, "active_tab": "programaciones"}
+    return render(request, "courses/course_schedule_form.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def schedule_edit(request, schedule_id):
+    """Editar una programación: reasignar responsable y/o convocar a más gente.
+
+    Reasignar el `responsable` es el requisito 4 del issue: la firma que sale en
+    el PDF pasa a ser la del nuevo. No hace falta copiar nada -- la firma se
+    resuelve en tiempo de render desde `schedule.responsable`.
+
+    En edición la audiencia es OPCIONAL (ver `CourseScheduleForm.clean`): lo
+    normal es entrar solo a reasignar. Si se seleccionan personas/perfiles/
+    cargos, se AGREGAN a los ya convocados; nunca se quitan (no se pidió
+    des-convocar y borrar convocatorias es destructivo).
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    schedule = get_object_or_404(
+        CourseSchedule.objects.select_related("course", "responsable"), pk=schedule_id
+    )
+
+    if request.method == "POST":
+        form = CourseScheduleForm(request.POST, instance=schedule)
+        if form.is_valid():
+            with transaction.atomic():
+                schedule = form.save()
+                audience = CourseScheduleService.resolve_audience(
+                    users=form.cleaned_data.get("users"),
+                    job_profiles=form.cleaned_data.get("job_profiles"),
+                    job_positions=form.cleaned_data.get("job_positions"),
+                )
+                added = 0
+                if audience:
+                    result = CourseScheduleService.convocar(schedule, audience)
+                    added = len(result["convocados"])
+
+            extra = f" Se convocaron {added} persona(s) más." if added else ""
+            messages.success(request, f"Programación actualizada.{extra}")
+            return redirect("courses:schedule_detail", schedule_id=schedule.id)
+        messages.error(request, "Revise los datos de la programación.")
+    else:
+        form = CourseScheduleForm(instance=schedule)
+
+    context = {"form": form, "schedule": schedule, "active_tab": "programaciones"}
+    return render(request, "courses/course_schedule_form.html", context)
+
+
+@login_required
+def schedule_detail(request, schedule_id):
+    """Detalle de la programación = reporte de asistencia de ESA convocatoria.
+
+    Requisito 5 del issue y el "y luego veo la asistencia" del comentario: el
+    roster son SOLO los convocados de esta programación (no todos los inscritos
+    del curso), así dos convocatorias del mismo curso nunca se mezclan.
+
+    Reusa `_course_attendance_missing_fields` (SD#63) para no ofrecer un PDF
+    incompleto respecto al formato FT-HSEQ-60.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    schedule = get_object_or_404(
+        CourseSchedule.objects.select_related("course", "responsable"), pk=schedule_id
+    )
+    summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
+    missing_fields = _course_attendance_missing_fields(schedule.course)
+
+    context = {
+        "schedule": schedule,
+        "course": schedule.course,
+        "rows": summary["rows"],
+        "total_inscritos": summary["total_inscritos"],
+        "total_presentes": summary["total_presentes"],
+        "total_ausentes": summary["total_ausentes"],
+        "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "missing_fields": missing_fields,
+        "active_tab": "programaciones",
+    }
+    return render(request, "courses/course_schedule_detail.html", context)
+
+
+@login_required
+def export_schedule_attendance_pdf(request, schedule_id):
+    """PDF de asistencia FILTRADO por programación (requisito 5 del issue).
+
+    Reusa el MISMO template `course_attendance_pdf.html` del reporte por curso
+    (SD#63) -- el issue dice explícitamente que no modifica el PDF de asistencia
+    en sí, solo lo filtra por convocatoria. Lo único que cambia por contexto:
+
+      - `rows`: solo los convocados de esta programación.
+      - `pdf_instructor` + `instructor_signature_url`: el RESPONSABLE de la
+        programación y su firma de perfil (requisito 4). Si la programación se
+        reasigna, este render trae la firma del nuevo responsable sin
+        intervención manual, porque se lee de `schedule.responsable` cada vez.
+        Si no hay responsable asignado, cae al instructor del curso -- el
+        comportamiento previo de SD#63.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    from io import BytesIO
+
+    from django.template.loader import render_to_string
+
+    from xhtml2pdf import pisa
+
+    schedule = get_object_or_404(
+        CourseSchedule.objects.select_related("course", "responsable"), pk=schedule_id
+    )
+    course = schedule.course
+
+    missing = _course_attendance_missing_fields(course)
+    if missing:
+        messages.error(
+            request,
+            "Complete los siguientes campos del curso antes de descargar el "
+            f"reporte de asistencia: {', '.join(missing)}.",
+        )
+        return redirect("courses:schedule_detail", schedule_id=schedule.id)
+
+    summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
+
+    pdf_instructor = schedule.responsable or course.instructor
+    signature_url = schedule.responsable_signature_url
+    if not schedule.responsable and course.instructor and course.instructor.signature:
+        try:
+            signature_url = course.instructor.signature.url
+        except Exception:
+            signature_url = ""
+
+    context = {
+        "course": course,
+        "schedule": schedule,
+        "rows": summary["rows"],
+        "total_inscritos": summary["total_inscritos"],
+        "total_presentes": summary["total_presentes"],
+        "total_ausentes": summary["total_ausentes"],
+        "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+        "pdf_instructor": pdf_instructor,
+        "instructor_signature_url": signature_url,
+    }
+    context.update(_attendance_pdf_branding_context())
+
+    html_string = render_to_string("courses/course_attendance_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF de asistencia de la programación.")
+        return redirect("courses:schedule_detail", schedule_id=schedule.id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = f"asistencia_programacion_{schedule.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

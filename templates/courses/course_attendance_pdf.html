@@ -181,14 +181,34 @@
                     <div class="value">{% if course.objectives %}{{ course.objectives }}{% else %}<span class="empty">No definido</span>{% endif %}</div>
                 </td>
             </tr>
+            {% if schedule %}
+            {# SD#73: bloque ADITIVO, solo aparece cuando el PDF se genera
+               filtrado por una programación. El reporte por curso y el
+               individual (SD#63) no pasan `schedule` y quedan idénticos. #}
+            <tr>
+                <td>
+                    <div class="label">Programación</div>
+                    <div class="value">{{ schedule.name }}</div>
+                </td>
+                <td>
+                    <div class="label">Fecha de finalización sugerida</div>
+                    <div class="value">{% if schedule.suggested_end_date %}{{ schedule.suggested_end_date|date:"d/m/Y" }}{% else %}<span class="empty">Sin fecha</span>{% endif %}</div>
+                </td>
+            </tr>
+            {% endif %}
             <tr>
                 <td colspan="2" class="signature-cell">
-                    <div class="label">Instructor</div>
-                    <div class="value">{% if course.instructor %}{{ course.instructor.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
+                    {# SD#73: cuando el PDF sale de una programación, el firmante es
+                       su RESPONSABLE (requisito 4), no el instructor del curso. Se
+                       resuelve por contexto con fallback al comportamiento SD#63. #}
+                    <div class="label">{% if pdf_instructor %}Responsable{% else %}Instructor{% endif %}</div>
+                    {% with signer=pdf_instructor|default:course.instructor %}
+                    <div class="value">{% if signer %}{{ signer.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
+                    {% endwith %}
                     {% if instructor_signature_url %}
                         <img class="signature-img" src="{{ instructor_signature_url }}" alt="Firma del instructor">
                     {% else %}
-                        <div style="border-top: 1px solid #1a1a1a; margin-top: 20px; padding-top: 4px; font-size:8pt; color:#666;">Firma del instructor</div>
+                        <div style="border-top: 1px solid #1a1a1a; margin-top: 20px; padding-top: 4px; font-size:8pt; color:#666;">Firma del {% if pdf_instructor %}responsable{% else %}instructor{% endif %}</div>
                     {% endif %}
                 </td>
             </tr>

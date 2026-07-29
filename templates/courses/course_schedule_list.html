@@ -1,0 +1,96 @@
+{% extends "base/dashboard.html" %}
+{% block page_title %}Programaciones{% endblock %}
+{% block page_description %}
+    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        Convocatorias de un curso existente a un grupo de personas. Programe aquí y luego consulte la asistencia de esa misma convocatoria.
+    </p>
+{% endblock %}
+{% block dashboard_content %}
+    {% include "courses/partials/attendance_section_tabs.html" %}
+    <!-- Filters + nueva -->
+    <div class="card bg-base-100 shadow mb-6">
+        <div class="card-body">
+            <div class="flex flex-wrap gap-4 items-end justify-between">
+                <form method="get" class="flex gap-4 items-end flex-1">
+                    <div class="form-control flex-1">
+                        <label class="label">
+                            <span class="label-text">Buscar</span>
+                        </label>
+                        <input type="text"
+                               name="search"
+                               value="{{ search }}"
+                               placeholder="Nombre de la programacion, titulo o codigo del curso..."
+                               class="input input-bordered input-sm w-full">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                    {% if search %}
+                        <a href="{% url 'courses:schedule_list' %}" class="btn btn-ghost btn-sm">Limpiar</a>
+                    {% endif %}
+                </form>
+                <a href="{% url 'courses:schedule_create' %}" class="btn btn-primary btn-sm">Nueva programacion</a>
+            </div>
+        </div>
+    </div>
+    <!-- Table -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Programacion</th>
+                            <th>Curso</th>
+                            <th>Responsable</th>
+                            <th>Fecha sugerida</th>
+                            <th>Convocados</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for schedule in schedules %}
+                            <tr>
+                                <td class="font-semibold">{{ schedule.name }}</td>
+                                <td>
+                                    <span class="font-mono text-xs">{{ schedule.course.code }}</span>
+                                    <br>
+                                    {{ schedule.course.title }}
+                                </td>
+                                <td>
+                                    {% if schedule.responsable %}
+                                        {{ schedule.responsable.get_full_name }}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if schedule.suggested_end_date %}
+                                        {{ schedule.suggested_end_date|date:"d M Y" }}
+                                        {% if schedule.is_overdue %}
+                                            <span class="badge badge-warning badge-sm ml-1"
+                                                  title="Fecha sugerida vencida. El curso sigue disponible: no se bloquea el acceso.">Fecha vencida (no bloquea)</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">Sin fecha</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ schedule.convocados_count }}</td>
+                                <td class="text-right">
+                                    <a href="{% url 'courses:schedule_detail' schedule.id %}"
+                                       class="btn btn-ghost btn-xs">Ver asistencia</a>
+                                    <a href="{% url 'courses:schedule_edit' schedule.id %}"
+                                       class="btn btn-ghost btn-xs">Editar</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-gray-400 py-8">
+                                    No hay programaciones registradas. Cree la primera con "Nueva programacion".
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

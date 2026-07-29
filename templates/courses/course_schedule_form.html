@@ -1,0 +1,124 @@
+{% extends "base/dashboard.html" %}
+{% block page_title %}
+    {% if schedule %}Editar programacion{% else %}Nueva programacion{% endif %}
+{% endblock %}
+{% block page_description %}
+    <div class="flex items-center justify-between">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Convocatoria de un curso ya existente a un grupo de personas. El curso no se modifica.
+        </p>
+        <a href="{% url 'courses:schedule_list' %}" class="btn btn-ghost btn-sm">Volver al listado</a>
+    </div>
+{% endblock %}
+{% block dashboard_content %}
+    {% include "courses/partials/attendance_section_tabs.html" %}
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-error mb-4">
+                <span>{{ form.non_field_errors }}</span>
+            </div>
+        {% endif %}
+        <!-- Datos de la programacion -->
+        <div class="card bg-base-100 shadow mb-6">
+            <div class="card-body">
+                <h3 class="text-lg font-semibold mb-4">Datos de la programacion</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label" for="{{ form.course.id_for_label }}">
+                            <span class="label-text">{{ form.course.label }}</span>
+                        </label>
+                        {{ form.course }}
+                        {% if form.course.errors %}<span class="text-error text-xs mt-1">{{ form.course.errors }}</span>{% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="{{ form.name.id_for_label }}">
+                            <span class="label-text">{{ form.name.label }}</span>
+                        </label>
+                        {{ form.name }}
+                        <span class="text-xs text-gray-500 mt-1">{{ form.name.help_text }}</span>
+                        {% if form.name.errors %}<span class="text-error text-xs mt-1">{{ form.name.errors }}</span>{% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="{{ form.suggested_end_date.id_for_label }}">
+                            <span class="label-text">{{ form.suggested_end_date.label }}</span>
+                        </label>
+                        {{ form.suggested_end_date }}
+                        <span class="text-xs text-gray-500 mt-1">{{ form.suggested_end_date.help_text }}</span>
+                        {% if form.suggested_end_date.errors %}
+                            <span class="text-error text-xs mt-1">{{ form.suggested_end_date.errors }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label" for="{{ form.responsable.id_for_label }}">
+                            <span class="label-text">{{ form.responsable.label }}</span>
+                        </label>
+                        {{ form.responsable }}
+                        <span class="text-xs text-gray-500 mt-1">{{ form.responsable.help_text }}</span>
+                        {% if form.responsable.errors %}
+                            <span class="text-error text-xs mt-1">{{ form.responsable.errors }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="form-control md:col-span-2">
+                        <label class="label" for="{{ form.notes.id_for_label }}">
+                            <span class="label-text">{{ form.notes.label }}</span>
+                        </label>
+                        {{ form.notes }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- A quien va dirigida -->
+        <div class="card bg-base-100 shadow mb-6">
+            <div class="card-body">
+                <h3 class="text-lg font-semibold">A quien va dirigida</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    Puede combinar las tres vias. Si una persona entra por mas de una, se convoca una sola vez.
+                    {% if schedule %}
+                        Al editar, las personas seleccionadas se <strong>agregan</strong> a las ya convocadas.
+                    {% endif %}
+                </p>
+                <!-- 1. Persona especifica (buscador) -->
+                <div class="mb-6">
+                    <h4 class="font-medium mb-2">Personas especificas</h4>
+                    <input type="search"
+                           name="q"
+                           placeholder="Buscar por nombre, cedula o cargo..."
+                           class="input input-bordered input-sm w-full"
+                           hx-get="{% url 'courses:schedule_search_people' %}"
+                           hx-trigger="keyup changed delay:400ms, search"
+                           hx-target="#people-results"
+                           autocomplete="off">
+                    <div id="people-results" class="mt-2">
+                        <p class="text-sm text-gray-400 py-2">Escriba al menos 2 caracteres para buscar.</p>
+                    </div>
+                    {% if form.users.errors %}<span class="text-error text-xs mt-1">{{ form.users.errors }}</span>{% endif %}
+                </div>
+                <!-- 2. Perfil ocupacional -->
+                <div class="mb-6">
+                    <h4 class="font-medium mb-2">{{ form.job_profiles.label }}</h4>
+                    <p class="text-xs text-gray-500 mb-2">{{ form.job_profiles.help_text }}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">{{ form.job_profiles }}</div>
+                    {% if form.job_profiles.errors %}
+                        <span class="text-error text-xs mt-1">{{ form.job_profiles.errors }}</span>
+                    {% endif %}
+                </div>
+                <!-- 3. Cargo -->
+                <div>
+                    <h4 class="font-medium mb-2">{{ form.job_positions.label }}</h4>
+                    <p class="text-xs text-gray-500 mb-2">{{ form.job_positions.help_text }}</p>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">{{ form.job_positions }}</div>
+                    {% if form.job_positions.errors %}
+                        <span class="text-error text-xs mt-1">{{ form.job_positions.errors }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <a href="{% url 'courses:schedule_list' %}" class="btn btn-ghost">Cancelar</a>
+            <button type="submit" class="btn btn-primary">
+                {% if schedule %}Guardar cambios{% else %}Crear y convocar{% endif %}
+            </button>
+        </div>
+    </form>
+{% endblock %}

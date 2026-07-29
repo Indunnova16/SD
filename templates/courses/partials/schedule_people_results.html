@@ -1,0 +1,35 @@
+{% comment %}
+SD#73 -- Resultados del buscador de personas de la convocatoria.
+
+El cliente pidió "buscador, no una lista larga sin filtro" (requisito 2). Este
+partial lo devuelve `views.schedule_search_people` por HTMX; cada resultado es
+un checkbox con `name="users"` que el form (`CourseScheduleForm.users`) valida
+del lado del servidor contra el queryset de usuarios activos.
+{% endcomment %}
+{% if too_short %}
+    <p class="text-sm text-gray-400 py-2">Escriba al menos 2 caracteres para buscar.</p>
+{% elif not results %}
+    <p class="text-sm text-gray-400 py-2">Sin resultados para "{{ query }}".</p>
+{% else %}
+    <ul class="divide-y divide-gray-200 dark:divide-gray-700 max-h-72 overflow-y-auto">
+        {% for person in results %}
+            <li class="py-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox"
+                           name="users"
+                           value="{{ person.id }}"
+                           class="checkbox checkbox-primary checkbox-sm">
+                    <span class="flex-1">
+                        <span class="font-medium">{{ person.get_full_name|default:person.document_number }}</span>
+                        <span class="text-xs text-gray-500 block">
+                            CC {{ person.document_number }}{% if person.job_position %} · {{ person.job_position }}{% endif %}
+                        </span>
+                    </span>
+                </label>
+            </li>
+        {% endfor %}
+    </ul>
+    <p class="text-xs text-gray-400 mt-2">
+        Mostrando {{ results|length }} resultado(s). Afine la búsqueda si no encuentra a la persona.
+    </p>
+{% endif %}
