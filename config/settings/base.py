@@ -48,6 +48,11 @@ THIRD_PARTY_APPS = [
     "crispy_tailwind",
     "widget_tweaks",
     "django_htmx",
+    # django-csp: la app no tiene modelos ni migraciones; se instala para que
+    # se registren sus system checks (csp/apps.py importa csp.checks). Sin
+    # esto, configurar la CSP con el formato viejo CSP_* no producia NI header
+    # NI aviso -- la tercera capa de silencio de SD#76.
+    "csp",
 ]
 
 LOCAL_APPS = [
