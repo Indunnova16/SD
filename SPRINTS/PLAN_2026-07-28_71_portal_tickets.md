@@ -39,22 +39,26 @@ reclamando = rebote funcional.
 Derivada del body (4 bullets) + comentario #2 del revisor (3 reclamos).
 `✅ ya hecho` = cubierto por los commits v1.0 en `main`; `❌ falta` = trabajo de esta ronda.
 
-| # | Entregable | Evidencia esperada (URL/campo/comportamiento) | Estado al abrir |
-|---|---|---|---|
-| 1 | Portal público de tickets estilo Arcopack, sin login | `GET /feedback/` 200 anónimo | ✅ ya hecho (`views.py:29`) |
-| 2 | Se llama "portal de SD - Cursos" | `<h1>` y `<title>` con el texto literal | ✅ ya hecho (`base.html:22,131`) |
-| 3 | Crear ticket desde el portal | `POST /feedback/nuevo/` → redirect a detalle | ✅ ya hecho (`views.py:43`) |
-| 4 | Ticket crea issue en GH con label `portal-web` + assignee `@Indunnova` | payload `labels`/`assignees` en `crear_issue` | ✅ ya hecho (`github_client.py:79-84`) |
-| 5 | El usuario ve **sus** imágenes adjuntas en el portal | `<img>` por cada adjunto en el detalle | ✅ ya hecho (`detalle.html:29-42`) |
-| 6 | **Grabar AUDIO desde el portal** | Botón "Grabar audio" → `MediaRecorder` → adjunto `tipo=audio` → `<audio controls>` en el detalle | ❌ falta |
-| 7 | **Grabar VIDEO desde el portal** | Botón "Grabar video" → `MediaRecorder` (cámara+mic, preview en vivo) → adjunto `tipo=video` → `<video controls>` en el detalle | ❌ falta |
-| 8 | Adjuntar audio/video como **archivo** (no solo grabado) | `accept="image/*,audio/*,video/*"`; backend acepta los 3 prefijos MIME | ❌ falta |
-| 9 | **Ver los comentarios del equipo (GitHub) en el ticket** | Sección "Conversación" en el detalle con autor + fecha + cuerpo de cada comentario del issue | ❌ falta |
-| 10 | **Ver las imágenes cargadas en GH desde el portal** (requisito literal del body) | Imagen embebida en un comentario de GH (`![](…)` o `<img src="https://github.com/user-attachments/assets/…">`) se ve como `<img>` en el detalle del portal | ❌ falta |
-| 11 | **Resolver el caso desde el portal** | Botón "Resolver" → `POST /feedback/<id>/resolver/` → `estado=resuelto` + comentario y `state=closed` en el issue de GH | ❌ falta |
-| 12 | El estado del ticket es visible | Badge 🔵 Abierto / 🟢 Resuelto en lista y detalle | ❌ falta |
-| 13 | Fallo de GitHub nunca pierde/rompe el ticket | comentarios: degrada sin romper el detalle; resolver: estado local igual queda `resuelto` | ❌ falta (aplica a lo nuevo) |
-| 14 | Los tests del portal corren en la suite de CI | `pytest` **colecta** los tests de `apps/feedback` | ❌ falta (ver §2) |
+| # | Entregable | Evidencia esperada (URL/campo/comportamiento) | Estado al abrir | Cierre de esta rama |
+|---|---|---|---|---|
+| 1 | Portal público de tickets estilo Arcopack, sin login | `GET /feedback/` 200 anónimo | ✅ ya hecho (`views.py:29`) | ✅ sin cambios |
+| 2 | Se llama "portal de SD - Cursos" | `<h1>` y `<title>` con el texto literal | ✅ ya hecho (`base.html:22,131`) | ✅ sin cambios |
+| 3 | Crear ticket desde el portal | `POST /feedback/nuevo/` → redirect a detalle | ✅ ya hecho (`views.py:43`) | ✅ sin cambios |
+| 4 | Ticket crea issue en GH con label `portal-web` + assignee `@Indunnova` | payload `labels`/`assignees` en `crear_issue` | ✅ ya hecho | ✅ sin cambios |
+| 5 | El usuario ve **sus** imágenes adjuntas en el portal | `<img>` por cada adjunto en el detalle | ✅ ya hecho | ✅ `test_imagen_se_sigue_renderizando_con_img` |
+| 6 | **Grabar AUDIO desde el portal** | Botón "Grabar audio" → `MediaRecorder` → adjunto `tipo=audio` → `<audio controls>` | ❌ falta | 🔵 código + tests (`test_audio_grabado_por_mediarecorder_crea_attachment_tipo_audio`, `test_audio_se_renderiza_con_tag_audio`, `test_hay_botones_de_grabar_audio_y_video`) — **falta prod** |
+| 7 | **Grabar VIDEO desde el portal** | Botón "Grabar video" → `MediaRecorder` (cámara+mic, preview) → `tipo=video` → `<video controls>` | ❌ falta | 🔵 código + tests (`test_video_grabado_crea_attachment_tipo_video`, `test_video_se_renderiza_con_tag_video`) — **falta prod** |
+| 8 | Adjuntar audio/video como **archivo** | `accept="image/*,audio/*,video/*"`; backend acepta los 3 prefijos | ❌ falta | 🔵 `test_input_accept_incluye_audio_y_video`, `test_mezcla_imagen_audio_video_en_un_solo_ticket` |
+| 9 | **Ver los comentarios del equipo (GitHub) en el ticket** | Sección "Conversación" con autor + fecha + cuerpo | ❌ falta | 🔵 `test_muestra_autor_y_cuerpo_del_comentario` |
+| 10 | **Ver las imágenes cargadas en GH desde el portal** (requisito literal del body) | `<img src="https://github.com/user-attachments/assets/…">` de un comentario de GH visible en el detalle | ❌ falta | 🔵 `test_imagen_cargada_en_github_se_ve_en_el_portal` + `test_imagen_html_cruda_de_github_sobrevive_al_saneo` (usan la URL literal del comentario del revisor) |
+| 11 | **Resolver el caso desde el portal** | Botón → `POST /feedback/<id>/resolver/` → `estado=resuelto` + `state=closed` en GH | ❌ falta | 🔵 `test_post_valido_resuelve_y_redirige`, `test_comenta_y_despues_cierra` |
+| 12 | El estado del ticket es visible | Badge 🔵 Abierto / 🟢 Resuelto en lista y detalle | ❌ falta | 🔵 `test_ticket_resuelto_oculta_el_boton_y_muestra_quien`, `test_lista_muestra_el_estado` |
+| 13 | Fallo de GitHub nunca pierde/rompe el ticket | comentarios degradan sin romper; resolver deja `resuelto` local | ❌ falta | 🔵 `test_github_caido_no_rompe_el_detalle_y_avisa`, `test_github_caido_igual_resuelve_localmente` |
+| 14 | Los tests del portal corren en la suite de CI | `pytest` **colecta** los tests de `apps/feedback` | ❌ falta (ver §2) | ✅ 0 → 94 tests colectados por pytest |
+
+**Verdict de la rama: 🔵 implementado + testeado, NO deployado.** Nada acá puede ir
+🟢: no hubo deploy ni smoke en prod (fuera del alcance encargado). Las filas 6-13
+pasan a 🟡 al deployar y a 🟢 solo tras reproducir en prod el escenario del cliente.
 
 ## 2. Hallazgo colateral: los 36 tests de v1.0 son invisibles para CI
 
