@@ -583,18 +583,31 @@ def check_enrollment_deadlines():
 
 
 def _send_deadline_notification(user, title, message, priority="normal"):
-    """Helper to create in-app notification for deadline alerts."""
-    try:
-        from apps.notifications.models import Notification
+    """
+    Helper to create in-app notification for deadline alerts.
 
-        Notification.objects.create(
+    Delega en NotificationService (la API que usa el resto del codigo) en vez de
+    construir el modelo a mano: el modelo expone `subject`/`body`, no
+    `title`/`message`, y construirlo directo hace que cualquier desalineacion de
+    nombres solo explote en runtime. Ver SD#75.
+    """
+    try:
+        from apps.notifications.models import NotificationTemplate
+        from apps.notifications.services import NotificationService
+
+        notification = NotificationService.create_notification(
             user=user,
-            title=title,
-            message=message,
-            channel="in_app",
+            subject=title,
+            body=message,
+            channel=NotificationTemplate.Channel.IN_APP,
             priority=priority,
-            status="delivered",
-            delivered_at=timezone.now(),
         )
+        # Las alertas de vencimiento son in-app puras: quedan disponibles al
+        # usuario apenas se crean, sin pasar por un canal externo.
+        NotificationService.mark_as_delivered(notification)
+        return notification
     except Exception as e:
-        logger.warning(f"Failed to create notification for {user}: {e}")
+        # NO degradar a warning sin traza: un `except` que descarta el stack
+        # convirtio el typo de SD#75 en un fallo invisible durante meses.
+        logger.exception(f"Error inesperado creando notificacion de vencimiento para {user}: {e}")
+        return None

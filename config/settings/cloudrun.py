@@ -5,6 +5,7 @@ Django settings for Google Cloud Run environment.
 from decouple import config
 
 from .base import *  # noqa: F403, F401
+from .csp import CSP_DIRECTIVES
 
 DEBUG = False
 
@@ -27,6 +28,21 @@ SECURE_HSTS_PRELOAD = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+# Content Security Policy (SD#76).
+# Este es el settings que REALMENTE corre en produccion: deploy.yml despliega
+# Cloud Run con DJANGO_SETTINGS_MODULE=config.settings.cloudrun. Antes la CSP
+# vivia solo en production.py (que no se usa) y encima en el formato plano
+# CSP_* que django-csp 4.0 ignora -> nunca se emitio header.
+#
+# Arranca en REPORT-ONLY a proposito: emite el header y el navegador reporta
+# violaciones sin bloquear. Para pasar a bloqueante, primero medir los reportes
+# y despues desplegar con CSP_ENFORCE=True (ver config/settings/csp.py).
+CSP_ENFORCE = config("CSP_ENFORCE", default=False, cast=bool)
+if CSP_ENFORCE:
+    CONTENT_SECURITY_POLICY = {"DIRECTIVES": CSP_DIRECTIVES}
+else:
+    CONTENT_SECURITY_POLICY_REPORT_ONLY = {"DIRECTIVES": CSP_DIRECTIVES}
 
 # Storage backends (Django 5.1+ uses STORAGES instead of deprecated
 # DEFAULT_FILE_STORAGE / STATICFILES_STORAGE)
