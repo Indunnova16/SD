@@ -1,0 +1,138 @@
+{% extends "base/dashboard.html" %}
+{% block page_title %}Asistencia: {{ schedule.name }}{% endblock %}
+{% block page_description %}
+    <div class="flex items-center justify-between">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Asistencia de la programacion <strong>{{ schedule.name }}</strong> del curso <strong>{{ course.title }}</strong> — solo las personas convocadas en esta convocatoria.
+        </p>
+        <a href="{% url 'courses:schedule_list' %}" class="btn btn-ghost btn-sm">Volver al listado</a>
+    </div>
+{% endblock %}
+{% block dashboard_content %}
+    {% include "courses/partials/attendance_section_tabs.html" %}
+    {% if missing_fields %}
+        <div class="alert alert-warning mb-6">
+            <div>
+                <h3 class="font-bold">Reporte incompleto</h3>
+                <div class="text-xs">
+                    Complete estos campos del curso antes de descargar el PDF: {{ missing_fields|join:", " }}.
+                    <a href="{% url 'courses:course_full_edit' course.id %}" class="link link-primary">Editar curso</a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="flex justify-end gap-2 mb-4">
+            <a href="{% url 'courses:schedule_edit' schedule.id %}" class="btn btn-ghost btn-sm">Editar programacion</a>
+            <a href="{% url 'courses:export_schedule_attendance_pdf' schedule.id %}"
+               class="btn btn-primary btn-sm">Descargar PDF de esta programacion</a>
+        </div>
+    {% endif %}
+    <!-- Datos de la programacion -->
+    <div class="card bg-base-100 shadow mb-6">
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <div class="text-xs text-gray-500 uppercase">Curso</div>
+                    <div class="font-semibold">{{ course.title }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase">Responsable (firma del reporte)</div>
+                    <div class="font-semibold">
+                        {% if schedule.responsable %}
+                            {{ schedule.responsable.get_full_name }}
+                            {% if not schedule.responsable_signature_url %}
+                                <span class="badge badge-warning badge-sm ml-1"
+                                      title="El responsable no tiene firma cargada en su perfil: el PDF saldra con la linea de firma en blanco.">Sin firma en perfil</span>
+                            {% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase">Fecha sugerida</div>
+                    <div class="font-semibold">
+                        {% if schedule.suggested_end_date %}
+                            {{ schedule.suggested_end_date|date:"d M Y" }}
+                            {% if schedule.is_overdue %}<span class="badge badge-warning badge-sm ml-1">Vencida (no bloquea)</span>{% endif %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase">Tiempo (horas)</div>
+                    <div class="font-semibold">{{ course.duration_hours }}</div>
+                </div>
+            </div>
+            {% if schedule.notes %}<div class="mt-4 text-sm text-gray-500">{{ schedule.notes }}</div>{% endif %}
+        </div>
+    </div>
+    <!-- Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Convocados</div>
+            <div class="stat-value text-2xl">{{ total_inscritos }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Ya lo hicieron</div>
+            <div class="stat-value text-2xl text-success">{{ total_presentes }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">Faltan</div>
+            <div class="stat-value text-2xl text-error">{{ total_ausentes }}</div>
+        </div>
+        <div class="stat bg-base-100 shadow rounded-lg">
+            <div class="stat-title">% Asistencia</div>
+            <div class="stat-value text-2xl">{{ porcentaje_asistencia }}%</div>
+        </div>
+    </div>
+    <!-- Roster -->
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h3 class="text-lg font-semibold mb-4">Convocados</h3>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Cedula</th>
+                            <th>Cargo</th>
+                            <th>Convocado por</th>
+                            <th>Estado</th>
+                            <th>Fecha de firma</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            <tr>
+                                <td>{{ row.full_name }}</td>
+                                <td>{{ row.document_number }}</td>
+                                <td>{{ row.job_position|default:"—" }}</td>
+                                <td class="text-xs text-gray-500">{{ row.source }}</td>
+                                <td>
+                                    {% if row.presente %}
+                                        <span class="badge badge-success badge-sm">Presente</span>
+                                    {% else %}
+                                        <span class="badge badge-error badge-sm">Ausente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if row.signed_at %}
+                                        {{ row.signed_at|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-gray-400 py-8">No hay personas convocadas en esta programacion.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

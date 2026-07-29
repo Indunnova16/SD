@@ -1,0 +1,15 @@
+{% comment %}
+SD#73 -- Pestañas de la sección de Asistencia.
+
+El cliente pidió (comentario 2026-07-28, manda sobre el body del issue) que la
+Programación NO fuera una página nueva del navbar sino un paso/pestaña DENTRO de
+la misma sección de Asistencia: "yo programo y luego veo la asistencia, así
+sería". Este partial es ese conmutador, incluido por las dos vistas de la
+sección. `active_tab` lo pone cada vista ("cursos" | "programaciones").
+{% endcomment %}
+<div class="tabs tabs-boxed mb-6 bg-white dark:bg-gray-800 p-1">
+    <a href="{% url 'courses:schedule_list' %}"
+       class="tab {% if active_tab == 'programaciones' %}tab-active{% endif %}">1. Programaciones</a>
+    <a href="{% url 'courses:attendance_reports' %}"
+       class="tab {% if active_tab == 'cursos' %}tab-active{% endif %}">2. Asistencia por Curso</a>
+</div>

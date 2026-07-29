@@ -6,12 +6,21 @@ from decimal import Decimal
 
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from apps.assessments.models import Assessment
 
-from .models import AttendanceSignature, Category, Course, JobProfileType, Lesson, Module
+from .models import (
+    AttendanceSignature,
+    Category,
+    Course,
+    CourseSchedule,
+    JobProfileType,
+    Lesson,
+    Module,
+)
 
 User = get_user_model()
 
@@ -616,3 +625,129 @@ class AttendanceSignatureForm(forms.ModelForm):
         widgets = {
             "signature_image": forms.HiddenInput(),
         }
+
+
+def get_job_position_choices():
+    """Cargos (`User.job_position`) realmente existentes en la BD — SD#73.
+
+    `job_position` es texto libre (no un catálogo), así que las opciones se
+    derivan de los usuarios ACTIVOS. Mismo espíritu que `get_profile_choices`:
+    la lista se lee de la BD, no se hardcodea.
+    """
+    values = (
+        User.objects.filter(is_active=True)
+        .exclude(job_position="")
+        .values_list("job_position", flat=True)
+        .distinct()
+        .order_by("job_position")
+    )
+    return [(v, v) for v in values]
+
+
+class CourseScheduleForm(forms.ModelForm):
+    """Form de la "Programación" (convocatoria) — SD#73.
+
+    Combina los datos de la programación con la audiencia (requisito 2 del
+    issue): personas específicas + perfiles ocupacionales + cargos. Los tres
+    campos de audiencia NO son del modelo `CourseSchedule` (la audiencia se
+    materializa como `ScheduleAssignment` vía `CourseScheduleService`), por eso
+    van declarados aparte.
+
+    `users` usa `SelectMultiple` alimentado por el buscador HTMX
+    (`schedule_search_people`) en vez de renderizar la lista completa de
+    usuarios: el cliente pidió explícitamente "buscador, no una lista larga sin
+    filtro". La validación contra el queryset de usuarios activos sigue del lado
+    del servidor — el buscador es UI, no el control.
+    """
+
+    users = forms.ModelMultipleChoiceField(
+        label=_("Personas específicas"),
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "hidden", "id": "id_users"}),
+        help_text=_("Búsquelas por nombre o cédula."),
+    )
+    job_profiles = forms.ModelMultipleChoiceField(
+        label=_("Perfiles ocupacionales"),
+        queryset=JobProfileType.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+        help_text=_("Convoca a TODAS las personas activas con ese perfil."),
+    )
+    job_positions = forms.MultipleChoiceField(
+        label=_("Cargos"),
+        choices=[],
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+        help_text=_("Convoca a TODAS las personas activas con ese cargo."),
+    )
+
+    class Meta:
+        model = CourseSchedule
+        fields = ["course", "name", "suggested_end_date", "responsable", "notes"]
+        widgets = {
+            "course": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "name": forms.TextInput(
+                attrs={
+                    "class": "input input-bordered w-full",
+                    "placeholder": "Ej: Turno X",
+                }
+            ),
+            "suggested_end_date": forms.DateInput(
+                attrs={"class": "input input-bordered w-full", "type": "date"},
+                format="%Y-%m-%d",
+            ),
+            "responsable": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "notes": forms.Textarea(
+                attrs={"class": "textarea textarea-bordered w-full", "rows": 3}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        active_users = User.objects.filter(is_active=True).order_by("first_name", "last_name")
+
+        self.fields["users"].queryset = active_users
+        self.fields["job_profiles"].queryset = JobProfileType.objects.filter(
+            is_active=True
+        ).order_by("order", "name")
+        self.fields["job_positions"].choices = get_job_position_choices()
+
+        # Solo cursos publicados: una convocatoria es sobre un curso YA
+        # existente y utilizable; convocar a un borrador dejaría al convocado
+        # sin poder entrar. Los ya programados sobre otro estado se preservan.
+        course_qs = Course.objects.filter(status=Course.Status.PUBLISHED).order_by("title")
+        if self.instance and self.instance.pk and self.instance.course_id:
+            course_qs = Course.objects.filter(
+                models.Q(status=Course.Status.PUBLISHED) | models.Q(pk=self.instance.course_id)
+            ).order_by("title")
+        self.fields["course"].queryset = course_qs
+        self.fields["course"].empty_label = None
+
+        self.fields["responsable"].queryset = active_users
+        self.fields["responsable"].empty_label = "Sin asignar"
+        self.fields["responsable"].required = False
+
+        if self.instance and self.instance.pk and self.instance.suggested_end_date:
+            self.initial["suggested_end_date"] = self.instance.suggested_end_date.isoformat()
+
+    def clean(self):
+        cleaned = super().clean()
+        # En creación hay que convocar a alguien; en edición se permite guardar
+        # sin audiencia nueva (típicamente se está reasignando el responsable,
+        # requisito 4 del issue, sin volver a tocar el grupo).
+        if not self.instance.pk:
+            if not any(
+                (
+                    cleaned.get("users"),
+                    cleaned.get("job_profiles"),
+                    cleaned.get("job_positions"),
+                )
+            ):
+                raise forms.ValidationError(
+                    _(
+                        "Seleccione al menos una persona, un perfil ocupacional o un "
+                        "cargo para convocar."
+                    )
+                )
+        return cleaned

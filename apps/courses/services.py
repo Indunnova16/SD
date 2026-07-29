@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from apps.courses.models import (
     Course,
+    CourseSchedule,
     CourseVersion,
     Enrollment,
     Lesson,
@@ -22,6 +23,7 @@ from apps.courses.models import (
     MediaAsset,
     Module,
     ResourceLibrary,
+    ScheduleAssignment,
     ScormPackage,
 )
 
@@ -652,3 +654,244 @@ class ResourceLibraryService:
         ResourceLibrary.objects.filter(id=resource_id).update(
             usage_count=models.F("usage_count") + 1
         )
+
+
+class CourseScheduleService:
+    """Lógica de negocio de la "Programación" de cursos — SD#73.
+
+    Una programación es una convocatoria puntual de un curso YA existente a un
+    grupo de personas. Este servicio resuelve la audiencia (personas sueltas +
+    perfiles ocupacionales + cargos), materializa los `ScheduleAssignment`,
+    reusa/crea el `Enrollment` de cada convocado y avisa a cada uno.
+    """
+
+    @staticmethod
+    def resolve_audience(users=None, job_profiles=None, job_positions=None):
+        """Resuelve la audiencia de una convocatoria a una lista de `User`.
+
+        Tres vías, tal cual las pide el requisito 2 del issue:
+          - `users`:         personas específicas (nombre/cédula).
+          - `job_profiles`:  `JobProfileType` -> TODOS los usuarios activos con
+                             ese `User.job_profile` (perfil ocupacional).
+          - `job_positions`: cadenas de `User.job_position` -> TODOS los
+                             usuarios activos con ese cargo (texto libre).
+
+        Devuelve ``{user_id: source}`` deduplicado. Cuando una persona entra por
+        más de una vía gana la más específica (``user`` > ``profile`` >
+        ``position``): el operador la eligió a dedo, esa es la trazabilidad
+        honesta de por qué está convocada.
+
+        Solo usuarios ACTIVOS: convocar a alguien desactivado generaría un
+        ausente permanente en el reporte de asistencia.
+        """
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        resolved = {}
+
+        for position in job_positions or []:
+            if not position:
+                continue
+            ids = User.objects.filter(is_active=True, job_position=position).values_list(
+                "id", flat=True
+            )
+            for user_id in ids:
+                resolved[user_id] = ScheduleAssignment.Source.POSITION
+
+        for profile in job_profiles or []:
+            profile_id = getattr(profile, "pk", profile)
+            ids = User.objects.filter(is_active=True, job_profile_id=profile_id).values_list(
+                "id", flat=True
+            )
+            for user_id in ids:
+                resolved[user_id] = ScheduleAssignment.Source.PROFILE
+
+        for user in users or []:
+            user_id = getattr(user, "pk", user)
+            resolved[user_id] = ScheduleAssignment.Source.USER
+
+        return resolved
+
+    @staticmethod
+    @transaction.atomic
+    def convocar(schedule: CourseSchedule, audience: dict, notify: bool = True) -> dict:
+        """Convoca a `audience` (salida de `resolve_audience`) a `schedule`.
+
+        Reglas (requisito "qué pasa si alguien ya está inscrito"):
+          - El `Enrollment` se REUSA vía `get_or_create`. Nunca se duplica
+            (es único por user+course), nunca se resetea progreso, firma de
+            finalización ni estado. Deliberadamente NO se usa
+            `EnrollmentService.enroll_user`: ese helper RE-INSCRIBE los
+            enrollments `EXPIRED` poniendo `progress=0` y borrando
+            `started_at`/`completed_at` — convocar a alguien a un turno no
+            puede borrarle el avance que ya tenía.
+          - NO se toca `Enrollment.due_date`. Ese campo es un límite DURO
+            (`tasks.check_enrollment_deadlines` lo marca `EXPIRED` y obliga a
+            "Habilitar de nuevo"); el issue pide una fecha SUGERIDA que no
+            bloquee. La fecha vive solo en `schedule.suggested_end_date`.
+          - No se exigen prerrequisitos del curso: una convocatoria es una
+            decisión administrativa de HSE, mismo criterio que el auto-enroll
+            por perfil de `views.my_courses`. El bloqueo secuencial de
+            lecciones (`EnrollmentService.is_lesson_accessible`) sigue vigente.
+          - Ya convocado a ESTA programación -> no se duplica (UniqueConstraint)
+            y no se le vuelve a notificar.
+
+        Devuelve ``{"convocados": [...], "ya_convocados": [...]}`` con los
+        `ScheduleAssignment` nuevos y los usuarios que ya estaban.
+        """
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+
+        existing_ids = set(
+            ScheduleAssignment.objects.filter(schedule=schedule).values_list("user_id", flat=True)
+        )
+
+        nuevos = []
+        ya_convocados = []
+        users = User.objects.filter(id__in=list(audience.keys())).select_related("job_profile")
+
+        for user in users:
+            if user.id in existing_ids:
+                ya_convocados.append(user)
+                continue
+
+            enrollment, _created = Enrollment.objects.get_or_create(
+                user=user,
+                course=schedule.course,
+                defaults={
+                    "assigned_by": schedule.created_by,
+                    "status": Enrollment.Status.ENROLLED,
+                },
+            )
+
+            assignment = ScheduleAssignment.objects.create(
+                schedule=schedule,
+                user=user,
+                enrollment=enrollment,
+                source=audience[user.id],
+            )
+            nuevos.append(assignment)
+
+        if notify and nuevos:
+            for assignment in nuevos:
+                CourseScheduleService.notify_assignment(assignment)
+
+        return {"convocados": nuevos, "ya_convocados": ya_convocados}
+
+    @staticmethod
+    def notify_assignment(assignment: ScheduleAssignment):
+        """Avisa al convocado: "se le asignó este curso y tiene hasta tal fecha".
+
+        Requisito 3 del issue. Usa `NotificationService.create_notification`
+        (campos reales del modelo: `subject`/`body`) y deja explícito en el
+        cuerpo que pasada la fecha el curso SIGUE disponible, para que la fecha
+        se lea como sugerencia y no como bloqueo.
+
+        Nunca levanta: un fallo del subsistema de notificaciones no puede tumbar
+        la convocatoria (que ya está persistida en la transacción del caller).
+        """
+        from apps.notifications.services.notification import NotificationService
+
+        schedule = assignment.schedule
+        if schedule.suggested_end_date:
+            plazo = (
+                f" Tiene hasta el {schedule.suggested_end_date.strftime('%d/%m/%Y')} "
+                "(fecha sugerida). Si no alcanza a completarlo en esa fecha, "
+                "puede seguir haciéndolo después: el acceso no se bloquea."
+            )
+        else:
+            plazo = " No tiene fecha de finalización sugerida."
+
+        try:
+            return NotificationService.create_notification(
+                user=assignment.user,
+                subject=f"Curso asignado: {schedule.course.title}",
+                body=(
+                    f"Se le asignó el curso '{schedule.course.title}' dentro de la "
+                    f"programación '{schedule.name}'.{plazo}"
+                ),
+                priority="normal",
+                metadata={
+                    "schedule_id": schedule.id,
+                    "course_id": schedule.course_id,
+                    "issue": "SD#73",
+                },
+            )
+        except Exception as exc:  # pragma: no cover - defensivo
+            logger.warning(
+                "No se pudo notificar la convocatoria %s a %s: %s",
+                schedule.id,
+                assignment.user_id,
+                exc,
+            )
+            return None
+
+    @staticmethod
+    def build_schedule_attendance_summary(schedule: CourseSchedule) -> dict:
+        """Roster de asistencia de UNA programación (requisito 5 del issue).
+
+        Mismo criterio de "Presente" que el reporte por curso de SD#63
+        (`views._build_course_attendance_summary`): presente ⇔ el
+        `Enrollment.completion_signature` existe. La diferencia es el universo:
+        aquí son SOLO los convocados de esta programación, no todos los
+        inscritos del curso — así dos convocatorias del mismo curso no se
+        mezclan.
+
+        Devuelve las mismas claves que el helper de SD#63 (`rows`,
+        `total_inscritos`, `total_presentes`, `total_ausentes`,
+        `porcentaje_asistencia`) para poder alimentar el MISMO template de PDF
+        sin duplicar el formato FT-HSEQ-60.
+        """
+        assignments = (
+            ScheduleAssignment.objects.filter(schedule=schedule)
+            .select_related("user", "enrollment")
+            .order_by("user__first_name", "user__last_name", "user__document_number")
+        )
+
+        rows = []
+        total_presentes = 0
+        for assignment in assignments:
+            user = assignment.user
+            enrollment = assignment.enrollment
+            if enrollment is None:
+                enrollment = Enrollment.objects.filter(
+                    user=user, course=schedule.course
+                ).first()
+
+            presente = bool(enrollment and enrollment.completion_signature)
+            if presente:
+                total_presentes += 1
+
+            signature_image_url = ""
+            if presente:
+                try:
+                    signature_image_url = enrollment.completion_signature.url
+                except Exception:
+                    signature_image_url = ""
+
+            rows.append(
+                {
+                    "user": user,
+                    "full_name": user.get_full_name() or user.document_number,
+                    "document_number": user.document_number,
+                    "job_position": user.job_position,
+                    "presente": presente,
+                    "estado": "Presente" if presente else "Ausente",
+                    "signed_at": enrollment.completion_signed_at if enrollment else None,
+                    "signature_image_url": signature_image_url,
+                    "source": assignment.get_source_display(),
+                }
+            )
+
+        total_inscritos = len(rows)
+        total_ausentes = total_inscritos - total_presentes
+        porcentaje = round(total_presentes / total_inscritos * 100, 1) if total_inscritos else 0.0
+
+        return {
+            "rows": rows,
+            "total_inscritos": total_inscritos,
+            "total_presentes": total_presentes,
+            "total_ausentes": total_ausentes,
+            "porcentaje_asistencia": porcentaje,
+        }
