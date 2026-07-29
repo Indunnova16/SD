@@ -375,6 +375,10 @@ DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@sd-lms.com")
 GITHUB_FEEDBACK_TOKEN = config("GITHUB_FEEDBACK_TOKEN", default="")
 GITHUB_FEEDBACK_REPO = config("GITHUB_FEEDBACK_REPO", default="Indunnova16/SD")
 FEEDBACK_MAX_ATTACHMENTS = config("FEEDBACK_MAX_ATTACHMENTS", default=10, cast=int)
+# 30 MB: desde #71 ronda 2 el portal acepta audio/video grabados desde el
+# navegador, que pesan mucho más que una captura de pantalla. El techo real
+# no es este número sino el límite de request de Cloud Run (32 MiB), así que
+# subirlo más no serviría.
 FEEDBACK_MAX_ATTACHMENT_BYTES = config(
-    "FEEDBACK_MAX_ATTACHMENT_BYTES", default=10 * 1024 * 1024, cast=int
+    "FEEDBACK_MAX_ATTACHMENT_BYTES", default=30 * 1024 * 1024, cast=int
 )
