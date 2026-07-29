@@ -1,4 +1,5 @@
 {% extends "feedback/base.html" %}
+{% load feedback_markdown %}
 
 {% block title %}{{ ticket.asunto }} - portal de SD - Cursos{% endblock %}
 
@@ -8,10 +9,20 @@
         <a href="{% url 'feedback:lista' %}" class="link link-primary text-sm">« Volver al tablero</a>
     </div>
 
-    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ ticket.asunto }}</h2>
+    <div class="flex items-start justify-between gap-4 mb-2">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ ticket.asunto }}</h2>
+        <span class="badge {% if ticket.esta_resuelto %}badge-success{% else %}badge-info{% endif %} whitespace-nowrap"
+              data-testid="estado-ticket">
+            {{ ticket.get_estado_display }}
+        </span>
+    </div>
     <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
         Reportado por <span class="font-medium">{{ ticket.nombre_reportante }}</span>
         · {{ ticket.created_at|date:"d/m/Y H:i" }}
+        {% if ticket.esta_resuelto and ticket.resuelto_por %}
+        <br>Resuelto por <span class="font-medium">{{ ticket.resuelto_por }}</span>
+        {% if ticket.resuelto_at %}· {{ ticket.resuelto_at|date:"d/m/Y H:i" }}{% endif %}
+        {% endif %}
     </p>
 
     {% if not ticket.sincronizado_github %}
@@ -27,18 +38,121 @@
     </div>
 
     {% if adjuntos %}
-    <div>
-        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Imágenes adjuntas</h3>
-        <div class="ticket-adjuntos grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">Adjuntos</h3>
+        <div class="ticket-adjuntos space-y-4">
             {% for adjunto in adjuntos %}
-            <a href="{{ adjunto.imagen.url }}" target="_blank" rel="noopener" class="block">
-                <img src="{{ adjunto.imagen.url }}"
-                     alt="{{ adjunto.nombre_original|default:ticket.asunto }}"
-                     class="rounded-lg shadow object-cover w-full h-32">
-            </a>
+            <div data-testid="adjunto" data-tipo="{{ adjunto.tipo }}">
+                {% if adjunto.tipo == 'audio' %}
+                    <audio controls preload="metadata" class="w-full">
+                        <source src="{{ adjunto.archivo.url }}"{% if adjunto.mime_type %} type="{{ adjunto.mime_type }}"{% endif %}>
+                        Tu navegador no puede reproducir este audio.
+                        <a href="{{ adjunto.archivo.url }}" target="_blank" rel="noopener">Descargalo acá</a>.
+                    </audio>
+                {% elif adjunto.tipo == 'video' %}
+                    <video controls preload="metadata" class="w-full rounded-lg max-h-96">
+                        <source src="{{ adjunto.archivo.url }}"{% if adjunto.mime_type %} type="{{ adjunto.mime_type }}"{% endif %}>
+                        Tu navegador no puede reproducir este video.
+                        <a href="{{ adjunto.archivo.url }}" target="_blank" rel="noopener">Descargalo acá</a>.
+                    </video>
+                {% else %}
+                    <a href="{{ adjunto.archivo.url }}" target="_blank" rel="noopener" class="block">
+                        <img src="{{ adjunto.archivo.url }}"
+                             alt="{{ adjunto.nombre_original|default:ticket.asunto }}"
+                             class="rounded-lg shadow max-w-full max-h-96">
+                    </a>
+                {% endif %}
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {{ adjunto.get_tipo_display }} · {{ adjunto.nombre_original }}
+                </p>
+            </div>
             {% endfor %}
         </div>
     </div>
     {% endif %}
+
+    <!-- Conversación: comentarios del equipo en el issue de GitHub, traídos
+         en vivo por services.obtener_comentarios_github. Resuelve el reclamo
+         "el usuario no puede ver los comentarios ni imágenes en el ticket":
+         el cuerpo se renderiza con `markdownify`, así que las imágenes que
+         el equipo adjunta en GitHub se ven acá como <img>. -->
+    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Conversación</h3>
+
+        {% if comentarios_error %}
+        <div class="alert alert-warning" role="status" aria-live="polite">
+            <span>No pudimos cargar la conversación en este momento. Volvé a intentar en unos minutos.</span>
+        </div>
+        {% elif comentarios %}
+        <div class="space-y-4" data-testid="comentarios">
+            {% for comentario in comentarios %}
+            <div class="border-l-4 border-primary-500 bg-gray-50 dark:bg-gray-900 rounded-r-lg p-4"
+                 data-testid="comentario">
+                <p class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    {{ comentario.autor }}
+                    <span class="font-normal text-gray-500 dark:text-gray-400">
+                        · {{ comentario.created_at }}
+                    </span>
+                </p>
+                <div class="ticket-body text-gray-800 dark:text-gray-200 text-sm">
+                    {{ comentario.cuerpo|markdownify }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-500 dark:text-gray-400" data-testid="sin-comentarios">
+            Todavía no hay respuestas del equipo. Te vamos a responder por acá.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Resolver el caso ("ni puede resolver el caso"). POST-only. -->
+    {% if not ticket.esta_resuelto %}
+    <div class="border-t border-gray-200 dark:border-gray-700 mt-6 pt-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">¿Ya quedó resuelto?</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Si tu caso ya está solucionado, marcalo como resuelto y cerramos el reporte.
+        </p>
+        <form method="post"
+              action="{% url 'feedback:resolver' ticket_id=ticket.id %}"
+              id="form-resolver"
+              class="flex flex-col sm:flex-row gap-3 sm:items-start">
+            {% csrf_token %}
+            <div class="form-control flex-1">
+                <label class="sr-only" for="{{ resolver_form.resuelto_por.id_for_label }}">Tu nombre</label>
+                <input type="text"
+                       name="resuelto_por"
+                       id="{{ resolver_form.resuelto_por.id_for_label }}"
+                       placeholder="Tu nombre"
+                       class="input input-bordered w-full{% if resolver_form.resuelto_por.errors %} input-error{% endif %}"
+                       value="{{ resolver_form.resuelto_por.value|default:'' }}">
+                {% for error in resolver_form.resuelto_por.errors %}
+                <div class="label" aria-live="polite">
+                    <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {{ resolver_form.website }}
+            <button type="submit" class="btn btn-success whitespace-nowrap">
+                ✓ Resolver el caso
+            </button>
+        </form>
+    </div>
+    {% endif %}
 </div>
+
+<style>
+/* Los comentarios vienen de GitHub y traen imágenes de ancho arbitrario
+   (el equipo pega capturas de 1600px). Sin este cap, el detalle se
+   desborda horizontalmente en móvil. */
+.ticket-body img { max-width: 100%; height: auto; border-radius: .375rem; margin: .5rem 0; }
+.ticket-body p { margin: .5rem 0; }
+.ticket-body ul, .ticket-body ol { margin: .5rem 0; padding-left: 1.25rem; list-style: revert; }
+.ticket-body pre { overflow-x: auto; padding: .5rem; border-radius: .375rem; background: rgba(127,127,127,.15); }
+.ticket-body code { font-family: ui-monospace, monospace; font-size: .875em; }
+.ticket-body a { text-decoration: underline; }
+.ticket-body table { display: block; overflow-x: auto; border-collapse: collapse; }
+.ticket-body th, .ticket-body td { border: 1px solid rgba(127,127,127,.35); padding: .25rem .5rem; }
+</style>
 {% endblock %}
