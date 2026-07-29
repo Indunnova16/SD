@@ -21,9 +21,27 @@ class FeedbackTicket(models.Model):
     el reporte del usuario nunca se pierda.
     """
 
+    ESTADO_ABIERTO = "abierto"
+    ESTADO_RESUELTO = "resuelto"
+    ESTADO_CHOICES = [
+        (ESTADO_ABIERTO, _("🔵 Abierto")),
+        (ESTADO_RESUELTO, _("🟢 Resuelto")),
+    ]
+
     nombre_reportante = models.CharField(_("Nombre del reportante"), max_length=120)
     asunto = models.CharField(_("Asunto"), max_length=200)
     descripcion = models.TextField(_("Descripción"))
+
+    estado = models.CharField(
+        _("Estado"),
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default=ESTADO_ABIERTO,
+    )
+    resuelto_por = models.CharField(
+        _("Resuelto por"), max_length=120, blank=True
+    )
+    resuelto_at = models.DateTimeField(_("Resuelto el"), null=True, blank=True)
 
     github_issue_number = models.IntegerField(
         _("Número de issue en GitHub"),
@@ -48,16 +66,35 @@ class FeedbackTicket(models.Model):
     def __str__(self):
         return self.asunto
 
+    @property
+    def esta_resuelto(self):
+        return self.estado == self.ESTADO_RESUELTO
+
 
 class FeedbackAttachment(models.Model):
     """
-    Imagen adjunta a un `FeedbackTicket`, subida desde el portal público.
+    Adjunto de un `FeedbackTicket`, subido desde el portal público.
 
-    NOTA (ver services.py de A4): al crearse fuera de un ModelForm, este
-    modelo NO ejecuta `full_clean()` automáticamente — la validación real
-    de que el contenido es una imagen (Pillow) vive en la capa de servicio,
-    no depende de los validadores nativos de `ImageField`.
+    Desde el issue #71 ronda 2 acepta **imagen, audio y video** (el cliente
+    pidió poder grabar audio/video desde el portal), no solo imágenes. Por
+    eso el campo es un `FileField` genérico (`archivo`) + `tipo`/`mime_type`
+    derivados del MIME, en vez del `ImageField` de v1.0: un `ImageField`
+    rechaza cualquier cosa que Pillow no pueda abrir.
+
+    NOTA (ver services.py): al crearse fuera de un ModelForm, este modelo NO
+    ejecuta `full_clean()` automáticamente — la validación real (prefijo MIME
+    permitido, tamaño, y para imágenes `PIL.verify()`) vive en la capa de
+    servicio, no depende de los validadores nativos del field.
     """
+
+    TIPO_IMAGEN = "imagen"
+    TIPO_AUDIO = "audio"
+    TIPO_VIDEO = "video"
+    TIPO_CHOICES = [
+        (TIPO_IMAGEN, _("🖼 Imagen")),
+        (TIPO_AUDIO, _("🔊 Audio")),
+        (TIPO_VIDEO, _("🎬 Video")),
+    ]
 
     ticket = models.ForeignKey(
         FeedbackTicket,
@@ -65,9 +102,13 @@ class FeedbackAttachment(models.Model):
         related_name="adjuntos",
         verbose_name=_("Ticket"),
     )
-    imagen = models.ImageField(
-        _("Imagen"), upload_to="feedback/adjuntos/%Y/%m/"
+    archivo = models.FileField(
+        _("Archivo"), upload_to="feedback/adjuntos/%Y/%m/"
     )
+    tipo = models.CharField(
+        _("Tipo"), max_length=10, choices=TIPO_CHOICES, default=TIPO_IMAGEN
+    )
+    mime_type = models.CharField(_("MIME type"), max_length=120, blank=True)
     nombre_original = models.CharField(
         _("Nombre original del archivo"), max_length=255, blank=True
     )
@@ -80,3 +121,13 @@ class FeedbackAttachment(models.Model):
 
     def __str__(self):
         return self.nombre_original or f"Adjunto #{self.pk} de ticket #{self.ticket_id}"
+
+    @staticmethod
+    def inferir_tipo(mime):
+        """Deriva `tipo` del MIME type. Default `imagen` (v1.0 solo imágenes)."""
+        m = (mime or "").lower()
+        if m.startswith("audio/"):
+            return FeedbackAttachment.TIPO_AUDIO
+        if m.startswith("video/"):
+            return FeedbackAttachment.TIPO_VIDEO
+        return FeedbackAttachment.TIPO_IMAGEN

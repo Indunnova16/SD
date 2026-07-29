@@ -1212,3 +1212,178 @@ class AttendanceSignature(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.lesson.title} ({self.get_signature_type_display()})"
+
+
+class CourseSchedule(models.Model):
+    """
+    "Programación" de un curso — SD#73.
+
+    Una convocatoria puntual de un curso YA EXISTENTE a un grupo específico de
+    personas. NO crea contenido: define *quién* debe tomarlo y *hasta cuándo*
+    (ejemplo real del cliente: "Turno X"). El `Course` referenciado no se
+    modifica en ningún momento.
+
+    Vive dentro de la sección de Asistencia (comentario del cliente 2026-07-28,
+    que manda sobre el body del issue): las vistas cuelgan de
+    ``courses/attendance-reports/programaciones/…`` y NO agregan entradas al
+    navbar.
+
+    IMPORTANTE — `suggested_end_date` es SUGERIDA, no un límite duro (requisito
+    3 del issue). Deliberadamente NO se copia a ``Enrollment.due_date``: ese
+    campo sí bloquea, porque ``apps.courses.tasks.check_enrollment_deadlines``
+    marca ``EXPIRED`` todo enrollment con ``due_date < today`` y entonces el
+    alumno queda obligado a "Habilitar de nuevo" (``reenable_course``, con 5
+    días menos de plazo). El cliente pidió exactamente lo contrario: "si no lo
+    completa a tiempo, debe poder seguir haciéndolo después".
+    """
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name="schedules",
+        verbose_name=_("Curso"),
+    )
+    name = models.CharField(
+        _("Nombre de la programación"),
+        max_length=150,
+        help_text=_("Identifica la convocatoria (ej: 'Turno X', 'Cuadrilla norte')"),
+    )
+    suggested_end_date = models.DateField(
+        _("Fecha de finalización sugerida"),
+        null=True,
+        blank=True,
+        help_text=_(
+            "Fecha sugerida, NO un límite duro: pasada la fecha el convocado "
+            "sigue pudiendo completar el curso."
+        ),
+    )
+    responsable = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="course_schedules_responsable",
+        verbose_name=_("Responsable"),
+        help_text=_(
+            "Su firma de perfil es la que aparece en el reporte de asistencia "
+            "de esta programación. Al reasignar, la firma pasa a ser la del nuevo."
+        ),
+    )
+    notes = models.TextField(_("Observaciones"), blank=True, default="")
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="course_schedules_created",
+        verbose_name=_("Creada por"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "course_schedules"
+        verbose_name = _("Programación de curso")
+        verbose_name_plural = _("Programaciones de curso")
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["course", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.course.title}"
+
+    @property
+    def is_overdue(self):
+        """True si ya pasó la fecha sugerida. INFORMATIVO — no bloquea nada.
+
+        Se usa solo para pintar un badge en la UI. El acceso al curso nunca
+        depende de esta propiedad (requisito 3 del issue).
+        """
+        if not self.suggested_end_date:
+            return False
+        from datetime import date
+
+        return self.suggested_end_date < date.today()
+
+    @property
+    def responsable_signature_url(self):
+        """URL de la firma de perfil del responsable, o "" si no tiene.
+
+        Se resuelve EN TIEMPO DE LECTURA (no se copia al crear la
+        programación): por eso reasignar `responsable` cambia automáticamente
+        la firma que sale en el PDF (requisito 4 del issue). Nunca levanta
+        excepción — si el backend de storage falla resolviendo `.url`, el PDF
+        debe renderizar igual con la línea de firma en blanco (mismo criterio
+        que `_resolve_attendance_responsable`, views.py).
+        """
+        if not self.responsable or not self.responsable.signature:
+            return ""
+        try:
+            return self.responsable.signature.url
+        except Exception:
+            return ""
+
+
+class ScheduleAssignment(models.Model):
+    """
+    Una persona convocada a una `CourseSchedule` — SD#73.
+
+    Es una tabla aparte y NO un campo en `Enrollment` porque `Enrollment` es
+    único por (user, course) (ver `Enrollment.Meta.unique_together`): una misma
+    persona puede ser convocada a dos programaciones distintas del MISMO curso
+    y debe aparecer en ambos rosters, pero sigue teniendo un solo enrollment
+    (un solo progreso y una sola firma de finalización).
+    """
+
+    class Source(models.TextChoices):
+        USER = "user", _("Persona específica")
+        PROFILE = "profile", _("Perfil ocupacional")
+        POSITION = "position", _("Cargo")
+
+    schedule = models.ForeignKey(
+        CourseSchedule,
+        on_delete=models.CASCADE,
+        related_name="assignments",
+        verbose_name=_("Programación"),
+    )
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="course_schedule_assignments",
+        verbose_name=_("Convocado"),
+    )
+    enrollment = models.ForeignKey(
+        Enrollment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="schedule_assignments",
+        verbose_name=_("Inscripción"),
+        help_text=_("Inscripción reusada o creada al convocar."),
+    )
+    source = models.CharField(
+        _("Origen de la convocatoria"),
+        max_length=20,
+        choices=Source.choices,
+        default=Source.USER,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "schedule_assignments"
+        verbose_name = _("Convocado a programación")
+        verbose_name_plural = _("Convocados a programación")
+        ordering = ["user__first_name", "user__last_name"]
+        indexes = [
+            models.Index(fields=["schedule"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["schedule", "user"],
+                name="unique_schedule_assignment",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} - {self.schedule.name}"

@@ -21,11 +21,12 @@
                     Reportado por {{ ticket.nombre_reportante }} · {{ ticket.created_at|date:"d/m/Y H:i" }}
                 </p>
             </div>
-            {% if ticket.sincronizado_github %}
-            <span class="badge badge-success badge-outline shrink-0">Sincronizado</span>
-            {% else %}
-            <span class="badge badge-ghost shrink-0">Procesando</span>
-            {% endif %}
+            <!-- El estado del caso (abierto/resuelto) es lo que le importa a
+                 quien reportó; "Sincronizado" es detalle interno nuestro. -->
+            <span class="badge shrink-0 {% if ticket.esta_resuelto %}badge-success{% else %}badge-info{% endif %}"
+                  data-testid="estado-ticket">
+                {{ ticket.get_estado_display }}
+            </span>
         </div>
     </a>
     {% empty %}

@@ -14,19 +14,33 @@
             color: #1a1a1a;
             line-height: 1.4;
         }
+        /* FT-HSEQ-60 es un formato regulado: replica el papel oficial, que es
+           blanco y negro. El acento rojo corporativo de SD#69 aplica a la
+           interfaz general de la app -- navbar, botones, certificados --,
+           NUNCA a este documento (issue #63, comentario del 2026-07-28).
+           Hay un test de regresion que falla si ese hex reaparece aqui. */
         .header {
             text-align: center;
-            border-bottom: 2px solid {{ brand_accent }};
+            border-bottom: 2px solid #1a1a1a;
             padding-bottom: 10px;
             margin-bottom: 18px;
         }
+        /* xhtml2pdf NO implementa max-width/max-height sobre <img>: pisaTagIMG
+           solo lee width/height, y una declaracion max-* se ignora en silencio,
+           dibujando la imagen a tamano natural. Con `max-height: 42px` este
+           logo (1800x1200) se renderizaba a 524,7 x 349,8 pt -- practicamente
+           todo el ancho util de la pagina (527 pt). Se fija el tamano explicito
+           del membrete oficial: el DOCX FT-HSEQ-60 lo trae en 92,2 x 67,5 pt, y
+           90 x 60 pt entra en ese recuadro conservando la relacion de aspecto
+           exacta del asset (1800/1200 = 1,5), sin deformarlo. */
         .header-logo {
-            max-height: 42px;
+            width: 90pt;
+            height: 60pt;
             margin-bottom: 6px;
         }
         .header h1 {
             font-size: 15pt;
-            color: {{ brand_accent }};
+            color: #1a1a1a;
             margin: 0 0 4px 0;
         }
         .header .format-code {
@@ -111,9 +125,13 @@
             padding: 6px 8px;
             vertical-align: middle;
         }
+        /* Mismo motivo que .header-logo: max-* se ignora en xhtml2pdf. Se fija
+           SOLO el ancho -- la restriccion dominante es la columna "Firma"
+           (~111 pt) -- y se deja que la altura escale sola, para no deformar
+           firmas de proporciones distintas. Sin esto, la firma del instructor,
+           que vive en una celda a ancho completo, se dibujaba a 450 pt. */
         .signature-img {
-            max-height: 36px;
-            max-width: 110px;
+            width: 110px;
         }
         .empty {
             color: #9ca3af;
@@ -181,14 +199,34 @@
                     <div class="value">{% if course.objectives %}{{ course.objectives }}{% else %}<span class="empty">No definido</span>{% endif %}</div>
                 </td>
             </tr>
+            {% if schedule %}
+            {# SD#73: bloque ADITIVO, solo aparece cuando el PDF se genera
+               filtrado por una programación. El reporte por curso y el
+               individual (SD#63) no pasan `schedule` y quedan idénticos. #}
+            <tr>
+                <td>
+                    <div class="label">Programación</div>
+                    <div class="value">{{ schedule.name }}</div>
+                </td>
+                <td>
+                    <div class="label">Fecha de finalización sugerida</div>
+                    <div class="value">{% if schedule.suggested_end_date %}{{ schedule.suggested_end_date|date:"d/m/Y" }}{% else %}<span class="empty">Sin fecha</span>{% endif %}</div>
+                </td>
+            </tr>
+            {% endif %}
             <tr>
                 <td colspan="2" class="signature-cell">
-                    <div class="label">Instructor</div>
-                    <div class="value">{% if course.instructor %}{{ course.instructor.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
+                    {# SD#73: cuando el PDF sale de una programación, el firmante es
+                       su RESPONSABLE (requisito 4), no el instructor del curso. Se
+                       resuelve por contexto con fallback al comportamiento SD#63. #}
+                    <div class="label">{% if pdf_instructor %}Responsable{% else %}Instructor{% endif %}</div>
+                    {% with signer=pdf_instructor|default:course.instructor %}
+                    <div class="value">{% if signer %}{{ signer.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
+                    {% endwith %}
                     {% if instructor_signature_url %}
                         <img class="signature-img" src="{{ instructor_signature_url }}" alt="Firma del instructor">
                     {% else %}
-                        <div style="border-top: 1px solid #1a1a1a; margin-top: 20px; padding-top: 4px; font-size:8pt; color:#666;">Firma del instructor</div>
+                        <div style="border-top: 1px solid #1a1a1a; margin-top: 20px; padding-top: 4px; font-size:8pt; color:#666;">Firma del {% if pdf_instructor %}responsable{% else %}instructor{% endif %}</div>
                     {% endif %}
                 </td>
             </tr>

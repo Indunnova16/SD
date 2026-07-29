@@ -73,6 +73,41 @@ urlpatterns = [
         views.course_attendance_reports_list,
         name="attendance_reports",
     ),
+    # Programación de cursos (SD#73). Cuelga DENTRO de la sección de Asistencia
+    # -- el cliente pidió explícitamente que no fuera una página nueva del
+    # navbar (comentario 2026-07-28, manda sobre el body del issue). Va antes de
+    # `attendance-reports/<int:course_id>/` por claridad de lectura; no hay
+    # colisión posible porque `programaciones` no matchea `<int:...>`.
+    path(
+        "attendance-reports/programaciones/",
+        views.schedule_list,
+        name="schedule_list",
+    ),
+    path(
+        "attendance-reports/programaciones/nueva/",
+        views.schedule_create,
+        name="schedule_create",
+    ),
+    path(
+        "attendance-reports/programaciones/buscar-personas/",
+        views.schedule_search_people,
+        name="schedule_search_people",
+    ),
+    path(
+        "attendance-reports/programaciones/<int:schedule_id>/",
+        views.schedule_detail,
+        name="schedule_detail",
+    ),
+    path(
+        "attendance-reports/programaciones/<int:schedule_id>/editar/",
+        views.schedule_edit,
+        name="schedule_edit",
+    ),
+    path(
+        "attendance-reports/programaciones/<int:schedule_id>/export-pdf/",
+        views.export_schedule_attendance_pdf,
+        name="export_schedule_attendance_pdf",
+    ),
     path(
         "attendance-reports/<int:course_id>/export-pdf/",
         views.export_course_attendance_pdf,

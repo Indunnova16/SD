@@ -8,6 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Course,
+    CourseSchedule,
     Enrollment,
     JobProfileType,
     Lesson,
@@ -15,6 +16,7 @@ from .models import (
     LessonProgress,
     MediaAsset,
     Module,
+    ScheduleAssignment,
 )
 
 
@@ -331,3 +333,35 @@ class LessonEvidenceAdmin(admin.ModelAdmin):
             },
         ),
     ]
+
+
+class ScheduleAssignmentInline(admin.TabularInline):
+    """Convocados de una programación (SD#73)."""
+
+    model = ScheduleAssignment
+    extra = 0
+    autocomplete_fields = ["user"]
+    readonly_fields = ["created_at"]
+
+
+@admin.register(CourseSchedule)
+class CourseScheduleAdmin(admin.ModelAdmin):
+    """Programaciones de curso (SD#73)."""
+
+    list_display = ["name", "course", "responsable", "suggested_end_date", "created_at"]
+    list_filter = ["course", "suggested_end_date", "created_at"]
+    search_fields = ["name", "course__title", "course__code"]
+    autocomplete_fields = ["responsable", "created_by"]
+    readonly_fields = ["created_at", "updated_at"]
+    inlines = [ScheduleAssignmentInline]
+
+
+@admin.register(ScheduleAssignment)
+class ScheduleAssignmentAdmin(admin.ModelAdmin):
+    """Convocados a programaciones (SD#73)."""
+
+    list_display = ["user", "schedule", "source", "created_at"]
+    list_filter = ["source", "schedule"]
+    search_fields = ["user__first_name", "user__last_name", "user__document_number"]
+    autocomplete_fields = ["user", "schedule", "enrollment"]
+    readonly_fields = ["created_at"]

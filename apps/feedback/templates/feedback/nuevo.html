@@ -60,18 +60,47 @@
 
         <div class="form-control mb-6">
             <label class="label" for="id_imagenes">
-                <span class="label-text font-medium">Imágenes (opcional)</span>
+                <span class="label-text font-medium">Adjuntos (opcional)</span>
             </label>
+            <!-- El name sigue siendo `imagenes` (no `archivos`) para no
+                 romper el contrato con la vista, que lee
+                 request.FILES.getlist("imagenes"). El accept sí se amplía:
+                 desde #71 ronda 2 el portal acepta audio y video. -->
             <input type="file"
                    id="id_imagenes"
                    name="imagenes"
                    multiple
-                   accept="image/*"
+                   accept="image/*,audio/*,video/*"
                    class="file-input file-input-bordered w-full">
             <div class="label">
                 <span class="label-text-alt text-gray-500 dark:text-gray-400">
-                    Podés adjuntar una o varias fotos.
+                    Podés adjuntar fotos, audios o videos.
                 </span>
+            </div>
+
+            <!-- Grabación en vivo desde el navegador -->
+            <div class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
+                 id="grabador">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-3">
+                    …o grabalo ahora:
+                </p>
+                <div class="flex flex-wrap gap-2 items-center">
+                    <button type="button" id="btn-grabar-audio" class="btn btn-sm btn-outline">
+                        🔊 Grabar audio
+                    </button>
+                    <button type="button" id="btn-grabar-video" class="btn btn-sm btn-outline">
+                        🎬 Grabar video
+                    </button>
+                    <button type="button" id="btn-detener" class="btn btn-sm btn-error hidden">
+                        ⏹ Detener
+                    </button>
+                    <span id="grabador-timer" class="text-sm font-mono text-error hidden">00:00</span>
+                </div>
+                <p id="grabador-aviso" class="text-xs text-gray-500 dark:text-gray-400 mt-2 hidden"></p>
+                <video id="grabador-preview"
+                       class="hidden w-full mt-3 rounded-lg max-h-64 bg-black"
+                       autoplay muted playsinline></video>
+                <ul id="grabador-lista" class="text-sm mt-3 space-y-1"></ul>
             </div>
         </div>
 
@@ -84,4 +113,219 @@
         <button type="submit" class="btn btn-primary w-full">Enviar</button>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/*
+ * Grabación de audio/video desde el portal (issue #71, reclamo literal del
+ * cliente: "falta la opcion de grabar video y audio").
+ *
+ * El Blob que produce MediaRecorder se envuelve en un File y se inyecta en
+ * el <input type="file"> real vía DataTransfer, así el envío sigue siendo
+ * un multipart normal: cero cambios en la vista, que sigue leyendo
+ * request.FILES.getlist("imagenes"). La alternativa (fetch + base64) exigiría
+ * un endpoint aparte y perdería la resiliencia del form clásico.
+ *
+ * `FileList` es de solo lectura: DataTransfer es la única forma soportada de
+ * construir uno y asignarlo a input.files.
+ */
+(function () {
+    'use strict';
+
+    var input = document.getElementById('id_imagenes');
+    var btnAudio = document.getElementById('btn-grabar-audio');
+    var btnVideo = document.getElementById('btn-grabar-video');
+    var btnDetener = document.getElementById('btn-detener');
+    var timerEl = document.getElementById('grabador-timer');
+    var avisoEl = document.getElementById('grabador-aviso');
+    var preview = document.getElementById('grabador-preview');
+    var listaEl = document.getElementById('grabador-lista');
+
+    if (!input || !btnAudio || !btnVideo) { return; }
+
+    var MAX_FILES = {{ max_attachments }};
+    var MAX_BYTES = {{ max_attachment_bytes }};
+
+    var dt = new DataTransfer();
+    var mediaRecorder = null;
+    var activeStream = null;
+    var chunks = [];
+    var modoActual = null;
+    var timerId = null;
+    var segundos = 0;
+
+    function mostrarAviso(texto) {
+        avisoEl.textContent = texto;
+        avisoEl.classList.remove('hidden');
+    }
+
+    // getUserMedia solo existe en contexto seguro (https o localhost) y
+    // MediaRecorder no está en navegadores viejos. Sin este gate, el click
+    // tira un TypeError silencioso y el usuario no entiende por qué no pasa nada.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+        btnAudio.disabled = true;
+        btnVideo.disabled = true;
+        mostrarAviso('Tu navegador no permite grabar desde esta página. Podés adjuntar un archivo de audio o video en su lugar.');
+        return;
+    }
+
+    function mimeAudio() {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+        if (MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';  // Safari
+        return '';
+    }
+
+    function mimeVideo() {
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) return 'video/webm;codecs=vp9,opus';
+        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) return 'video/webm;codecs=vp8,opus';
+        if (MediaRecorder.isTypeSupported('video/webm')) return 'video/webm';
+        if (MediaRecorder.isTypeSupported('video/mp4')) return 'video/mp4';  // Safari/iOS
+        return '';
+    }
+
+    function renderLista() {
+        listaEl.innerHTML = '';
+        Array.prototype.forEach.call(dt.files, function (f, idx) {
+            var li = document.createElement('li');
+            li.className = 'flex items-center justify-between gap-2';
+            var span = document.createElement('span');
+            span.className = 'truncate text-gray-600 dark:text-gray-300';
+            span.textContent = f.name + ' (' + Math.round(f.size / 1024) + ' KB)';
+            var quitar = document.createElement('button');
+            quitar.type = 'button';
+            quitar.className = 'btn btn-ghost btn-xs text-error';
+            quitar.textContent = 'Quitar';
+            quitar.addEventListener('click', function () { removeFile(idx); });
+            li.appendChild(span);
+            li.appendChild(quitar);
+            listaEl.appendChild(li);
+        });
+    }
+
+    function sincronizarInput() {
+        input.files = dt.files;
+        renderLista();
+    }
+
+    function removeFile(idx) {
+        dt.items.remove(idx);
+        sincronizarInput();
+    }
+
+    function addFile(file) {
+        if (dt.files.length >= MAX_FILES) {
+            mostrarAviso('Máximo ' + MAX_FILES + ' archivos por ticket.');
+            return;
+        }
+        if (file.size > MAX_BYTES) {
+            mostrarAviso('"' + file.name + '" excede ' + Math.round(MAX_BYTES / (1024 * 1024)) + ' MB.');
+            return;
+        }
+        dt.items.add(file);
+        sincronizarInput();
+    }
+
+    // Los archivos que el usuario elige con el selector nativo pisan
+    // input.files por completo. Los absorbemos en el DataTransfer para que
+    // convivan con lo grabado en vez de borrarlo.
+    input.addEventListener('change', function () {
+        var elegidos = Array.prototype.slice.call(input.files);
+        var yaEn = {};
+        Array.prototype.forEach.call(dt.files, function (f) { yaEn[f.name + ':' + f.size] = true; });
+        elegidos.forEach(function (f) {
+            if (!yaEn[f.name + ':' + f.size]) { dt.items.add(f); }
+        });
+        sincronizarInput();
+    });
+
+    function tickTimer() {
+        segundos += 1;
+        var m = String(Math.floor(segundos / 60)).padStart(2, '0');
+        var s = String(segundos % 60).padStart(2, '0');
+        timerEl.textContent = m + ':' + s;
+    }
+
+    function resetUI() {
+        btnAudio.classList.remove('hidden');
+        btnVideo.classList.remove('hidden');
+        btnDetener.classList.add('hidden');
+        timerEl.classList.add('hidden');
+        preview.classList.add('hidden');
+        preview.srcObject = null;
+        if (timerId) { clearInterval(timerId); timerId = null; }
+        segundos = 0;
+        timerEl.textContent = '00:00';
+    }
+
+    function detenerStream() {
+        if (activeStream) {
+            activeStream.getTracks().forEach(function (t) { t.stop(); });
+            activeStream = null;
+        }
+    }
+
+    function iniciarGrabacion(modo) {
+        var constraints = modo === 'video'
+            ? { video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: true }
+            : { audio: true };
+
+        navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            activeStream = stream;
+            chunks = [];
+            modoActual = modo;
+
+            var mime = modo === 'video' ? mimeVideo() : mimeAudio();
+            mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+
+            mediaRecorder.ondataavailable = function (e) {
+                if (e.data && e.data.size > 0) { chunks.push(e.data); }
+            };
+
+            mediaRecorder.onstop = function () {
+                detenerStream();
+                var tipo = mediaRecorder.mimeType || (modo === 'video' ? 'video/webm' : 'audio/webm');
+                var blob = new Blob(chunks, { type: tipo });
+                var ext;
+                if (modo === 'video') { ext = tipo.indexOf('mp4') !== -1 ? 'mp4' : 'webm'; }
+                else { ext = tipo.indexOf('mp4') !== -1 ? 'm4a' : 'webm'; }
+                var fecha = new Date().toISOString().replace(/[:.]/g, '-');
+                var nombre = (modo === 'video' ? 'video' : 'audio') + '-' + fecha + '.' + ext;
+                addFile(new File([blob], nombre, { type: tipo }));
+                resetUI();
+            };
+
+            if (modo === 'video') {
+                preview.srcObject = stream;
+                preview.classList.remove('hidden');
+            }
+
+            mediaRecorder.start();
+            btnAudio.classList.add('hidden');
+            btnVideo.classList.add('hidden');
+            btnDetener.classList.remove('hidden');
+            timerEl.classList.remove('hidden');
+            avisoEl.classList.add('hidden');
+            timerId = setInterval(tickTimer, 1000);
+        }).catch(function (err) {
+            detenerStream();
+            resetUI();
+            if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) {
+                mostrarAviso('No nos diste permiso para usar el micrófono/cámara. Habilitalo en el navegador y volvé a intentar.');
+            } else if (err && err.name === 'NotFoundError') {
+                mostrarAviso('No encontramos micrófono o cámara en este dispositivo.');
+            } else {
+                mostrarAviso('No pudimos iniciar la grabación. Podés adjuntar un archivo en su lugar.');
+            }
+        });
+    }
+
+    btnAudio.addEventListener('click', function () { iniciarGrabacion('audio'); });
+    btnVideo.addEventListener('click', function () { iniciarGrabacion('video'); });
+    btnDetener.addEventListener('click', function () {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') { mediaRecorder.stop(); }
+    });
+})();
+</script>
 {% endblock %}

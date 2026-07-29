@@ -2,8 +2,9 @@
 Vistas públicas del portal de feedback ("portal de SD - Cursos").
 
 Superficie 100% pública/anónima (sin `@login_required`, sin sesión SD):
-listar tickets, crear un ticket nuevo (con 0-N imágenes adjuntas) y ver el
-detalle de un ticket, incluidas sus imágenes.
+listar tickets, crear un ticket nuevo (con 0-N adjuntos: imagen, audio o
+video), ver el detalle de un ticket — sus adjuntos y la conversación del
+equipo traída de GitHub — y marcar el caso como resuelto.
 
 `nuevo_view` delega la creación de adjuntos y la sincronización a GitHub en
 `apps.feedback.services` (sub-item A4): `procesar_archivos_subidos` y
@@ -12,15 +13,20 @@ detalle de un ticket, incluidas sus imágenes.
 `encolar_sincronizacion_ticket`) se dispare justo al terminar la request.
 """
 
+from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
-from apps.feedback.forms import NuevoTicketForm
+from apps.feedback.forms import NuevoTicketForm, ResolverTicketForm
+from apps.feedback.github_client import GitHubClientError
 from apps.feedback.models import FeedbackTicket
 from apps.feedback.services import (
     encolar_sincronizacion_ticket,
+    obtener_comentarios_github,
     procesar_archivos_subidos,
+    resolver_ticket,
 )
 
 TICKETS_POR_PAGINA = 20
@@ -63,13 +69,95 @@ def nuevo_view(request):
     else:
         form = NuevoTicketForm()
 
-    return render(request, "feedback/nuevo.html", {"form": form})
+    # Los límites van al template para que el JS del grabador rechace en el
+    # cliente exactamente lo mismo que `procesar_archivos_subidos` descarta
+    # en el servidor. Duplicarlos hardcodeados en el JS es cómo se
+    # desincronizan.
+    context = {
+        "form": form,
+        "max_attachments": settings.FEEDBACK_MAX_ATTACHMENTS,
+        "max_attachment_bytes": settings.FEEDBACK_MAX_ATTACHMENT_BYTES,
+    }
+    return render(request, "feedback/nuevo.html", context)
 
 
 def detalle_view(request, ticket_id):
-    """Detalle público de un ticket, incluidas las imágenes que subió."""
+    """Detalle público de un ticket: adjuntos + conversación de GitHub.
+
+    Los comentarios se traen de la API de GitHub en vivo (con caché corta,
+    ver `services.obtener_comentarios_github`). Si GitHub falla, la página
+    se renderiza igual con `comentarios_error=True` — el detalle del ticket
+    nunca depende de que GitHub esté arriba.
+    """
     ticket = get_object_or_404(FeedbackTicket, id=ticket_id)
     adjuntos = ticket.adjuntos.all()
 
-    context = {"ticket": ticket, "adjuntos": adjuntos}
+    comentarios = []
+    comentarios_error = False
+    try:
+        comentarios = obtener_comentarios_github(ticket)
+    except GitHubClientError:
+        comentarios_error = True
+
+    context = {
+        "ticket": ticket,
+        "adjuntos": adjuntos,
+        "comentarios": comentarios,
+        "comentarios_error": comentarios_error,
+        "resolver_form": ResolverTicketForm(),
+    }
     return render(request, "feedback/detalle.html", context)
+
+
+@require_POST
+def resolver_view(request, ticket_id):
+    """Marca un ticket como resuelto y cierra su issue en GitHub.
+
+    Sin autenticación, por diseño: el portal es 100% anónimo y el criterio
+    del protocolo es que **el cliente cierra al validar**. La trazabilidad
+    es el nombre que se pide en el form; si alguien resuelve por error, el
+    equipo reabre desde GitHub.
+
+    Solo POST (`@require_POST`): resolver es una acción con efecto, no debe
+    poder dispararse con un GET (un prefetch del navegador o un crawler
+    cerraría tickets ajenos).
+    """
+    ticket = get_object_or_404(FeedbackTicket, id=ticket_id)
+
+    if ticket.esta_resuelto:
+        messages.info(request, "Este ticket ya estaba marcado como resuelto.")
+        return redirect("feedback:detalle", ticket_id=ticket.id)
+
+    form = ResolverTicketForm(request.POST)
+    if not form.is_valid():
+        adjuntos = ticket.adjuntos.all()
+        comentarios = []
+        comentarios_error = False
+        try:
+            comentarios = obtener_comentarios_github(ticket)
+        except GitHubClientError:
+            comentarios_error = True
+        context = {
+            "ticket": ticket,
+            "adjuntos": adjuntos,
+            "comentarios": comentarios,
+            "comentarios_error": comentarios_error,
+            "resolver_form": form,
+        }
+        return render(request, "feedback/detalle.html", context)
+
+    cerrado_en_github = resolver_ticket(
+        ticket.id, form.cleaned_data["resuelto_por"]
+    )
+    if cerrado_en_github:
+        messages.success(request, "¡Listo! El caso quedó marcado como resuelto.")
+    else:
+        # El ticket SÍ quedó resuelto localmente (ver services.resolver_ticket):
+        # no mentimos diciendo que falló, pero tampoco afirmamos que se
+        # cerró en GitHub cuando no pudimos confirmarlo.
+        messages.success(
+            request,
+            "El caso quedó marcado como resuelto. Estamos terminando de "
+            "sincronizarlo con el equipo.",
+        )
+    return redirect("feedback:detalle", ticket_id=ticket.id)

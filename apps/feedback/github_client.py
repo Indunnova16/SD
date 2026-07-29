@@ -1,10 +1,12 @@
 """
 Cliente GitHub REST minimal para el portal de tickets de feedback (apps.feedback).
 
-Encapsula las dos únicas operaciones que necesita el portal contra la API
-de GitHub: crear un issue por cada ticket reportado y asegurar que la label
-'portal-web' exista en el repo destino. NO es un cliente genérico — deja
-fuera todo lo que el portal no usa (paginación, otras rutas, etc).
+Encapsula las únicas operaciones que necesita el portal contra la API de
+GitHub: crear un issue por cada ticket reportado, asegurar que la label
+'portal-web' exista en el repo destino, listar los comentarios de un issue
+(para mostrarlos en el detalle del ticket) y cerrar un issue cuando el
+usuario resuelve su caso. NO es un cliente genérico — deja fuera todo lo
+que el portal no usa (paginación real, otras rutas, etc).
 
 Toda excepción de red o de status inesperado se normaliza a
 GitHubClientError para que el caller (apps.feedback.services) capture un
@@ -20,6 +22,15 @@ LABEL_PORTAL_WEB = "portal-web"
 LABEL_PORTAL_WEB_COLOR = "fbca04"
 LABEL_PORTAL_WEB_DESCRIPTION = "Ticket reportado desde el portal web de feedback"
 DEFAULT_TIMEOUT_SECONDS = 15
+
+# Timeout más corto para leer comentarios: corre en el camino crítico de
+# renderizar el detalle del ticket, así que no puede colgar la página 15 s
+# cuando GitHub está lento.
+READ_TIMEOUT_SECONDS = 8
+COMENTARIOS_POR_PAGINA = 100
+
+TIPO_IMAGEN = "imagen"
+ICONO_POR_TIPO = {"audio": "🔊", "video": "🎬"}
 
 
 class GitHubClientError(Exception):
@@ -62,10 +73,20 @@ class GitHubFeedbackClient:
             lineas.append("")
             lineas.append("**Adjuntos:**")
             for adjunto in adjuntos:
-                nombre = adjunto.get("nombre") if isinstance(adjunto, dict) else None
-                url = adjunto.get("url") if isinstance(adjunto, dict) else adjunto
+                if isinstance(adjunto, dict):
+                    nombre = adjunto.get("nombre")
+                    url = adjunto.get("url")
+                    tipo = adjunto.get("tipo") or TIPO_IMAGEN
+                else:
+                    nombre, url, tipo = None, adjunto, TIPO_IMAGEN
                 nombre = nombre or "adjunto"
-                lineas.append(f"![{nombre}]({url})")
+                # Solo las imágenes van como `![]()`. Un audio/video
+                # embebido así se renderiza como imagen rota en GitHub, así
+                # que van como link con el ícono del tipo.
+                if tipo == TIPO_IMAGEN:
+                    lineas.append(f"![{nombre}]({url})")
+                else:
+                    lineas.append(f"{ICONO_POR_TIPO.get(tipo, '📎')} [{nombre}]({url})")
         return "\n".join(lineas)
 
     def crear_issue(self, ticket_id, asunto, descripcion, nombre_reportante, adjuntos=None):
@@ -107,6 +128,100 @@ class GitHubFeedbackClient:
             "html_url": data["html_url"],
             "id": data["id"],
         }
+
+    def listar_comentarios(self, issue_number):
+        """Lista los comentarios de un issue, del más viejo al más nuevo.
+
+        Devuelve una lista de dicts `{autor, avatar, cuerpo, created_at,
+        url}` — solo los campos que el portal renderiza, no el payload
+        crudo de GitHub (que es enorme y trae datos que no queremos filtrar
+        a una superficie pública/anónima).
+
+        Levanta GitHubClientError ante cualquier fallo (red, status != 200).
+        """
+        try:
+            response = requests.get(
+                f"{GITHUB_API_BASE}/repos/{self.repo}/issues/{issue_number}/comments",
+                params={"per_page": COMENTARIOS_POR_PAGINA},
+                headers=self._headers(),
+                timeout=READ_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            raise GitHubClientError(
+                f"Error de red listando comentarios del issue {issue_number}: {exc}"
+            ) from exc
+
+        if response.status_code != 200:
+            raise GitHubClientError(
+                f"GitHub devolvió status inesperado listando comentarios del "
+                f"issue {issue_number}: {response.status_code} — {response.text}"
+            )
+
+        comentarios = []
+        for item in response.json():
+            usuario = item.get("user") or {}
+            comentarios.append(
+                {
+                    "autor": usuario.get("login") or "equipo",
+                    "avatar": usuario.get("avatar_url") or "",
+                    "cuerpo": item.get("body") or "",
+                    "created_at": item.get("created_at") or "",
+                    "url": item.get("html_url") or "",
+                }
+            )
+        return comentarios
+
+    def cerrar_issue(self, issue_number, comentario=None):
+        """Cierra un issue; si viene `comentario`, lo postea antes de cerrar.
+
+        El comentario va primero a propósito: deja registro de QUIÉN resolvió
+        desde el portal antes de que el issue quede cerrado.
+
+        Devuelve {"state": "closed", "comment_id": int|None}.
+        Levanta GitHubClientError ante cualquier fallo.
+        """
+        comment_id = None
+
+        if comentario:
+            try:
+                resp_comentario = requests.post(
+                    f"{GITHUB_API_BASE}/repos/{self.repo}/issues/{issue_number}/comments",
+                    json={"body": comentario},
+                    headers=self._headers(),
+                    timeout=DEFAULT_TIMEOUT_SECONDS,
+                )
+            except requests.RequestException as exc:
+                raise GitHubClientError(
+                    f"Error de red comentando el issue {issue_number}: {exc}"
+                ) from exc
+
+            if resp_comentario.status_code != 201:
+                raise GitHubClientError(
+                    f"GitHub devolvió status inesperado comentando el issue "
+                    f"{issue_number}: {resp_comentario.status_code} — "
+                    f"{resp_comentario.text}"
+                )
+            comment_id = resp_comentario.json().get("id")
+
+        try:
+            response = requests.patch(
+                f"{GITHUB_API_BASE}/repos/{self.repo}/issues/{issue_number}",
+                json={"state": "closed"},
+                headers=self._headers(),
+                timeout=DEFAULT_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            raise GitHubClientError(
+                f"Error de red cerrando el issue {issue_number}: {exc}"
+            ) from exc
+
+        if response.status_code != 200:
+            raise GitHubClientError(
+                f"GitHub devolvió status inesperado cerrando el issue "
+                f"{issue_number}: {response.status_code} — {response.text}"
+            )
+
+        return {"state": "closed", "comment_id": comment_id}
 
     def asegurar_label_portal_web(self):
         """Crea la label 'portal-web' en el repo si no existe.

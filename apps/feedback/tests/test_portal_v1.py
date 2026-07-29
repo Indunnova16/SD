@@ -245,10 +245,13 @@ PNG_1X1 = base64.b64decode(
 class ProcesarArchivosSubidosTestCase(TestCase):
     """Tests del sub-item A4 — validación explícita de imágenes subidas.
 
-    Cubre el hallazgo de F2: `FeedbackAttachment.objects.create(imagen=...)`
+    Cubre el hallazgo de F2: `FeedbackAttachment.objects.create(archivo=...)`
     fuera de un `ModelForm` no ejecuta `full_clean()`, por lo que
     `procesar_archivos_subidos` debe validar content_type + tamaño +
     contenido real (Pillow) de forma explícita, best-effort por archivo.
+
+    Los casos de audio/video que agregó la ronda 2 de #71 viven en
+    `test_adjuntos_media.py`.
     """
 
     def _ticket(self):
@@ -753,4 +756,4 @@ class IntegracionEndToEndTestCase(TestCase):
         self.assertContains(detalle_response, datos["asunto"])
 
         adjunto = FeedbackAttachment.objects.get(ticket=ticket)
-        self.assertContains(detalle_response, adjunto.imagen.url)
+        self.assertContains(detalle_response, adjunto.archivo.url)

@@ -142,6 +142,25 @@
                             Fecha límite: {{ enrollment.due_date|date:"d M Y" }}
                         </div>
                     {% endif %}
+                    {% comment %}
+                    SD#73 -- aviso de convocatoria. La fecha de la programación es
+                    SUGERIDA: se informa, pero el curso sigue accesible después de
+                    ella (requisito 3). Por eso este bloque es independiente del de
+                    `enrollment.due_date`, que sí es un límite duro.
+                    {% endcomment %}
+                    {% if enrollment.convocatoria %}
+                        <div class="mt-3 text-xs text-info flex items-start gap-1">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                                Le asignaron este curso en la programación
+                                <strong>{{ enrollment.convocatoria.name }}</strong>{% if enrollment.convocatoria.suggested_end_date %},
+                                y tiene hasta el {{ enrollment.convocatoria.suggested_end_date|date:"d M Y" }} (fecha sugerida).
+                                Si no alcanza, puede completarlo después: el acceso no se bloquea.{% endif %}
+                            </span>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         {% empty %}
