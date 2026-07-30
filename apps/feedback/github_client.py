@@ -62,6 +62,22 @@ class GitHubFeedbackClient:
             "X-GitHub-Api-Version": "2022-11-28",
         }
 
+    @staticmethod
+    def _bloque_transcripcion(transcripcion):
+        """Renderiza la transcripción IA de un adjunto como blockquote markdown.
+
+        Issue #71 ronda 3: portado de `Piloto/apps/feedback/github_client.py`
+        (`_bloque_transcripcion`), formato exacto que el cliente ya vio y
+        adjuntó como referencia. Devuelve `""` si no hay transcripción (el
+        caller simplemente omite el bloque para ese adjunto — ningún fallo
+        de Gemini debe dejar un encabezado vacío en el issue).
+        """
+        if not transcripcion or not transcripcion.strip():
+            return ""
+        lineas = transcripcion.strip().splitlines()
+        bq = "\n".join(f"> {l}" if l.strip() else ">" for l in lineas)
+        return f"**Transcripción:**\n{bq}"
+
     def _build_body(self, descripcion, nombre_reportante, adjuntos=None):
         lineas = [
             descripcion,
@@ -77,8 +93,10 @@ class GitHubFeedbackClient:
                     nombre = adjunto.get("nombre")
                     url = adjunto.get("url")
                     tipo = adjunto.get("tipo") or TIPO_IMAGEN
+                    transcripcion = adjunto.get("transcripcion") or ""
                 else:
                     nombre, url, tipo = None, adjunto, TIPO_IMAGEN
+                    transcripcion = ""
                 nombre = nombre or "adjunto"
                 # Solo las imágenes van como `![]()`. Un audio/video
                 # embebido así se renderiza como imagen rota en GitHub, así
@@ -87,6 +105,13 @@ class GitHubFeedbackClient:
                     lineas.append(f"![{nombre}]({url})")
                 else:
                     lineas.append(f"{ICONO_POR_TIPO.get(tipo, '📎')} [{nombre}]({url})")
+                # Issue #71 ronda 3 — el ÚNICO reclamo vigente del cliente
+                # (pedido 2 veces, diferido 2 veces sin preguntar): que la
+                # transcripción/descripción generada por IA llegue al issue
+                # de GitHub, no solo a la base de datos.
+                bloque_tr = self._bloque_transcripcion(transcripcion)
+                if bloque_tr:
+                    lineas.append(bloque_tr)
         return "\n".join(lineas)
 
     def crear_issue(self, ticket_id, asunto, descripcion, nombre_reportante, adjuntos=None):
