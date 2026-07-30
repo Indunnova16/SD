@@ -241,6 +241,31 @@ PNG_1X1 = base64.b64decode(
     "+A8AAQUBAScY42YAAAAASUVORK5CYII="
 )
 
+# PNG de 4x4 con IHDR válido pero CRC corrupto en el chunk IDAT (issue
+# #81, mismo fixture que usa el journey E2E de SD_81 —
+# ~/.claude/skills/qa-prod/fixtures/SD/crc_corrupto_idat_sd81.png).
+# `Image.open()` lo "abre" sin problema (el header es válido); revienta
+# recién en `.verify()` con `SyntaxError: broken PNG file (bad header
+# checksum in b'IDAT')` — NO es subclase de OSError/ValueError/
+# UnidentifiedImageError, por eso escapaba el except viejo de
+# `services.py` y producía un 500. Verificado contra Pillow 10.4.0.
+PNG_CRC_IDAT_CORRUPTO = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGP8"
+    "z4AATAxEcQAz0QEHxYQ+uAAAAABJRU5ErkJggg=="
+)
+
+# PNG de 68 bytes con un IHDR que declara 20000x20000 píxeles (400M) pero
+# datos de IDAT triviales/no reales — no hace falta un archivo pesado de
+# verdad: `Image.open()` calcula el tamaño total desde el header y lanza
+# `Image.DecompressionBombError` ANTES de decodificar un solo píxel (issue
+# #81). Su MRO es [DecompressionBombError, Exception] — tampoco hereda de
+# OSError/ValueError, mismo hueco que el CRC corrupto. Verificado contra
+# Pillow 10.4.0 (MAX_IMAGE_PIXELS=89478485, límite real de error=2x eso).
+PNG_DECOMPRESSION_BOMB = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAATiAAAE4gCAIAAABsEtFuAAAAC0lEQVR4nGNg"
+    "wAsAAB8AAYD9Q9oAAAAASUVORK5CYII="
+)
+
 
 class ProcesarArchivosSubidosTestCase(TestCase):
     """Tests del sub-item A4 — validación explícita de imágenes subidas.
@@ -296,6 +321,52 @@ class ProcesarArchivosSubidosTestCase(TestCase):
             "malicioso.png",
             b"esto no es una imagen real, son bytes de texto disfrazados de png",
             content_type="image/png",
+        )
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(creados, [])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+    def test_archivo_png_crc_idat_corrupto_no_crea_attachment_ni_lanza(self):
+        """Issue #81 — regresión real, NO simulada con bytes de texto.
+
+        A diferencia de `test_archivo_content_type_spoofeado_bytes_
+        corruptos_no_crea_attachment` (que cae en `UnidentifiedImageError`,
+        ya cubierto desde v1.0), este PNG tiene un IHDR perfectamente
+        válido y solo el chunk IDAT corrupto — `Image.open()` lo abre sin
+        problema y revienta con `SyntaxError` recién en `.verify()`. Antes
+        del fix esta excepción escapaba el `except` y producía un 500 real
+        en prod (traza 2026-07-29T12:02:25Z, ver F1/F2).
+        """
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile(
+            "crc_corrupto.png", PNG_CRC_IDAT_CORRUPTO, content_type="image/png"
+        )
+
+        creados = procesar_archivos_subidos(ticket, [archivo])
+
+        self.assertEqual(creados, [])
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+    def test_archivo_png_decompression_bomb_no_crea_attachment_ni_lanza(self):
+        """Issue #81 — segundo vector confirmado por F2.
+
+        `Image.DecompressionBombError` tampoco hereda de OSError/
+        ValueError (MRO: [DecompressionBombError, Exception]) y se lanza
+        desde el propio `Image.open()` cuando el header declara más
+        píxeles que `Image.MAX_IMAGE_PIXELS` — mismo hueco estructural que
+        el CRC corrupto, con la clase de excepción distinta. El fixture no
+        necesita una imagen pesada de verdad: el header alcanza para
+        disparar el chequeo antes de decodificar un solo píxel.
+        """
+        ticket = self._ticket()
+        archivo = SimpleUploadedFile(
+            "bomba.png", PNG_DECOMPRESSION_BOMB, content_type="image/png"
         )
 
         creados = procesar_archivos_subidos(ticket, [archivo])
@@ -536,6 +607,30 @@ class ViewsTestCase(TestCase):
         ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
         mock_encolar.assert_called_once_with(ticket.id)
 
+    @patch("apps.feedback.views.procesar_archivos_subidos")
+    def test_atomic_revierte_el_ticket_si_procesar_archivos_lanza_excepcion_no_contemplada(
+        self, mock_procesar
+    ):
+        """Red de seguridad del cambio 2 (issue #81), independiente del
+        cambio 1: aunque escape una excepción que `services.py` NO
+        contempla (simulando una futura variante de PIL no cubierta por
+        el except explícito), `transaction.atomic()` alrededor de
+        `nuevo_view` revierte el `FeedbackTicket.objects.create()` — el
+        ticket NUNCA queda huérfano en BD. La request en sí sigue
+        propagando el error (eso lo resuelve el except ampliado de
+        `procesar_archivos_subidos`, no la atomicidad), pero ya no hay
+        efecto secundario de "ticket fantasma sin sincronizar".
+        """
+        mock_procesar.side_effect = RuntimeError("excepción no contemplada")
+        datos = self._datos_validos()
+
+        with self.assertRaises(RuntimeError):
+            self.client.post(reverse("feedback:nuevo"), data=datos)
+
+        self.assertFalse(
+            FeedbackTicket.objects.filter(asunto=datos["asunto"]).exists()
+        )
+
     # -- detalle_view --------------------------------------------------
 
     def test_detalle_view_200_ticket_existente(self):
@@ -715,6 +810,73 @@ class IntegracionEndToEndTestCase(TestCase):
         )
         self.assertEqual(detalle_response.status_code, 200)
         self.assertContains(detalle_response, datos["asunto"])
+
+    @patch("apps.feedback.github_client.requests.post")
+    def test_imagen_png_crc_idat_corrupta_no_produce_500_ni_ticket_huerfano(
+        self, mock_post
+    ):
+        """Issue #81 — reproduce el escenario EXACTO del journey E2E
+        (SD_81, i81_portal_feedback_imagen_crc_corrupto_no_500_no_huerfano)
+        contra la cadena completa real: POST público -> nuevo_view ->
+        procesar_archivos_subidos (PIL real) -> transaction.atomic ->
+        encolar_sincronizacion_ticket -> sincronizar_ticket ->
+        GitHubFeedbackClient -> requests.post (único mock).
+
+        Antes del fix esto era un Server Error (500) y, si el ticket ya
+        alcanzaba a insertarse antes de que PIL reventara, quedaba
+        huérfano (sin sincronizar) porque `nuevo_view` no era atómica.
+        Después del fix: (a) NO 500 — 302 a la página de detalle; (b) el
+        archivo corrupto NO se guarda como adjunto; (c) el ticket SÍ queda
+        sincronizado con GitHub (no huérfano).
+        """
+        mock_post.return_value = self._mock_response(
+            201,
+            json_data={
+                "number": 81,
+                "html_url": "https://github.com/Indunnova16/SD/issues/81",
+                "id": 8181,
+            },
+        )
+        archivo = SimpleUploadedFile(
+            "crc_corrupto.png", PNG_CRC_IDAT_CORRUPTO, content_type="image/png"
+        )
+        datos = self._datos_validos(
+            asunto="QA_E2E_SD81 - imagen PNG con CRC corrupto en IDAT"
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]}
+            )
+
+        # (a) nunca un 500 -- redirige al detalle del ticket recién creado
+        ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            response.url,
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id}),
+        )
+
+        # (b) el archivo corrupto se descartó -- no quedó como adjunto
+        self.assertEqual(
+            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
+        )
+
+        # (c) el ticket NO quedó huérfano -- se sincronizó con GitHub
+        ticket.refresh_from_db()
+        self.assertTrue(ticket.sincronizado_github)
+        self.assertEqual(ticket.github_issue_number, 81)
+        self.assertEqual(ticket.error_sincronizacion, "")
+
+        # el detalle es 200 y no muestra el banner de "sincronización
+        # pendiente" (observable visible, mismo criterio que el journey).
+        detalle_response = self.client.get(
+            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
+        )
+        self.assertEqual(detalle_response.status_code, 200)
+        self.assertNotContains(
+            detalle_response, "estamos procesando la sincronización"
+        )
 
     @patch("apps.feedback.github_client.requests.post")
     def test_flujo_completo_navegacion_lista_y_detalle_con_imagen(
