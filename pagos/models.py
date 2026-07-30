@@ -121,6 +121,23 @@ class Suscripcion(models.Model):
             return False
         return (timezone.localdate() - self.fecha_proximo_pago).days >= 5
 
+    @property
+    def meses_atraso(self):
+        """Meses completos de atraso respecto a fecha_proximo_pago. 0 si esta
+        al dia, sin fecha aun, o el pago no ha vencido. Sirve para sugerir
+        cuantos meses pagar de una vez en el checkout (issue: clientes que se
+        atrasan mas de un mes solo pagaban 1 y quedaban atrasados igual,
+        porque el sistema no distinguia "vencido hoy" de "vencido hace 2
+        meses")."""
+        hoy = timezone.localdate()
+        if not self.fecha_proximo_pago or self.fecha_proximo_pago >= hoy:
+            return 0
+        return (
+            (hoy.year - self.fecha_proximo_pago.year) * 12
+            + (hoy.month - self.fecha_proximo_pago.month)
+            + 1
+        )
+
 
 class Pago(models.Model):
     ESTADO_CHOICES = [
