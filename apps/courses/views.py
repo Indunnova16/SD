@@ -2996,6 +2996,11 @@ def export_schedule_attendance_pdf(request, schedule_id):
         "total_presentes": summary["total_presentes"],
         "total_ausentes": summary["total_ausentes"],
         "porcentaje_asistencia": summary["porcentaje_asistencia"],
+        "calificacion_promedio": summary["calificacion_promedio"],
+        # Fecha ESTABLE de la programación -- a diferencia de `generated_at`
+        # (que cambia en cada descarga), esta no cambia entre descargas del
+        # mismo `schedule` (SD#73, punto 2 del rebote).
+        "schedule_date": schedule.suggested_end_date or schedule.created_at.date(),
         "generated_at": timezone.now(),
         "request_user": request.user,
         "pdf_instructor": pdf_instructor,
