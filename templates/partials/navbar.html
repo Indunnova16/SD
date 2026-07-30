@@ -1,6 +1,27 @@
 {% load static %}
 <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40"
         x-data="{ mobileMenuOpen: false }">
+    {% if alerta_pago_vencido %}
+        <!-- Banner de aviso de pago vencido (5+ dias) -- separado del link
+             "Portal de Pagos" de mas abajo (ese sigue visible desde el dia 1
+             del vencimiento; este banner es la escalada visual desde el
+             dia 5, issue #90). -->
+        <div class="alert alert-warning rounded-none justify-center gap-2 py-2 text-sm"
+             role="alert">
+            <svg class="w-5 h-5 flex-shrink-0"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24"
+                 aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            <span>
+                El pago de la suscripción lleva <strong>5 o más días vencido</strong>.
+                <a href="{% url 'pagos:portal' %}" class="link link-primary font-semibold">Ir al Portal de Pagos</a>
+                para regularizar y evitar la suspensión del servicio.
+            </span>
+        </div>
+    {% endif %}
     <nav class="navbar max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
          role="navigation"
          aria-label="Navegacion principal">
