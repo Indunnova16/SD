@@ -91,9 +91,13 @@ def assessment_detail(request, assessment_id):
         assessment=assessment,
     ).order_by("-started_at")
 
-    # Check if can start new attempt
-    can_start = True
-    if assessment.max_attempts > 0:
+    # Check if can start new attempt (issue SD#84, hallazgo adicional F2):
+    # una evaluación sin preguntas nunca debe ofrecer el botón "Iniciar
+    # Evaluación" como activo, aunque el guard real que bloquea la creación
+    # del intento vive en start_attempt/AssessmentService.
+    has_questions = assessment.questions.exists()
+    can_start = has_questions
+    if can_start and assessment.max_attempts > 0:
         if user_attempts.count() >= assessment.max_attempts:
             can_start = False
 
@@ -104,6 +108,7 @@ def assessment_detail(request, assessment_id):
         "assessment": assessment,
         "user_attempts": user_attempts,
         "can_start": can_start,
+        "has_questions": has_questions,
         "in_progress": in_progress,
         "best_attempt": user_attempts.filter(status=AssessmentAttempt.Status.GRADED)
         .order_by("-score")
@@ -114,51 +119,43 @@ def assessment_detail(request, assessment_id):
 
 @login_required
 def start_attempt(request, assessment_id):
-    """Start a new assessment attempt."""
+    """Start a new assessment attempt.
+
+    Delega en `AssessmentService.start_attempt()` (issue SD#84): el service
+    ya implementa TODOS los checks correctos vía `can_start_attempt()`
+    (publicado, tiene preguntas, sin intento en progreso, máximo de
+    intentos), incluyendo el guard `questions.count()==0` -> "La evaluación
+    no tiene preguntas" que antes NO se ejecutaba porque este view
+    reimplementaba sus propios checks (incompletos) en vez de llamar al
+    service.
+    """
     assessment = get_object_or_404(
         Assessment,
         pk=assessment_id,
         status=Assessment.Status.PUBLISHED,
     )
 
-    # Check max attempts
-    if assessment.max_attempts > 0:
-        existing_count = AssessmentAttempt.objects.filter(
+    try:
+        attempt = AssessmentService.start_attempt(
             user=request.user,
             assessment=assessment,
-        ).count()
-
-        if existing_count >= assessment.max_attempts:
-            messages.error(request, "Has alcanzado el número máximo de intentos.")
-            return redirect("assessments:detail", assessment_id=assessment_id)
-
-    # Check for existing in-progress attempt
-    in_progress = AssessmentAttempt.objects.filter(
-        user=request.user,
-        assessment=assessment,
-        status=AssessmentAttempt.Status.IN_PROGRESS,
-    ).first()
-
-    if in_progress:
-        return redirect("assessments:take", attempt_id=in_progress.id)
-
-    # Calculate attempt number
-    attempt_number = (
-        AssessmentAttempt.objects.filter(
-            user=request.user,
-            assessment=assessment,
-        ).count()
-        + 1
-    )
-
-    # Create new attempt
-    attempt = AssessmentAttempt.objects.create(
-        user=request.user,
-        assessment=assessment,
-        attempt_number=attempt_number,
-        ip_address=request.META.get("REMOTE_ADDR", ""),
-        user_agent=request.headers.get("user-agent", ""),
-    )
+            ip_address=request.META.get("REMOTE_ADDR", ""),
+            user_agent=request.headers.get("user-agent", ""),
+        )
+    except ValueError as exc:
+        reason = str(exc)
+        if reason == "Ya tienes un intento en progreso":
+            # Mismo comportamiento previo: continuar el intento existente
+            # en vez de mostrar un error.
+            in_progress = AssessmentAttempt.objects.filter(
+                user=request.user,
+                assessment=assessment,
+                status=AssessmentAttempt.Status.IN_PROGRESS,
+            ).first()
+            if in_progress:
+                return redirect("assessments:take", attempt_id=in_progress.id)
+        messages.error(request, reason)
+        return redirect("assessments:detail", assessment_id=assessment_id)
 
     return redirect("assessments:take", attempt_id=attempt.id)
 
