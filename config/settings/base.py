@@ -67,6 +67,7 @@ LOCAL_APPS = [
     "apps.occupational_profiles",
     "apps.inspections",
     "apps.feedback",
+    "pagos",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -381,4 +382,33 @@ FEEDBACK_MAX_ATTACHMENTS = config("FEEDBACK_MAX_ATTACHMENTS", default=10, cast=i
 # subirlo más no serviría.
 FEEDBACK_MAX_ATTACHMENT_BYTES = config(
     "FEEDBACK_MAX_ATTACHMENT_BYTES", default=30 * 1024 * 1024, cast=int
+)
+
+# Portal de pagos (apps pagos) -- WOMPI + Alegra, issue #85 sub-item A5.
+# CRITICO: TODAS las config() de este bloque llevan default seguro
+# (default=""/0/True) -- Sprint B (los 6 GCP Secrets reales de WOMPI/Alegra)
+# esta bloqueado hoy, y este sub-item se deploya ANTES de que existan. Sin
+# default, UndefinedValueError tumbaria el arranque de TODO el repo (no solo
+# /pagos/) apenas Django intente importar settings.
+WOMPI_PUBLIC_KEY = config("WOMPI_PUBLIC_KEY", default="")
+WOMPI_PRIVATE_KEY = config("WOMPI_PRIVATE_KEY", default="")
+WOMPI_EVENTS_KEY = config("WOMPI_EVENTS_KEY", default="")
+WOMPI_INTEGRITY_KEY = config("WOMPI_INTEGRITY_KEY", default="")
+WOMPI_SANDBOX = config("WOMPI_SANDBOX", default=True, cast=bool)
+WOMPI_REFERENCE_PREFIX = config("WOMPI_REFERENCE_PREFIX", default="SD")
+
+ALEGRA_EMAIL = config("ALEGRA_EMAIL", default="")
+ALEGRA_API_TOKEN = config("ALEGRA_API_TOKEN", default="")
+ALEGRA_API_URL = config("ALEGRA_API_URL", default="https://api.alegra.com/api/v1")
+ALEGRA_NUMBER_TEMPLATE_ID = config("ALEGRA_NUMBER_TEMPLATE_ID", default="")
+ALEGRA_ITEM_ID = config("ALEGRA_ITEM_ID", default="")
+ALEGRA_BANK_ACCOUNT_ID = config("ALEGRA_BANK_ACCOUNT_ID", default="")
+
+# Plan de servicio -- valores placeholder seguros. El precio REAL de la
+# propuesta comercial se provisiona en Sprint B1 (bloqueado, HITL: escribe
+# BD prod). NO usar este default para crear el PlanServicio en produccion.
+PAGOS_PLAN_NAME = config("PAGOS_PLAN_NAME", default="Plan SaaS")
+PAGOS_PLAN_PRICE = config("PAGOS_PLAN_PRICE", default=150000, cast=int)
+PAGOS_PLAN_DESCRIPTION = config(
+    "PAGOS_PLAN_DESCRIPTION", default="Plataforma SaaS + Hosting + Soporte"
 )
