@@ -18,6 +18,9 @@
                     <a href="{% url 'assessments:take' in_progress.id %}"
                        class="btn btn-warning btn-block mb-2">Continuar Intento</a>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Tienes un intento en progreso</p>
+                {% elif not has_questions %}
+                    <button class="btn btn-disabled btn-block" disabled>Sin Preguntas Disponibles</button>
+                    <p class="text-sm text-error mt-2">Esta evaluación no tiene preguntas todavía.</p>
                 {% elif can_start %}
                     <a href="{% url 'assessments:start' assessment.id %}"
                        class="btn btn-primary btn-block">Iniciar Evaluación</a>

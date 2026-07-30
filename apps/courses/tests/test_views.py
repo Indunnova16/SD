@@ -8,7 +8,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
-from apps.assessments.models import Assessment
+from apps.assessments.models import Assessment, Question
 from apps.courses.models import Category, Course, Lesson, Module
 
 
@@ -80,6 +80,18 @@ class BuilderEditAssessmentViewTests(TestCase):
             status="draft",
             course=self.course,
             created_by=self.creator,
+        )
+        # Issue SD#84: publicar (status="published") ahora requiere >=1
+        # Question real (ver AssessmentEditForm.clean_status). Este quiz
+        # SÍ tiene contenido -- las pruebas de esta clase ejercitan la
+        # edición de propiedades, no el guard de "sin preguntas" (para eso
+        # ver BuilderEditAssessmentPublishGuardIssue84Tests más abajo).
+        Question.objects.create(
+            assessment=self.assessment,
+            question_type="single_choice",
+            text="Pregunta inicial",
+            points=1,
+            order=0,
         )
 
         self.url = reverse(
@@ -195,6 +207,118 @@ class BuilderEditAssessmentViewTests(TestCase):
         )
         self.assessment.refresh_from_db()
         self.assertEqual(self.assessment.created_by_id, original_creator_id)
+
+
+class BuilderEditAssessmentPublishGuardIssue84Tests(TestCase):
+    """Issue SD#84 — punto 2 del fix (guard de creación/publicación).
+
+    Root cause: `builder_edit_assessment` (via `AssessmentEditForm`) es el
+    endpoint real de "publicar" una evaluación desde el builder (el campo
+    `status` es editable ahí). Antes de este fix, nada impedía guardar
+    status='published' sobre una evaluación con 0 preguntas -- exactamente
+    el estado en el que quedó el caso real de prod (assessment_id=28,
+    'Evaluacion seguridad vial', confirmado por F2 contra BD prod), que
+    luego permitía intentos con resultado 0/0.
+    """
+
+    def setUp(self):
+        self.client = Client()
+
+        self.staff = User.objects.create_user(
+            email="staff_sd84@test.com",
+            password="testpass123",
+            first_name="Staff",
+            last_name="SD84",
+            document_number="84000001",
+            job_position="Admin",
+            job_profile=None,
+            hire_date=date(2024, 1, 1),
+            is_staff=True,
+            rol=User.Rol.ADMINISTRADOR,
+        )
+        self.category = Category.objects.create(
+            name="Cat SD84",
+            slug="cat-sd84",
+            description="cat",
+            color="#00AACC",
+        )
+        self.course = Course.objects.create(
+            code="COURSE-SD84-1",
+            title="Curso SD84",
+            description="desc",
+            objectives="obj",
+            course_type=Course.Type.MANDATORY,
+            status=Course.Status.DRAFT,
+            category=self.category,
+            created_by=self.staff,
+        )
+        # Mirrors the real broken prod row (assessment_id=28): draft,
+        # 0 questions, about to be (incorrectly) published.
+        self.assessment_no_questions = Assessment.objects.create(
+            title="Evaluacion sin preguntas SD84",
+            description="",
+            assessment_type="quiz",
+            passing_score=80,
+            max_attempts=0,
+            status="draft",
+            course=self.course,
+            created_by=self.staff,
+        )
+        self.url = reverse(
+            "courses:builder_edit_assessment",
+            kwargs={"course_id": self.course.id, "assessment_id": self.assessment_no_questions.id},
+        )
+        self.client.force_login(self.staff)
+
+    def _post_status(self, status):
+        return self.client.post(
+            self.url,
+            data={
+                "title": self.assessment_no_questions.title,
+                "description": "",
+                "assessment_type": "quiz",
+                "passing_score": 80,
+                "time_limit": "",
+                "max_attempts": 0,
+                "status": status,
+            },
+        )
+
+    def test_cannot_publish_assessment_with_zero_questions(self):
+        """EDGE CASE (SD#84): intentar publicar (status='published') una
+        evaluación con 0 preguntas debe rechazarse (400) y la evaluación
+        debe permanecer en 'draft' -- NO debe repetirse el caso
+        assessment_id=28."""
+        resp = self._post_status("published")
+        self.assertEqual(resp.status_code, 400)
+        self.assessment_no_questions.refresh_from_db()
+        self.assertEqual(self.assessment_no_questions.status, "draft")
+        self.assertContains(
+            resp, "no tiene preguntas todavía", status_code=400
+        )
+
+    def test_can_still_save_as_draft_with_zero_questions(self):
+        """Guardar explícitamente como 'draft' (sin preguntas) sigue
+        funcionando -- el guard solo bloquea 'published'."""
+        resp = self._post_status("draft")
+        self.assertEqual(resp.status_code, 200)
+        self.assessment_no_questions.refresh_from_db()
+        self.assertEqual(self.assessment_no_questions.status, "draft")
+
+    def test_can_publish_once_it_has_at_least_one_question(self):
+        """HAPPY PATH: agregar 1 pregunta real habilita la publicación
+        normalmente -- el guard no bloquea el caso correcto."""
+        Question.objects.create(
+            assessment=self.assessment_no_questions,
+            question_type="single_choice",
+            text="Pregunta real",
+            points=1,
+            order=0,
+        )
+        resp = self._post_status("published")
+        self.assertEqual(resp.status_code, 200)
+        self.assessment_no_questions.refresh_from_db()
+        self.assertEqual(self.assessment_no_questions.status, "published")
 
 
 class BuilderAddAttendanceLessonViewTests(TestCase):
