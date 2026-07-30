@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Historial de Pagos{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Historial de Pagos</h2>
+        <a href="{% url 'pagos:portal' %}" class="btn btn-primary btn-sm">Volver al portal</a>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Plan</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Transaccion WOMPI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for pago in pagos %}
+                        <tr>
+                            <td>{{ pago.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>{{ pago.suscripcion.plan.nombre }}</td>
+                            <td>${{ pago.monto|floatformat:0|intcomma }}</td>
+                            <td>
+                                {% if pago.estado == 'APROBADO' %}
+                                <span class="badge badge-success badge-sm">Aprobado</span>
+                                {% elif pago.estado == 'PENDIENTE' %}
+                                <span class="badge badge-warning badge-sm">Pendiente</span>
+                                {% elif pago.estado == 'RECHAZADO' %}
+                                <span class="badge badge-error badge-sm">Rechazado</span>
+                                {% else %}
+                                <span class="badge badge-ghost badge-sm">{{ pago.estado }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-xs opacity-50">{{ pago.wompi_transaction_id|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center opacity-50 py-4">No hay pagos registrados</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <div class="flex justify-center mt-6">
+        <div class="join">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">Anterior</a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+            <a href="?page={{ num }}" class="join-item btn btn-sm {% if page_obj.number == num %}btn-active{% endif %}">{{ num }}</a>
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">Siguiente</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

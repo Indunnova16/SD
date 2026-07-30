@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Datos de Facturacion{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6">Datos de Facturacion</h2>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <p class="opacity-70 mb-6">
+                Complete los datos de facturacion para generar su factura electronica automaticamente al realizar el pago.
+            </p>
+
+            <form method="post" id="facturacionForm">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Tipo de persona <span class="text-error">*</span></span></label>
+                        <select name="tipo_persona" id="tipo_persona" class="select select-bordered" required>
+                            <option value="">-- Seleccione --</option>
+                            <option value="JURIDICA" {% if d.tipo_persona == 'JURIDICA' %}selected{% endif %}>Persona Juridica</option>
+                            <option value="NATURAL" {% if d.tipo_persona == 'NATURAL' %}selected{% endif %}>Persona Natural</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Regimen <span class="text-error">*</span></span></label>
+                        <select name="regimen" id="regimen" class="select select-bordered" required>
+                            <option value="COMMON_REGIME" {% if d.regimen == 'COMMON_REGIME' %}selected{% endif %}>Regimen Comun</option>
+                            <option value="SIMPLIFIED_REGIME" {% if d.regimen == 'SIMPLIFIED_REGIME' %}selected{% endif %}>Regimen Simplificado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-control mt-4">
+                    <label class="label"><span class="label-text">Razon Social / Nombre Completo <span class="text-error">*</span></span></label>
+                    <input type="text" name="razon_social" id="razon_social" class="input input-bordered"
+                           value="{{ d.razon_social }}" required maxlength="200">
+                </div>
+
+                <div class="grid grid-cols-4 md:grid-cols-12 gap-4 mt-4">
+                    <div class="col-span-4 md:col-span-4 form-control">
+                        <label class="label"><span class="label-text">Tipo ID <span class="text-error">*</span></span></label>
+                        <select name="tipo_identificacion" id="tipo_identificacion" class="select select-bordered" required>
+                            <option value="NIT" {% if d.tipo_identificacion == 'NIT' %}selected{% endif %}>NIT</option>
+                            <option value="CC" {% if d.tipo_identificacion == 'CC' %}selected{% endif %}>Cedula de Ciudadania</option>
+                            <option value="CE" {% if d.tipo_identificacion == 'CE' %}selected{% endif %}>Cedula de Extranjeria</option>
+                        </select>
+                    </div>
+                    <div class="col-span-4 md:col-span-5 form-control">
+                        <label class="label"><span class="label-text">Numero <span class="text-error">*</span></span></label>
+                        <input type="text" name="numero_identificacion" id="numero_identificacion" class="input input-bordered"
+                               value="{{ d.numero_identificacion }}" required maxlength="20">
+                    </div>
+                    <div class="col-span-4 md:col-span-3 form-control" id="dv_group">
+                        <label class="label"><span class="label-text">DV</span></label>
+                        <input type="text" name="dv" id="dv" class="input input-bordered"
+                               value="{{ d.dv }}" maxlength="1">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Email de Facturacion <span class="text-error">*</span></span></label>
+                        <input type="email" name="email" id="email" class="input input-bordered"
+                               value="{{ d.email }}" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Telefono <span class="text-error">*</span></span></label>
+                        <input type="text" name="telefono" id="telefono" class="input input-bordered"
+                               value="{{ d.telefono }}" required maxlength="20">
+                    </div>
+                </div>
+
+                <div class="form-control mt-4">
+                    <label class="label"><span class="label-text">Direccion <span class="text-error">*</span></span></label>
+                    <input type="text" name="direccion" id="direccion" class="input input-bordered"
+                           value="{{ d.direccion }}" required maxlength="200">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Departamento <span class="text-error">*</span></span></label>
+                        <select name="departamento" id="departamento" class="select select-bordered" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Ciudad <span class="text-error">*</span></span></label>
+                        <select name="ciudad" id="ciudad" class="select select-bordered" required>
+                            <option value="">-- Seleccione departamento --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <a href="{% url 'pagos:portal' %}" class="btn btn-ghost">Volver</a>
+                    <button type="submit" class="btn btn-primary">Guardar y Continuar al Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tipoPersona = document.getElementById('tipo_persona');
+    const tipoId = document.getElementById('tipo_identificacion');
+    const dvGroup = document.getElementById('dv_group');
+
+    function syncTipoId() {
+        if (tipoPersona.value === 'JURIDICA') {
+            tipoId.value = 'NIT';
+            tipoId.disabled = true;
+        } else {
+            tipoId.disabled = false;
+        }
+        dvGroup.style.display = tipoId.value === 'NIT' ? '' : 'none';
+    }
+    tipoPersona.addEventListener('change', syncTipoId);
+    tipoId.addEventListener('change', function() {
+        dvGroup.style.display = this.value === 'NIT' ? '' : 'none';
+    });
+    syncTipoId();
+
+    document.getElementById('facturacionForm').addEventListener('submit', function() {
+        tipoId.disabled = false;
+    });
+
+    const API_BASE = 'https://api-colombia.com/api/v1';
+    const deptoSelect = document.getElementById('departamento');
+    const ciudadSelect = document.getElementById('ciudad');
+    const savedDepto = '{{ d.departamento|escapejs }}';
+    const savedCiudad = '{{ d.ciudad|escapejs }}';
+    let deptosMap = {};
+
+    async function cargarDepartamentos() {
+        try {
+            const resp = await fetch(API_BASE + '/Department');
+            const data = await resp.json();
+            data.sort((a, b) => a.name.localeCompare(b.name));
+            deptoSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+            data.forEach(function(item) {
+                deptosMap[item.name] = item.id;
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.textContent = item.name;
+                if (item.name === savedDepto) opt.selected = true;
+                deptoSelect.appendChild(opt);
+            });
+            if (savedDepto && deptosMap[savedDepto]) cargarCiudades(deptosMap[savedDepto]);
+        } catch (e) {
+            deptoSelect.innerHTML = '<option value="">Error cargando</option>';
+            const input = document.createElement('input');
+            input.type = 'text'; input.name = 'departamento'; input.id = 'departamento';
+            input.className = 'input input-bordered'; input.required = true;
+            input.value = savedDepto;
+            deptoSelect.replaceWith(input);
+        }
+    }
+
+    async function cargarCiudades(deptoId) {
+        ciudadSelect.innerHTML = '<option value="">Cargando...</option>';
+        try {
+            const resp = await fetch(API_BASE + '/Department/' + deptoId + '/cities');
+            const data = await resp.json();
+            data.sort((a, b) => a.name.localeCompare(b.name));
+            ciudadSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+            data.forEach(function(item) {
+                const opt = document.createElement('option');
+                opt.value = item.name;
+                opt.textContent = item.name;
+                if (item.name === savedCiudad) opt.selected = true;
+                ciudadSelect.appendChild(opt);
+            });
+        } catch (e) {
+            ciudadSelect.innerHTML = '<option value="">Error cargando</option>';
+            const input = document.createElement('input');
+            input.type = 'text'; input.name = 'ciudad'; input.id = 'ciudad';
+            input.className = 'input input-bordered'; input.required = true;
+            input.value = savedCiudad;
+            ciudadSelect.replaceWith(input);
+        }
+    }
+
+    deptoSelect.addEventListener('change', function() {
+        if (this.value && deptosMap[this.value]) {
+            cargarCiudades(deptosMap[this.value]);
+        } else {
+            ciudadSelect.innerHTML = '<option value="">-- Seleccione departamento --</option>';
+        }
+    });
+
+    cargarDepartamentos();
+</script>
+{% endblock %}

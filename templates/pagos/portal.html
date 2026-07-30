@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Portal de Pagos{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+    <h2 class="text-2xl font-bold flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+        Portal de Pagos
+    </h2>
+
+    {% if plan %}
+    <!-- Plan Card -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body text-center">
+            <h3 class="card-title justify-center text-lg">{{ plan.nombre }}</h3>
+            <p class="text-4xl font-bold text-primary my-4">${{ plan.precio|floatformat:0|intcomma }} <span class="text-sm font-normal opacity-60">COP/mes</span></p>
+            <p class="opacity-70">{{ plan.descripcion }}</p>
+            <div class="divider"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-left text-sm">
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Plataforma completa</div>
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Hosting Google Cloud</div>
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Backups diarios</div>
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Soporte WhatsApp</div>
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Actualizaciones mensuales</div>
+                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Soporte tecnico</div>
+            </div>
+
+            {% if suscripcion and not suscripcion.requiere_pago %}
+            <div class="alert alert-success mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Suscripcion activa</span>
+            </div>
+            {% else %}
+            {% if datos_facturacion %}
+            <!-- Billing data summary -->
+            <div class="alert alert-info text-left mt-4">
+                <div>
+                    <h4 class="font-bold text-sm mb-1">Datos de Facturacion</h4>
+                    <p class="text-sm"><strong>{{ datos_facturacion.razon_social }}</strong></p>
+                    <p class="text-sm">{{ datos_facturacion.get_tipo_identificacion_display }}: {{ datos_facturacion.numero_identificacion }}{% if datos_facturacion.dv %}-{{ datos_facturacion.dv }}{% endif %}</p>
+                    <p class="text-sm">{{ datos_facturacion.email }} | {{ datos_facturacion.telefono }}</p>
+                    <p class="text-sm">{{ datos_facturacion.direccion }}, {{ datos_facturacion.ciudad }} - {{ datos_facturacion.departamento }}</p>
+                    <a href="{% url 'pagos:facturacion' %}" class="btn btn-xs btn-outline mt-2">Editar datos</a>
+                </div>
+            </div>
+
+            <!-- WOMPI payment button -->
+            <div class="mt-4">
+                <form>
+                    <script
+                        src="https://checkout.wompi.co/widget.js"
+                        data-render="button"
+                        data-public-key="{{ wompi_public_key }}"
+                        data-currency="COP"
+                        data-amount-in-cents="{{ monto_centavos }}"
+                        data-reference="{{ wompi_reference }}"
+                        data-signature:integrity="{{ wompi_signature }}"
+                        data-redirect-url="{{ request.scheme }}://{{ request.get_host }}{% url 'pagos:portal' %}"
+                    ></script>
+                </form>
+                <p class="text-xs opacity-50 mt-2">Pago seguro procesado por WOMPI. Se generara factura electronica automaticamente.</p>
+            </div>
+            {% else %}
+            <!-- No billing data yet -->
+            <div class="mt-4">
+                <p class="opacity-70 mb-3">
+                    Antes de pagar, necesitamos sus datos de facturacion para generar la factura electronica DIAN.
+                </p>
+                <a href="{% url 'pagos:facturacion' %}" class="btn btn-primary btn-lg">
+                    Completar Datos de Facturacion
+                </a>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent payments -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="card-title text-base">Pagos Recientes</h3>
+                <a href="{% url 'pagos:historial' %}" class="btn btn-sm btn-ghost">Ver todos</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="table table-zebra">
+                    <thead>
+                        <tr><th>Fecha</th><th>Monto</th><th>Estado</th><th>Transaccion</th><th>Factura</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for pago in pagos_recientes %}
+                        <tr>
+                            <td>{{ pago.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>${{ pago.monto|floatformat:0|intcomma }}</td>
+                            <td>
+                                {% if pago.estado == 'APROBADO' %}
+                                <span class="badge badge-success badge-sm">Aprobado</span>
+                                {% elif pago.estado == 'PENDIENTE' %}
+                                <span class="badge badge-warning badge-sm">Pendiente</span>
+                                {% elif pago.estado == 'RECHAZADO' %}
+                                <span class="badge badge-error badge-sm">Rechazado</span>
+                                {% else %}
+                                <span class="badge badge-ghost badge-sm">{{ pago.estado }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-xs opacity-50">{{ pago.wompi_transaction_id|default:"-" }}</td>
+                            <td class="text-xs opacity-50">{{ pago.alegra_invoice_id|default:"-" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5" class="text-center opacity-50 py-4">No hay pagos registrados</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -147,6 +147,9 @@
                                     <li>
                                         <a href="{% url 'reports:dashboard' %}">📊 Reportes y Analytics</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'pagos:portal' %}">💳 Portal de Pagos</a>
+                                    </li>
                                 {% endif %}
                                 <li>
                                     <a href="{% url 'notifications:list' %}">🔔 Notificaciones</a>
@@ -309,6 +312,8 @@
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">⚙️ Parametrización</a>
                     <a href="{% url 'reports:dashboard' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📊 Reportes</a>
+                    <a href="{% url 'pagos:portal' %}"
+                       class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💳 Portal de Pagos</a>
                 {% endif %}
                 <a href="{% url 'notifications:list' %}"
                    class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones</a>
