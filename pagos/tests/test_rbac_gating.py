@@ -92,16 +92,20 @@ class RbacGatingHappyPathTests(TestCase):
         )
 
     def test_administrador_accede_al_portal(self):
-        resp = self.client.get(reverse('pagos:portal'))
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(reverse('pagos:portal'))
+        self.assertContains(response, 'Portal de Pagos')
 
     def test_administrador_accede_a_facturacion(self):
-        resp = self.client.get(reverse('pagos:facturacion'))
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(reverse('pagos:facturacion'))
+        # El <select name="tipo_identificacion"> se arma en el template desde
+        # las choices reales del modelo (DatosFacturacion.TIPO_IDENTIFICACION_CHOICES)
+        # -- assertContains sobre el HTML renderizado, no solo status 200.
+        self.assertContains(response, 'name="tipo_identificacion"')
+        self.assertContains(response, 'facturacionForm')
 
     def test_administrador_accede_a_historial(self):
-        resp = self.client.get(reverse('pagos:historial'))
-        self.assertEqual(resp.status_code, 200)
+        response = self.client.get(reverse('pagos:historial'))
+        self.assertContains(response, 'Historial de Pagos')
 
 
 class RbacGatingEjecutorBloqueadoTests(TestCase):

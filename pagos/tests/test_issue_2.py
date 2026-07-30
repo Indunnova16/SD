@@ -234,29 +234,26 @@ class PortalGateTemplateTests(TestCase):
         Suscripcion.objects.create(
             plan=self.plan, estado='ACTIVA', fecha_proximo_pago=futuro, datos_facturacion=self.datos,
         )
-        resp = self.client.get(reverse('pagos:portal'))
-        content = resp.content.decode()
-        self.assertIn('Suscripcion activa', content)
-        self.assertNotIn('checkout.wompi.co/widget.js', content)
+        response = self.client.get(reverse('pagos:portal'))
+        self.assertContains(response, 'Suscripcion activa')
+        self.assertNotContains(response, 'checkout.wompi.co/widget.js')
 
     def test_activa_vencida_muestra_boton_de_pago_de_nuevo(self):
         ayer = timezone.localdate() - timedelta(days=1)
         Suscripcion.objects.create(
             plan=self.plan, estado='ACTIVA', fecha_proximo_pago=ayer, datos_facturacion=self.datos,
         )
-        resp = self.client.get(reverse('pagos:portal'))
-        content = resp.content.decode()
-        self.assertNotIn('Suscripcion activa', content)
-        self.assertIn('checkout.wompi.co/widget.js', content)
+        response = self.client.get(reverse('pagos:portal'))
+        self.assertNotContains(response, 'Suscripcion activa')
+        self.assertContains(response, 'checkout.wompi.co/widget.js')
 
     def test_pendiente_muestra_boton_de_pago(self):
         Suscripcion.objects.create(
             plan=self.plan, estado='PENDIENTE', datos_facturacion=self.datos,
         )
-        resp = self.client.get(reverse('pagos:portal'))
-        content = resp.content.decode()
-        self.assertNotIn('Suscripcion activa', content)
-        self.assertIn('checkout.wompi.co/widget.js', content)
+        response = self.client.get(reverse('pagos:portal'))
+        self.assertNotContains(response, 'Suscripcion activa')
+        self.assertContains(response, 'checkout.wompi.co/widget.js')
 
 
 # ---------------------------------------------------------------------------
