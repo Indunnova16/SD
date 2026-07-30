@@ -96,6 +96,15 @@ class Suscripcion(models.Model):
             return False
         return timezone.localdate() >= self.fecha_proximo_pago
 
+    @property
+    def alerta_pago_vencido(self):
+        """True cuando el pago lleva 5+ dias vencido sin realizarse -- dispara
+        el banner de aviso al admin (mas permisivo que requiere_pago, que se
+        activa el mismo dia del vencimiento para habilitar el widget de pago)."""
+        if not self.requiere_pago or not self.fecha_proximo_pago:
+            return False
+        return (timezone.localdate() - self.fecha_proximo_pago).days >= 5
+
 
 class Pago(models.Model):
     ESTADO_CHOICES = [
