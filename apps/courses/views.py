@@ -1294,6 +1294,13 @@ def builder_add_lesson(request, course_id, module_id):
 
                 try:
                     with transaction.atomic():
+                        # Issue SD#84: se crea SIEMPRE en draft. Solo se
+                        # publica al final de este bloque si el parseo de
+                        # quiz_questions produjo >=1 Question real — nunca
+                        # incondicional, para no repetir el caso de
+                        # "Evaluacion seguridad vial" (assessment_id=28,
+                        # published con 0 preguntas, permitía intentos con
+                        # resultado 0/0).
                         assessment = Assessment.objects.create(
                             title=lesson.title,
                             assessment_type="quiz",
@@ -1302,7 +1309,7 @@ def builder_add_lesson(request, course_id, module_id):
                             course=course,
                             lesson=lesson,
                             created_by=request.user,
-                            status="published",
+                            status="draft",
                         )
 
                         # Parse inline quiz questions from JSON
@@ -1374,6 +1381,20 @@ def builder_add_lesson(request, course_id, module_id):
                                 # builder_add_question/builder_edit_question.
                                 question.metadata = {"match_pairs": match_pairs}
                                 question.save(update_fields=["metadata"])
+
+                        # Issue SD#84: solo publicar si el parseo produjo
+                        # >=1 Question real. Si quiz_questions vino vacío o
+                        # no parseó ninguna pregunta, el assessment queda en
+                        # draft y se avisa al usuario del builder.
+                        if assessment.questions.count() > 0:
+                            assessment.status = "published"
+                            assessment.save(update_fields=["status"])
+                        else:
+                            messages.warning(
+                                request,
+                                "El quiz se guardó como borrador: no tiene preguntas "
+                                "todavía. Agrégalas antes de publicarlo.",
+                            )
                 except Exception as e:
                     import logging
 
@@ -1443,7 +1464,15 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                         f"Quiz edit - lesson_id={lesson.id}, quiz_time_limit='{quiz_time_limit}', has_assessment={assessment is not None}"
                     )
 
-                    # If quiz lesson has no assessment, create one
+                    # If quiz lesson has no assessment, create one.
+                    # Issue SD#84: SIEMPRE draft — este auto-create NO
+                    # parsea quiz_questions (las preguntas se agregan luego
+                    # vía builder_add_question/builder_edit_question), así
+                    # que publicarlo de una vez dejaría, otra vez, un
+                    # assessment published con 0 preguntas. La publicación
+                    # real la hace builder_edit_assessment (AssessmentEditForm,
+                    # que ahora valida >=1 pregunta antes de aceptar
+                    # status=published — ver AssessmentEditForm.clean()).
                     if not assessment:
                         from apps.assessments.models import Assessment
 
@@ -1456,7 +1485,7 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                                 course=course,
                                 lesson=lesson,
                                 created_by=request.user,
-                                status="published",
+                                status="draft",
                             )
                             logger.info(
                                 f"Created assessment {assessment.id} for quiz lesson {lesson.id}"
