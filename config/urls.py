@@ -70,6 +70,7 @@ urlpatterns = [
     path("reports/", include("apps.reports.urls")),
     path("gamification/", include("apps.gamification.urls")),
     path("feedback/", include("apps.feedback.urls")),
+    path("pagos/", include("pagos.urls", namespace="pagos")),
 ]
 
 # Debug toolbar (only in debug mode)
