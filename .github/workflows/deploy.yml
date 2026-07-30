@@ -62,8 +62,8 @@ jobs:
             --memory 1Gi --cpu 1 --min-instances 0 --max-instances 5 \
             --add-cloudsql-instances ${{ env.CLOUDSQL }} \
             --cpu-boost \
-            --set-env-vars "DJANGO_SETTINGS_MODULE=config.settings.cloudrun,DB_NAME=sd_lms,DB_USER=postgres,DB_HOST=/cloudsql/${{ env.CLOUDSQL }},GS_BUCKET_NAME=sd-lms-media,ALLOWED_HOSTS=*,CSRF_TRUSTED_ORIGINS=https://sd-lms-rvfp6uj2va-uc.a.run.app,AWS_REGION=us-east-1,REKOGNITION_COLLECTION_ID=sd-lms-employees,REKOGNITION_MATCH_THRESHOLD=90,GITHUB_FEEDBACK_REPO=Indunnova16/SD" \
-            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest,AWS_ACCESS_KEY_ID=sd-lms-aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=sd-lms-aws-secret-access-key:latest,GITHUB_FEEDBACK_TOKEN=arcopack-feedback-github-token:latest" \
+            --set-env-vars "DJANGO_SETTINGS_MODULE=config.settings.cloudrun,DB_NAME=sd_lms,DB_USER=postgres,DB_HOST=/cloudsql/${{ env.CLOUDSQL }},GS_BUCKET_NAME=sd-lms-media,ALLOWED_HOSTS=*,CSRF_TRUSTED_ORIGINS=https://sd-lms-rvfp6uj2va-uc.a.run.app,AWS_REGION=us-east-1,REKOGNITION_COLLECTION_ID=sd-lms-employees,REKOGNITION_MATCH_THRESHOLD=90,GITHUB_FEEDBACK_REPO=Indunnova16/SD,WOMPI_SANDBOX=False" \
+            --set-secrets "SECRET_KEY=sd-lms-secret-key:latest,DB_PASSWORD=sd-lms-db-password:latest,AWS_ACCESS_KEY_ID=sd-lms-aws-access-key-id:latest,AWS_SECRET_ACCESS_KEY=sd-lms-aws-secret-access-key:latest,GITHUB_FEEDBACK_TOKEN=arcopack-feedback-github-token:latest,WOMPI_PUBLIC_KEY=sd-lms-wompi-public-key:latest,WOMPI_PRIVATE_KEY=sd-lms-wompi-private-key:latest,WOMPI_EVENTS_KEY=sd-lms-wompi-events-key:latest,WOMPI_INTEGRITY_KEY=sd-lms-wompi-integrity-key:latest,ALEGRA_EMAIL=sd-lms-alegra-email:latest,ALEGRA_API_TOKEN=sd-lms-alegra-api-token:latest" \
             $TRAFFIC_FLAGS
 
       - name: Run Migrations
