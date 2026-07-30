@@ -385,6 +385,25 @@ FEEDBACK_MAX_ATTACHMENT_BYTES = config(
     "FEEDBACK_MAX_ATTACHMENT_BYTES", default=30 * 1024 * 1024, cast=int
 )
 
+# Transcripción IA de adjuntos del portal de feedback (issue #71 ronda 3 --
+# bounce=2, diferida 2 veces sin preguntarle al cliente). Usa el SDK
+# `google-genai` con GEMINI_API_KEY (API key directa, NO Vertex/ADC) -- mismo
+# patrón que las apps hermanas del portal de tickets (Piloto, Arcopack,
+# FormasFuturo) que implementan esta MISMA pieza, ver memoria
+# `feedback_portal_cliente_patron_arcopack` (más específica que el estándar
+# general `indunnova_llm_gemini_vertex` para este módulo puntual). Reusa el
+# secret COMPARTIDO `arcopack-feedback-gemini-key` (Secret Manager, proyecto
+# appsindunnova), igual que GITHUB_FEEDBACK_TOKEN ya reusa
+# `arcopack-feedback-github-token`. Default vacío/seguro: el arranque de
+# Django nunca falla si el secret todavía no está montado en el workflow de
+# deploy (pendiente para F4 -- ver output de F3, `pendiente_workflow_secret`).
+GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
+GEMINI_MODEL = config("GEMINI_MODEL", default="gemini-2.5-flash")
+GEMINI_TRANSCRIBE_ENABLED = config("GEMINI_TRANSCRIBE_ENABLED", default=True, cast=bool)
+GEMINI_TRANSCRIBE_MAX_BYTES = config(
+    "GEMINI_TRANSCRIBE_MAX_BYTES", default=20 * 1024 * 1024, cast=int
+)
+
 # Portal de pagos (apps pagos) -- WOMPI + Alegra, issue #85 sub-item A5.
 # CRITICO: TODAS las config() de este bloque llevan default seguro
 # (default=""/0/True) -- Sprint B (los 6 GCP Secrets reales de WOMPI/Alegra)

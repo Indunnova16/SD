@@ -112,6 +112,17 @@ class FeedbackAttachment(models.Model):
     nombre_original = models.CharField(
         _("Nombre original del archivo"), max_length=255, blank=True
     )
+    transcripcion_ia = models.TextField(
+        _("Transcripción IA"),
+        blank=True,
+        default="",
+        help_text=_(
+            "Texto generado por Gemini (apps.feedback.gemini_client) a partir "
+            "del contenido del adjunto — issue #71 ronda 3. Vacío si "
+            "GEMINI_API_KEY no está configurado o la transcripción falló "
+            "(best-effort, nunca bloquea la creación del ticket)."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
