@@ -20,27 +20,34 @@ from . import alegra
 logger = logging.getLogger(__name__)
 
 
-def _avanzar_fecha_proximo_pago(suscripcion):
-    """Avanza fecha_proximo_pago un periodo (1 mes) tras un pago aprobado, y
-    marca la suscripcion como ACTIVA. Si ya habia fecha_proximo_pago vigente
-    (pago anticipado antes de vencer), se avanza desde esa fecha para no
-    perder dias ya pagados; si no hay fecha previa o ya vencio, se avanza
-    desde hoy. Mismo patron que ObrajeCRM/apps/pagos/views.py."""
+def _sumar_meses(fecha, n_meses):
+    y, m, d = fecha.year, fecha.month, fecha.day
+    m += n_meses
+    y += (m - 1) // 12
+    m = (m - 1) % 12 + 1
+    dia = min(d, monthrange(y, m)[1])
+    return date(y, m, dia)
+
+
+def _avanzar_fecha_proximo_pago(pago):
+    """Avanza fecha_proximo_pago `pago.n_meses` periodos tras un pago
+    aprobado, y marca la suscripcion como ACTIVA.
+
+    Avanza SIEMPRE desde la fecha_proximo_pago anterior (vigente o vencida),
+    nunca desde "hoy" -- si se reseteara a hoy cuando esta vencida, un cliente
+    atrasado 2 meses que paga 1 mes quedaria "al dia" artificialmente: el mes
+    que debia desaparece sin quedar registrado. Al avanzar desde la fecha
+    vencida real, si el pago no alcanza a cubrir todo el atraso la suscripcion
+    sigue en requiere_pago=True (correcto: todavia debe meses)."""
+    suscripcion = pago.suscripcion
     hoy = timezone.localdate()
     base = suscripcion.fecha_proximo_pago or hoy
-    if base < hoy:
-        base = hoy
-    y, m, d = base.year, base.month, base.day
-    m += 1
-    if m > 12:
-        m = 1
-        y += 1
-    dia = min(d, monthrange(y, m)[1])
     suscripcion.estado = 'ACTIVA'
-    suscripcion.fecha_proximo_pago = date(y, m, dia)
+    suscripcion.fecha_proximo_pago = _sumar_meses(base, pago.n_meses)
     suscripcion.save(update_fields=['estado', 'fecha_proximo_pago', 'updated_at'])
     logger.info(
-        f'Suscripcion {suscripcion.id}: proximo pago avanzado a {suscripcion.fecha_proximo_pago}'
+        f'Suscripcion {suscripcion.id}: proximo pago avanzado a '
+        f'{suscripcion.fecha_proximo_pago} ({pago.n_meses} mes(es) cubiertos por pago {pago.id})'
     )
 
 
