@@ -615,6 +615,25 @@ class AssessmentEditForm(forms.ModelForm):
             raise forms.ValidationError(_("No puede ser negativo."))
         return value
 
+    def clean_status(self):
+        """Issue SD#84: no permitir publicar una evaluación sin preguntas.
+
+        Este es el punto de guardado explícito "Publicar quiz" del builder
+        (builder_edit_assessment). Sin este guard, un assessment con 0
+        preguntas quedaba published (ver assessment_id=28 "Evaluacion
+        seguridad vial") y permitía intentos con resultado 0/0.
+        """
+        value = self.cleaned_data.get("status")
+        if value == Assessment.Status.PUBLISHED and self.instance.pk:
+            if self.instance.questions.count() == 0:
+                raise forms.ValidationError(
+                    _(
+                        "No se puede publicar: esta evaluación no tiene preguntas "
+                        "todavía. Agrega al menos una pregunta antes de publicarla."
+                    )
+                )
+        return value
+
 
 class AttendanceSignatureForm(forms.ModelForm):
     """Form for capturing attendance signatures."""
