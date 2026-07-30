@@ -1270,6 +1270,17 @@ class CourseSchedule(models.Model):
         ),
     )
     notes = models.TextField(_("Observaciones"), blank=True, default="")
+    activity_type = models.CharField(
+        _("Tipo de actividad"),
+        max_length=20,
+        choices=Course.ActivityType.choices,
+        blank=True,
+        default="",
+        help_text=_(
+            "Tipo de actividad de ESTA convocatoria (reusa las opciones del "
+            "curso). Opcional -- no hereda automáticamente el del curso."
+        ),
+    )
     created_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,
