@@ -86,6 +86,38 @@ class CheckoutOpcionesPagoTests(TestCase):
         self.assertEqual(opciones[1]['reference'], r.context['wompi_reference'])
         self.assertEqual(opciones[1]['monto_centavos'], r.context['monto_centavos'])
 
+    # -----------------------------------------------------------------
+    # (#328) el <select>/banner se arman en el TEMPLATE desde el contexto
+    # de la vista -- un test que solo mira r.context puede pasar con el
+    # HTML mal armado (caso NOVAPCR). Estos assertean contra lo RENDERIZADO.
+    # -----------------------------------------------------------------
+    def test_al_dia_render_no_muestra_banner_de_atraso_pero_si_selector(self):
+        Suscripcion.objects.create(
+            plan=self.plan, estado='PENDIENTE', datos_facturacion=self.datos,
+        )
+        r = self.client.get(reverse('pagos:portal'))
+        self.assertNotContains(r, 'meses de suscripcion')
+        self.assertContains(r, 'Cuantos meses queres pagar?')
+        self.assertContains(r, 'id="pago-meses-select"')
+        self.assertContains(r, '1 mes -- $10000000')
+
+    def test_atrasado_render_muestra_banner_y_opcion_de_3_meses(self):
+        hoy = timezone.localdate()
+        y, m = hoy.year, hoy.month - 2
+        while m <= 0:
+            m += 12
+            y -= 1
+        vencida_hace_3_meses = date(y, m, 1)
+        Suscripcion.objects.create(
+            plan=self.plan, estado='ACTIVA', fecha_proximo_pago=vencida_hace_3_meses,
+            datos_facturacion=self.datos,
+        )
+        r = self.client.get(reverse('pagos:portal'))
+        self.assertContains(r, 'Debes 3 meses de suscripcion')
+        self.assertContains(r, '3 meses -- $30000000')
+        # opcion sugerida (N=3) debe venir seleccionada en el <select>
+        self.assertContains(r, f'value="3" selected')
+
     def test_opciones_tienen_referencias_unicas_entre_si(self):
         Suscripcion.objects.create(
             plan=self.plan, estado='PENDIENTE', datos_facturacion=self.datos,
@@ -169,6 +201,15 @@ class GridMesesTests(TestCase):
         self.assertTrue(all(m['pagado'] for m in grid))
         self.assertTrue(grid[-1]['es_actual'])
 
+        # (#328) render real: la grilla completa debe verse en el HTML, no
+        # solo en el contexto -- 6 badges verdes, ninguno rojo (nada
+        # pendiente al dia). Sin Pago creados en este test, badge-error solo
+        # puede venir de la grilla (la tabla de pagos recientes esta vacia).
+        self.assertContains(r, 'Estado por mes')
+        body = r.content.decode()
+        self.assertEqual(body.count('badge-success'), 6)
+        self.assertNotIn('badge-error', body)
+
     def test_atrasado_2_meses_los_ultimos_2_quedan_pendientes(self):
         # fecha_proximo_pago = hace 2 meses (calendario): el mes que era el
         # "proximo pago" en si NO cuenta como pagado (es el que se debia) --
@@ -187,6 +228,12 @@ class GridMesesTests(TestCase):
         self.assertFalse(grid[-2]['pagado'])
         self.assertFalse(grid[-3]['pagado'])
         self.assertTrue(grid[-4]['pagado'])
+
+        # (#328) render real: mezcla de badges rojos (pendiente) y verdes
+        # (pagado) visible en el HTML servido.
+        body = r.content.decode()
+        self.assertIn('badge-error', body)
+        self.assertIn('badge-success', body)
 
     def test_sin_suscripcion_no_rompe(self):
         r = self.client.get(reverse('pagos:portal'))
