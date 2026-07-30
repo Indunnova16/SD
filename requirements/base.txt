@@ -84,6 +84,10 @@ django-htmx>=1.17.3
 
 # HTTP client (portal de feedback -> GitHub REST API)
 requests>=2.31,<3
+# Transcripcion IA de adjuntos del portal de feedback (issue #71 ronda 3) --
+# SDK oficial de Gemini via API key (GEMINI_API_KEY), NO Vertex/ADC. Mismo pin
+# de spec suelto que el resto de este archivo; Arcopack fija ==2.6.0.
+google-genai>=2.6,<3
 
 # Timezone
 pytz>=2024.1
