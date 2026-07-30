@@ -18,7 +18,7 @@ puede rebotar:
     (comentario del cliente, que manda sobre el body).
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
@@ -321,6 +321,23 @@ class ConvocarTests(TestCase):
         self.assertIn("31/12/2026", notif.body)
         # Debe leerse como sugerencia, no como bloqueo.
         self.assertIn("no se bloquea", notif.body)
+
+    def test_notifica_al_convocado_incluye_action_url_y_text(self):
+        """Punto 5 -- `notify_assignment` debe pasar `action_url`/`action_text`
+        a `NotificationService.create_notification` (que ya los soporta pero
+        no se estaban usando, wiring faltante confirmado por F2)."""
+        persona = _make_user()
+        schedule = _make_schedule(self.course, self.admin, name="Turno X")
+
+        CourseScheduleService.convocar(
+            schedule, {persona.id: ScheduleAssignment.Source.USER}
+        )
+
+        notif = Notification.objects.get(user=persona)
+        self.assertEqual(
+            notif.action_url, reverse("courses:detail", args=[self.course.id])
+        )
+        self.assertEqual(notif.action_text, "Ir al curso")
 
     def test_persona_ya_inscrita_reusa_enrollment_sin_resetear_progreso(self):
         """Entregable 18: no duplica, no borra avance, no re-expira."""
@@ -694,6 +711,34 @@ class ScheduleViewsTests(TestCase):
 
 
 # =============================================================================
+# Punto 6 -- Navbar cablea el badge de no-leídas (notifications:unread-count)
+# =============================================================================
+
+
+class NavbarNotificationBadgeTests(TestCase):
+    """SD#73 punto 6 -- el link '🔔 Notificaciones' del navbar debía quedar
+    texto plano sin ningún `hx-get`, pese a que el endpoint
+    `notifications:unread-count` ya existía y ya devolvía el HTML del badge
+    (wiring faltante confirmado por F1/F2)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = _make_user(rol=User.Rol.ADMINISTRADOR)
+        self.client.force_login(self.admin)
+
+    def test_navbar_cablea_hx_get_a_unread_count(self):
+        response = self.client.get(reverse("notifications:list"))
+        self.assertEqual(response.status_code, 200)
+        unread_count_url = reverse("notifications:unread-count")
+        self.assertContains(response, f'hx-get="{unread_count_url}"')
+
+    def test_endpoint_unread_count_responde_html_del_badge(self):
+        """Regresión de vida del endpoint que el navbar ahora consume."""
+        response = self.client.get(reverse("notifications:unread-count"))
+        self.assertEqual(response.status_code, 200)
+
+
+# =============================================================================
 # Entregables 10, 11, 12, 15 -- Responsable, firma y PDF por programación
 # =============================================================================
 
@@ -815,8 +860,11 @@ class ScheduleResponsableAndPdfTests(TestCase):
             response["Location"],
         )
 
-    def test_pdf_render_usa_responsable_y_datos_de_la_programacion(self):
-        """Entregables 11 y 12 a nivel de HTML renderizado."""
+    def _render_schedule_pdf(self, **context_overrides):
+        """Arma el MISMO context que `views.export_schedule_attendance_pdf` y
+        renderiza el template real -- helper compartido por los tests de
+        contenido literal del PDF (gap de cobertura del bounce, ver
+        docstring del módulo)."""
         from django.template.loader import render_to_string
 
         from apps.courses.views import _attendance_pdf_branding_context
@@ -830,20 +878,127 @@ class ScheduleResponsableAndPdfTests(TestCase):
             "total_presentes": summary["total_presentes"],
             "total_ausentes": summary["total_ausentes"],
             "porcentaje_asistencia": summary["porcentaje_asistencia"],
+            "calificacion_promedio": summary["calificacion_promedio"],
+            "schedule_date": self.schedule.suggested_end_date or self.schedule.created_at.date(),
             "generated_at": timezone.now(),
             "request_user": self.admin,
             "pdf_instructor": self.schedule.responsable,
             "instructor_signature_url": self.schedule.responsable_signature_url,
         }
         context.update(_attendance_pdf_branding_context())
+        context.update(context_overrides)
 
-        html = render_to_string("courses/course_attendance_pdf.html", context)
+        return render_to_string("courses/course_attendance_pdf.html", context)
+
+    def test_pdf_render_usa_responsable_y_datos_de_la_programacion(self):
+        """Entregables 11 y 12 a nivel de HTML renderizado.
+
+        Incluye, además, el gate de cobertura real detrás del bounce
+        (reproceso bounce=1): el HTML renderizado NO debe contener el texto
+        LITERAL de los comentarios Django `{# #}` multilínea que el motor
+        imprimía sin procesar (SD#73 punto 1, CRÍTICO). Ese `assertNotIn`
+        es lo que faltaba la vez anterior -- el test ya renderizaba este
+        HTML pero nunca lo comprobó.
+        """
+        html = self._render_schedule_pdf()
 
         self.assertIn("Primera Responsable", html)
         self.assertIn(self.schedule.name, html)
         self.assertIn("firma1", html)
         # El instructor del curso NO firma cuando hay responsable de programación.
         self.assertNotIn("Instructor Curso", html)
+
+        # --- Gap de cobertura del bounce (punto 1, CRÍTICO) ---
+        # Los 2 bloques de comentario `{# ... #}` multilínea que el motor
+        # imprimía literal antes del fix. Deben estar 100% ausentes del HTML.
+        self.assertNotIn("SD#73: bloque ADITIVO", html)
+        self.assertNotIn("SD#73: cuando el PDF sale de una programación", html)
+        # Y, ya que estamos, ningún delimitador de comentario Django crudo
+        # debe sobrevivir al render (regresión genérica del mismo bug).
+        self.assertNotIn("{#", html)
+        self.assertNotIn("#}", html)
+
+    def test_pdf_fecha_estable_no_cambia_entre_descargas(self):
+        """Punto 2 del rebote -- 'Fecha' NO debe reflejar `generated_at`.
+
+        Renderiza el MISMO schedule dos veces con `generated_at` distinto
+        (simulando 2 descargas separadas) y confirma que el campo 'Fecha'
+        (vía `schedule_date`) es estable mientras 'Generado el' sí cambia.
+        """
+        html_1 = self._render_schedule_pdf(
+            generated_at=timezone.make_aware(datetime(2026, 1, 1))
+        )
+        html_2 = self._render_schedule_pdf(
+            generated_at=timezone.make_aware(datetime(2026, 6, 15))
+        )
+
+        schedule_date = self.schedule.suggested_end_date or self.schedule.created_at.date()
+        fecha_esperada = schedule_date.strftime("%d/%m/%Y")
+
+        self.assertIn(f'<div class="value">{fecha_esperada}</div>', html_1)
+        self.assertIn(f'<div class="value">{fecha_esperada}</div>', html_2)
+        # El encabezado "Generado el" SÍ cambia -- es la fecha de descarga.
+        self.assertIn("01/01/2026", html_1)
+        self.assertIn("15/06/2026", html_2)
+        self.assertNotIn("01/01/2026", html_2)
+
+    def test_pdf_muestra_calificacion_total_calculada(self):
+        """Punto 3 -- 'Calificación total' = promedio de evaluaciones GRADED
+        de los convocados de ESTA programación (patrón Avg+GRADED de
+        apps/assessments/services.py:513)."""
+        from apps.assessments.models import Assessment, AssessmentAttempt
+
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación SD73",
+            passing_score=60,
+            created_by=self.admin,
+        )
+        AssessmentAttempt.objects.create(
+            user=self.convocado,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=80,
+        )
+
+        html = self._render_schedule_pdf()
+
+        self.assertIn("Calificación total", html)
+        # Formateo localizado es-CO (LANGUAGE_CODE): coma decimal, no punto.
+        self.assertIn("80,0%", html)
+
+    def test_pdf_calificacion_total_sin_evaluaciones(self):
+        """Punto 3, caso borde: nadie ha presentado evaluación -> sin dividir
+        por cero, mensaje explícito en vez de 0%."""
+        html = self._render_schedule_pdf()
+
+        self.assertIn("Calificación total", html)
+        self.assertIn("Sin evaluaciones", html)
+        self.assertNotIn("0.0%", html)
+
+    def test_pdf_muestra_tipo_de_actividad_de_la_programacion(self):
+        """Punto 4 -- cuando hay `schedule`, el PDF muestra
+        `schedule.activity_type` (propio de la convocatoria), NO las
+        casillas del curso."""
+        self.schedule.activity_type = Course.ActivityType.SIMULACRO
+        self.schedule.save()
+
+        html = self._render_schedule_pdf()
+
+        self.assertIn("Tipo de actividad", html)
+        self.assertIn("Simulacro", html)
+        # Las casillas de chequeo (comportamiento SD#63/individual) no deben
+        # aparecer cuando el PDF sale de una programación (el selector CSS
+        # de la clase sigue en el <style>, pero la tabla en sí no se renderiza).
+        self.assertNotIn('<table class="activity-type-table">', html)
+
+    def test_pdf_tipo_de_actividad_no_definido_si_vacio(self):
+        """Punto 4, caso borde: `activity_type` en blanco (default) no
+        fuerza ninguna elección -- muestra 'No definido'."""
+        html = self._render_schedule_pdf()
+
+        self.assertIn("Tipo de actividad", html)
+        self.assertIn("No definido", html)
 
     def test_pdf_por_curso_de_sd63_no_cambia(self):
         """El issue dice explícitamente que NO modifica el PDF de asistencia."""
