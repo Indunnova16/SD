@@ -180,6 +180,8 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
         except Exception as e:
             logger.error(f'Error procesando transaccion WOMPI {tx_id}: {e}')
 
+    MESES_LABEL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         plan = PlanServicio.objects.filter(activo=True).first()
@@ -194,6 +196,11 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
         context['datos_facturacion'] = (
             suscripcion.datos_facturacion if suscripcion and suscripcion.datos_facturacion_id else None
         )
+
+        meses_atraso = suscripcion.meses_atraso if suscripcion else 0
+        context['meses_atraso'] = meses_atraso
+        context['grid_meses'] = self._grid_meses(suscripcion)
+
         # Generate WOMPI integrity signature (unica por intento -- microsegundos,
         # no solo year+month, para que 2 intentos de pago en el mismo mes no
         # colisionen en la misma referencia y WOMPI rechace el segundo intento)
@@ -207,7 +214,54 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
             concat = f"{reference}{amount_cents}{currency}{integrity_key}"
             context['wompi_signature'] = hashlib.sha256(concat.encode()).hexdigest()
             context['wompi_reference'] = reference
+
+            # Opciones de pago por N meses (issue: clientes atrasados >1 mes
+            # solo podian pagar 1 mes por vez). N=1 mantiene la referencia SIN
+            # sufijo (compat con integraciones/tests existentes); N>1 agrega
+            # "-{n}m" -- nunca colisiona porque el timestamp base ya es unico
+            # por request, el sufijo solo distingue las opciones hermanas.
+            max_meses = min(12, max(6, meses_atraso + 1))
+            opciones_pago = []
+            for n in range(1, max_meses + 1):
+                ref_n = reference if n == 1 else f"{reference}-{n}m"
+                monto_n = amount_cents * n
+                concat_n = f"{ref_n}{monto_n}{currency}{integrity_key}"
+                opciones_pago.append({
+                    'n': n,
+                    'monto_centavos': monto_n,
+                    'reference': ref_n,
+                    'signature': hashlib.sha256(concat_n.encode()).hexdigest(),
+                })
+            context['opciones_pago'] = opciones_pago
+            context['opciones_pago_json'] = json.dumps(opciones_pago)
+            context['meses_sugeridos'] = max(1, meses_atraso)
         return context
+
+    def _grid_meses(self, suscripcion, ventana=6):
+        """Grilla de los ultimos `ventana` meses (el actual incluido): pagado
+        si el mes es anterior al mes de fecha_proximo_pago, pendiente si no.
+        No necesita reconstruir el historial exacto de Pago -- fecha_proximo_pago
+        YA es el cursor correcto de "hasta donde esta pagado" (una vez
+        corregido el bug de _avanzar_fecha_proximo_pago que la reseteaba a
+        hoy en vez de acumular el atraso real)."""
+        hoy = timezone.localdate()
+        fpp_mes = None
+        if suscripcion and suscripcion.fecha_proximo_pago:
+            fpp = suscripcion.fecha_proximo_pago
+            fpp_mes = fpp.year * 12 + (fpp.month - 1)
+
+        grid = []
+        total_actual = hoy.year * 12 + (hoy.month - 1)
+        for i in range(ventana - 1, -1, -1):
+            total = total_actual - i
+            y, m0 = divmod(total, 12)
+            pagado = fpp_mes is not None and total < fpp_mes
+            grid.append({
+                'label': f"{self.MESES_LABEL[m0]} {y}",
+                'pagado': pagado,
+                'es_actual': total == total_actual,
+            })
+        return grid
 
 
 class HistorialPagosView(RolRequiredMixin, ListView):
