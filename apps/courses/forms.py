@@ -684,7 +684,14 @@ class CourseScheduleForm(forms.ModelForm):
 
     class Meta:
         model = CourseSchedule
-        fields = ["course", "name", "suggested_end_date", "responsable", "notes"]
+        fields = [
+            "course",
+            "name",
+            "suggested_end_date",
+            "responsable",
+            "activity_type",
+            "notes",
+        ]
         widgets = {
             "course": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "name": forms.TextInput(
@@ -698,6 +705,7 @@ class CourseScheduleForm(forms.ModelForm):
                 format="%Y-%m-%d",
             ),
             "responsable": forms.Select(attrs={"class": "select select-bordered w-full"}),
+            "activity_type": forms.Select(attrs={"class": "select select-bordered w-full"}),
             "notes": forms.Textarea(
                 attrs={"class": "textarea textarea-bordered w-full", "rows": 3}
             ),
