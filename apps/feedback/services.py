@@ -77,7 +77,14 @@ def procesar_archivos_subidos(ticket, archivos):
         a. El MIME normalizado empieza con `image/`, `audio/` o `video/`.
         b. `size <= settings.FEEDBACK_MAX_ATTACHMENT_BYTES`.
         c. Solo para imágenes: el contenido real es una imagen válida
-           (`PIL.Image.verify()`), defensivo contra content-type spoofeado.
+           (`PIL.Image.verify()`), defensivo contra content-type spoofeado
+           o archivos corruptos/maliciosos. Cubre las excepciones que PIL
+           puede lanzar aquí — no solo `UnidentifiedImageError`/`OSError`/
+           `ValueError`, también `SyntaxError` (chunk con CRC corrupto,
+           ej. IDAT, con IHDR válido) y `Image.DecompressionBombError`
+           (header que declara más píxeles que `Image.MAX_IMAGE_PIXELS`,
+           lanzada desde el propio `Image.open()`) — issue #81, ninguna
+           de las dos hereda de OSError/ValueError.
 
     (c) es solo para imágenes a propósito: no existe un equivalente barato
     y confiable para audio/video (haría falta ffprobe, que no está en la
@@ -142,10 +149,28 @@ def procesar_archivos_subidos(ticket, archivos):
             try:
                 archivo.seek(0)
                 Image.open(archivo).verify()
-            except (UnidentifiedImageError, OSError, ValueError) as exc:
+            except (
+                UnidentifiedImageError,
+                OSError,
+                ValueError,
+                # `SyntaxError`: PIL la lanza desde `.verify()` cuando un
+                # chunk (ej. IDAT) trae un CRC corrupto pero el header
+                # (IHDR) es válido — Image.open() ya "abrió" el archivo,
+                # revienta recién al verificar el contenido. NO es
+                # subclase de OSError/ValueError (issue #81).
+                SyntaxError,
+                # `Image.DecompressionBombError`: PIL la lanza desde el
+                # propio `Image.open()` (antes incluso de `.verify()`)
+                # cuando el header declara más píxeles que
+                # `Image.MAX_IMAGE_PIXELS` — tampoco hereda de
+                # OSError/ValueError, mismo hueco explotable por
+                # cualquier visitante anónimo del portal (issue #81).
+                Image.DecompressionBombError,
+            ) as exc:
                 logger.warning(
                     "Ticket #%s: archivo '%s' descartado — contenido no es "
-                    "una imagen válida (posible content-type spoofeado): %s",
+                    "una imagen válida (posible content-type spoofeado o "
+                    "corrupto): %s",
                     ticket.pk,
                     nombre,
                     exc,

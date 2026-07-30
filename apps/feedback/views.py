@@ -8,14 +8,18 @@ equipo traída de GitHub — y marcar el caso como resuelto.
 
 `nuevo_view` delega la creación de adjuntos y la sincronización a GitHub en
 `apps.feedback.services` (sub-item A4): `procesar_archivos_subidos` y
-`encolar_sincronizacion_ticket` corren DENTRO del mismo bloque que crea el
-`FeedbackTicket`, para que `transaction.on_commit` (usado por
-`encolar_sincronizacion_ticket`) se dispare justo al terminar la request.
+`encolar_sincronizacion_ticket` corren DENTRO de un `transaction.atomic()`
+junto con la creación del `FeedbackTicket` (issue #81) — así (a)
+`transaction.on_commit` (usado por `encolar_sincronizacion_ticket`) se
+dispara justo al terminar la request, y (b) si algo revienta procesando un
+adjunto, el ticket entero se revierte en vez de quedar huérfano en BD sin
+sincronizar.
 """
 
 from django.conf import settings
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -51,16 +55,28 @@ def nuevo_view(request):
     if request.method == "POST":
         form = NuevoTicketForm(request.POST)
         if form.is_valid():
-            ticket = FeedbackTicket.objects.create(
-                nombre_reportante=form.cleaned_data["nombre_reportante"],
-                asunto=form.cleaned_data["asunto"],
-                descripcion=form.cleaned_data["descripcion"],
-            )
-            procesar_archivos_subidos(ticket, request.FILES.getlist("imagenes"))
-            # Debe ir DENTRO de este mismo bloque: transaction.on_commit
-            # necesita dispararse cuando la transacción de esta request
-            # (ticket + adjuntos) termine de committear.
-            encolar_sincronizacion_ticket(ticket.id)
+            # `transaction.atomic()` envuelve la creación del ticket + el
+            # procesamiento de adjuntos + el encolado de sincronización
+            # (issue #81): si CUALQUIER excepción escapa dentro del bloque
+            # (ej. una variante de PIL no contemplada por el except de
+            # `procesar_archivos_subidos`), Django hace ROLLBACK del
+            # INSERT del ticket — nunca queda un `FeedbackTicket` huérfano
+            # en BD (creado pero sin adjuntos procesados ni sincronización
+            # encolada). Es la red de seguridad estructural; el except
+            # ampliado de `services.py` es la que evita el 500 en sí.
+            with transaction.atomic():
+                ticket = FeedbackTicket.objects.create(
+                    nombre_reportante=form.cleaned_data["nombre_reportante"],
+                    asunto=form.cleaned_data["asunto"],
+                    descripcion=form.cleaned_data["descripcion"],
+                )
+                procesar_archivos_subidos(
+                    ticket, request.FILES.getlist("imagenes")
+                )
+                # Debe ir DENTRO de este mismo bloque: transaction.on_commit
+                # necesita dispararse cuando la transacción de esta request
+                # (ticket + adjuntos) termine de committear.
+                encolar_sincronizacion_ticket(ticket.id)
 
             messages.success(
                 request, "¡Gracias! Tu reporte fue registrado correctamente."
