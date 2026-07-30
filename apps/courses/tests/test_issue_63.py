@@ -27,7 +27,7 @@ sub-items de este mismo RUN -- este archivo de test es POR-ISSUE
 
 import base64
 import re
-from datetime import date
+from datetime import date, datetime
 from unittest import mock
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -37,7 +37,12 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.courses.forms import CourseCreateForm, CourseEditParamsForm, CourseFullEditForm
+from apps.courses.forms import (
+    CourseCreateForm,
+    CourseEditParamsForm,
+    CourseFullEditForm,
+    LessonBuilderForm,
+)
 from apps.courses.models import (
     AttendanceSignature,
     Category,
@@ -352,15 +357,26 @@ class BuilderHideAttendanceForNewLessonsTests(TestCase):
         self.client.force_login(self.administrador)
 
     def test_happy_path_builder_nueva_leccion_no_ofrece_asistencia(self):
-        response = self.client.get(
-            reverse("courses:course_builder", args=[self.course.id])
+        # Renderiza el partial is_new=True en AISLAMIENTO -- el mismo que
+        # module_card.html incluye para el panel "Agregar leccion" -- en
+        # vez de la pagina completa del builder. Desde SD#80, la pagina
+        # completa TAMBIEN incluye el editor inline real (lesson_item.html)
+        # de la leccion Asistencia YA EXISTENTE creada en el setUp de esta
+        # clase, y ese editor SI debe ofrecer 'attendance' (correcto -- ver
+        # BuilderInlineLessonItemAttendanceTests) -- un assertNotContains
+        # sobre la pagina completa quedaria contaminado por ese partial
+        # distinto y dejaria de medir lo que este test dice medir.
+        html = render_to_string(
+            "courses/partials/builder/lesson_form.html",
+            {
+                "lesson_form": LessonBuilderForm(),
+                "course": self.course,
+                "module": self.module,
+                "is_new": True,
+            },
         )
-        self.assertEqual(response.status_code, 200)
-        # El modulo existe -> module_card.html se incluye -> el partial
-        # is_new=True de "agregar leccion" esta en el DOM (oculto por Alpine,
-        # pero presente en el HTML fuente que ve el test client).
-        self.assertContains(response, 'name="lesson_type"')
-        self.assertNotContains(response, 'value="attendance"')
+        self.assertIn('name="lesson_type"', html)
+        self.assertNotIn('value="attendance"', html)
 
     def test_edge_editar_leccion_asistencia_existente_la_conserva(self):
         response = self.client.get(
@@ -395,6 +411,116 @@ class BuilderHideAttendanceForNewLessonsTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'value="attendance"')
+
+
+# =============================================================================
+# SD#80 -- Editar leccion Asistencia via el editor INLINE real (lesson_item.
+# html, <template x-if="editingLesson">, hx-post directo a
+# builder_edit_lesson) la convertia en Video y le borraba scheduled_date.
+#
+# Los tests de BuilderHideAttendanceForNewLessonsTests (arriba) quedaron en
+# verde con la suite entera porque hacen GET a builder_edit_lesson, que
+# renderiza lesson_form.html -- un template que #63/A7 SI arreglo, pero que
+# la UI real NUNCA renderiza (la edicion real es 100% hx-post directo desde
+# lesson_item.html, sin GET previo). Esta clase cubre el camino real.
+# =============================================================================
+
+
+class BuilderInlineLessonItemAttendanceTests(TestCase):
+    """SD#80: el <select name="lesson_type"> y el campo scheduled_date del
+    form de edicion INLINE (lesson_item.html) deben existir y venir
+    preseleccionados/precargados para una leccion Asistencia existente, y el
+    POST real (mismos campos que hx-post envia) debe preservarlos sin
+    tocarlos."""
+
+    def setUp(self):
+        self.administrador = _make_user(rol=User.Rol.ADMINISTRADOR, is_staff=True)
+        self.course, self.module = _make_course(self.administrador)
+        self.attendance_lesson = Lesson.objects.create(
+            module=self.module,
+            title="Sesión Asistencia SD80",
+            lesson_type=Lesson.Type.ATTENDANCE,
+            duration=0,
+            is_mandatory=True,
+            scheduled_date=timezone.make_aware(datetime(2026, 8, 20, 14, 30)),
+            order=0,
+        )
+        self.client = Client()
+        self.client.force_login(self.administrador)
+
+    def _edit_url(self, lesson):
+        return reverse(
+            "courses:builder_edit_lesson",
+            args=[self.course.id, self.module.id, lesson.id],
+        )
+
+    def test_happy_path_lesson_item_ofrece_attendance_preseleccionado_y_fecha_precargada(
+        self,
+    ):
+        """El builder real (course_builder -> module_card.html -> include de
+        lesson_item.html POR CADA leccion existente) trae el <option
+        value="attendance"> Y el input scheduled_date con el valor guardado
+        -- no solo lesson_form.html (dead code de cara a la UI)."""
+        response = self.client.get(reverse("courses:course_builder", args=[self.course.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'value="attendance"')
+        self.assertContains(response, 'name="scheduled_date"')
+        self.assertContains(response, "2026-08-20T14:30")
+
+    def test_edge_post_real_editar_leccion_asistencia_sin_cambios_la_conserva(self):
+        """El POST real que hx-post dispara desde lesson_item.html (mismos
+        campos que el form inline real envia: title/lesson_type/description/
+        duration/scheduled_date) preserva lesson_type y scheduled_date sin
+        tocarlos -- este es el POST que antes del fix corrompia la leccion
+        real (el <select> sin <option value="attendance"> hacia que el
+        navegador posteara lesson_type=video, y scheduled_date, ausente del
+        DOM, nunca viajaba en el POST)."""
+        response = self.client.post(
+            self._edit_url(self.attendance_lesson),
+            data={
+                "title": self.attendance_lesson.title,
+                "lesson_type": "attendance",
+                "description": "",
+                "duration": 0,
+                "scheduled_date": "2026-08-20T14:30",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.attendance_lesson.refresh_from_db()
+        self.assertEqual(self.attendance_lesson.lesson_type, Lesson.Type.ATTENDANCE)
+        self.assertEqual(
+            self.attendance_lesson.scheduled_date,
+            timezone.make_aware(datetime(2026, 8, 20, 14, 30)),
+        )
+
+    def test_edge_editar_leccion_no_attendance_sigue_funcionando_sin_regresion(self):
+        """Editar una leccion NO-Asistencia (video) desde el mismo template
+        sigue funcionando sin regresion -- el campo scheduled_date, oculto
+        via x-show para este tipo, no interfiere con el guardado normal."""
+        video_lesson = Lesson.objects.create(
+            module=self.module,
+            title="Video existente SD80",
+            lesson_type=Lesson.Type.VIDEO,
+            duration=5,
+            order=1,
+        )
+        response = self.client.post(
+            self._edit_url(video_lesson),
+            data={
+                "title": "Video existente SD80 editado",
+                "lesson_type": "video",
+                "description": "",
+                "duration": 7,
+                "video_url": "https://youtube.com/watch?v=abc12345678",
+            },
+            HTTP_HX_REQUEST="true",
+        )
+        self.assertEqual(response.status_code, 200)
+        video_lesson.refresh_from_db()
+        self.assertEqual(video_lesson.lesson_type, Lesson.Type.VIDEO)
+        self.assertEqual(video_lesson.title, "Video existente SD80 editado")
+        self.assertEqual(video_lesson.duration, 7)
 
 
 # =============================================================================
