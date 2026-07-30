@@ -17,12 +17,18 @@ SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Content Security Policy - Nonce-based (secure, no unsafe-inline)
+# checkout.wompi.co (script-src) y api-colombia.com (connect-src) agregados
+# en issue #85 sub-item A8 -- widget de pago WOMPI (portal.html) + fetch JS
+# de departamentos/ciudades (datos_facturacion.html). CSP_ENFORCE=False hoy
+# (report-only) -- no bloquea el smoke de este RUN, pero sin esto el flujo
+# se romperia silenciosamente el dia que se active enforce (mismo patron
+# que motivo SD#76).
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "cdn.jsdelivr.net", "cdn.tailwindcss.com", "unpkg.com")
+CSP_SCRIPT_SRC = ("'self'", "cdn.jsdelivr.net", "cdn.tailwindcss.com", "unpkg.com", "checkout.wompi.co")
 CSP_STYLE_SRC = ("'self'", "cdn.jsdelivr.net", "fonts.googleapis.com")
 CSP_IMG_SRC = ("'self'", "data:", "storage.googleapis.com", "*.googleusercontent.com")
 CSP_FONT_SRC = ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net")
-CSP_CONNECT_SRC = ("'self'",)
+CSP_CONNECT_SRC = ("'self'", "api-colombia.com")
 CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_FORM_ACTION = ("'self'",)
 
