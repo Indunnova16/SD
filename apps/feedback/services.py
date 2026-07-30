@@ -38,6 +38,7 @@ from django.db import transaction
 from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
+from apps.feedback import gemini_client
 from apps.feedback.github_client import GitHubClientError, GitHubFeedbackClient
 from apps.feedback.models import FeedbackAttachment, FeedbackTicket
 
@@ -91,6 +92,16 @@ def procesar_archivos_subidos(ticket, archivos):
     imagen de Cloud Run). Para esos el gate es el prefijo MIME + el tamaño,
     y el riesgo residual es acotado porque el archivo se sirve desde GCS
     como adjunto, nunca se ejecuta.
+
+    d. (issue #71 ronda 3) Tras pasar las validaciones anteriores, se llama
+       a `gemini_client.transcribir_media(data, mime)` para poblar
+       `FeedbackAttachment.transcripcion_ia`. Es **best-effort de punta a
+       punta**: `gemini_client.transcribir_media` ya nunca propaga
+       excepciones (retorna `""` si `GEMINI_API_KEY` no está configurado o
+       la llamada falla), y este caller la envuelve en un try/except
+       adicional por si acaso — mismo patrón defensivo de doble capa que
+       el issue #81 dejó establecido para `PIL.Image.verify()`. Un fallo de
+       Gemini NUNCA bloquea la creación del ticket ni del adjunto.
 
     Un archivo que falla cualquiera de las validaciones NO se guarda, se
     loguea como warning, y se continúa con el resto — un archivo inválido
@@ -179,12 +190,34 @@ def procesar_archivos_subidos(ticket, archivos):
             finally:
                 archivo.seek(0)
 
+        # Transcripción IA (issue #71 ronda 3) — best-effort, NUNCA bloquea
+        # la creación del adjunto/ticket. `gemini_client.transcribir_media`
+        # ya captura sus propias excepciones y retorna "" en ese caso; este
+        # try/except es una segunda capa defensiva por si el propio `read()`
+        # del archivo o algo inesperado en el wrapping fallara.
+        transcripcion = ""
+        try:
+            archivo.seek(0)
+            data = archivo.read()
+            archivo.seek(0)
+            transcripcion = gemini_client.transcribir_media(data, mime)
+        except Exception as exc:
+            logger.warning(
+                "Ticket #%s: transcripción IA falló para '%s': %s",
+                ticket.pk,
+                nombre,
+                exc,
+            )
+        finally:
+            archivo.seek(0)
+
         adjunto = FeedbackAttachment.objects.create(
             ticket=ticket,
             archivo=archivo,
             tipo=tipo,
             mime_type=mime,
             nombre_original=nombre,
+            transcripcion_ia=transcripcion,
         )
         adjuntos_creados.append(adjunto)
 
@@ -225,6 +258,7 @@ def sincronizar_ticket(ticket_id):
                     "nombre": adjunto.nombre_original,
                     "url": adjunto.archivo.url,
                     "tipo": adjunto.tipo,
+                    "transcripcion": adjunto.transcripcion_ia,
                 }
                 for adjunto in ticket.adjuntos.all()
             ],
