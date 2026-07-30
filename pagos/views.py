@@ -13,7 +13,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, ListView
 from apps.accounts.permissions import RolRequiredMixin, Rol
-from .models import PlanServicio, Suscripcion, Pago, DatosFacturacion
+from .models import PlanServicio, Suscripcion, Pago, DatosFacturacion, calcular_n_meses
 from . import wompi
 from . import alegra
 
@@ -158,9 +158,11 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
                 'VOIDED': 'RECHAZADO',
             }
 
+            n_meses = calcular_n_meses(amount, suscripcion.plan.precio) if suscripcion.plan else 1
             pago = Pago.objects.create(
                 suscripcion=suscripcion,
                 monto=amount,
+                n_meses=n_meses,
                 estado=estado_map.get(status, 'PENDIENTE'),
                 wompi_transaction_id=tx_id,
                 wompi_reference=reference,
@@ -168,7 +170,7 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
             )
 
             if status == 'APPROVED':
-                _avanzar_fecha_proximo_pago(suscripcion)
+                _avanzar_fecha_proximo_pago(pago)
                 try:
                     alegra.generar_factura_desde_pago(pago)
                 except Exception as e:
@@ -250,11 +252,17 @@ class WompiWebhookView(View):
                     'VOIDED': 'RECHAZADO',
                 }
 
+                suscripcion_actual = Suscripcion.objects.select_related('plan').first()
+                n_meses = (
+                    calcular_n_meses(amount, suscripcion_actual.plan.precio)
+                    if suscripcion_actual and suscripcion_actual.plan else 1
+                )
                 pago, created = Pago.objects.get_or_create(
                     wompi_transaction_id=tx_id,
                     defaults={
-                        'suscripcion': Suscripcion.objects.first(),
+                        'suscripcion': suscripcion_actual,
                         'monto': amount,
+                        'n_meses': n_meses,
                         'estado': 'PENDIENTE',
                         'wompi_reference': reference,
                     }
@@ -274,7 +282,7 @@ class WompiWebhookView(View):
 
                 if status == 'APPROVED' and not ya_estaba_aprobado:
                     if pago.suscripcion:
-                        _avanzar_fecha_proximo_pago(pago.suscripcion)
+                        _avanzar_fecha_proximo_pago(pago)
                     if not pago.alegra_invoice_id:
                         try:
                             alegra.generar_factura_desde_pago(pago)
