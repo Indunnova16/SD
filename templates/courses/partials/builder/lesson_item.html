@@ -196,6 +196,16 @@
                                 <option value="interactive">Interactivo</option>
                                 <option value="audio">Audio</option>
                                 <option value="presential">Presencial</option>
+                                {# SD#80: este <select> (form de edicion INLINE real, el que #}
+                                {# hx-post directo dispara -- NO lesson_form.html) necesita la #}
+                                {# opcion "attendance" SIN guard: a diferencia del template #}
+                                {# hermano (que oculta la opcion solo al CREAR, is_new=True), #}
+                                {# este partial SOLO se renderiza en modo edicion de una #}
+                                {# leccion ya existente, nunca is_new. Sin esta opcion el #}
+                                {# <select> nativo no puede reflejar/enviar 'attendance' y cae #}
+                                {# al primer <option> (video), corrompiendo la leccion real al #}
+                                {# guardar sin tocar el tipo. #}
+                                <option value="attendance">Asistencia</option>
                             </select>
                         </div>
                         <!-- Duration -->
@@ -234,6 +244,17 @@
                                   class="textarea textarea-bordered textarea-sm w-full"
                                   rows="2"
                                   placeholder="Descripcion de la leccion (opcional)">{{ lesson.description }}</textarea>
+                    </div>
+                    <!-- Attendance: scheduled date/time (SD#80) -->
+                    <div class="form-control mt-2" x-show="lessonType === 'attendance'">
+                        <label class="label py-1">
+                            <span class="label-text text-xs">Fecha y hora agendada</span>
+                        </label>
+                        <input type="datetime-local"
+                               name="scheduled_date"
+                               value="{% if lesson.scheduled_date %}{{ lesson.scheduled_date|date:'Y-m-d\TH:i' }}{% endif %}"
+                               class="input input-bordered input-sm w-full">
+                        <span class="text-xs text-gray-400 mt-1">Define cuándo se realiza la sesión de asistencia.</span>
                     </div>
                     <!-- Content (for text lessons) -->
                     <div class="form-control mt-2" x-show="lessonType === 'text'">
