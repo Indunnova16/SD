@@ -173,7 +173,12 @@
                                     </li>
                                 {% endif %}
                                 <li>
-                                    <a href="{% url 'notifications:list' %}">🔔 Notificaciones</a>
+                                    <a href="{% url 'notifications:list' %}">🔔 Notificaciones
+                                        <span id="navbar-notif-badge-desktop"
+                                              hx-get="{% url 'notifications:unread-count' %}"
+                                              hx-trigger="load, every 30s"
+                                              hx-swap="innerHTML"></span>
+                                    </a>
                                 </li>
                                 <li class="border-t dark:border-gray-600 my-1"></li>
                                 {% if user.rol == 'ADMINISTRADOR' %}
@@ -337,7 +342,12 @@
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">💳 Portal de Pagos</a>
                 {% endif %}
                 <a href="{% url 'notifications:list' %}"
-                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones</a>
+                   class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">🔔 Notificaciones
+                    <span id="navbar-notif-badge-mobile"
+                          hx-get="{% url 'notifications:unread-count' %}"
+                          hx-trigger="load, every 30s"
+                          hx-swap="innerHTML"></span>
+                </a>
                 {% if user.rol == 'ADMINISTRADOR' %}
                     <a href="{% url 'accounts:help_admin' %}"
                        class="block px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">📖 Manual de Administrador</a>

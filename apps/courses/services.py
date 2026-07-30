@@ -11,6 +11,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models, transaction
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.courses.models import (
@@ -804,6 +805,7 @@ class CourseScheduleService:
             plazo = " No tiene fecha de finalización sugerida."
 
         try:
+            action_url = reverse("courses:detail", args=[schedule.course_id])
             return NotificationService.create_notification(
                 user=assignment.user,
                 subject=f"Curso asignado: {schedule.course.title}",
@@ -812,6 +814,8 @@ class CourseScheduleService:
                     f"programación '{schedule.name}'.{plazo}"
                 ),
                 priority="normal",
+                action_url=action_url,
+                action_text="Ir al curso",
                 metadata={
                     "schedule_id": schedule.id,
                     "course_id": schedule.course_id,
@@ -888,10 +892,25 @@ class CourseScheduleService:
         total_ausentes = total_inscritos - total_presentes
         porcentaje = round(total_presentes / total_inscritos * 100, 1) if total_inscritos else 0.0
 
+        calificacion_promedio = None
+        if total_inscritos:
+            from django.db.models import Avg
+
+            from apps.assessments.models import AssessmentAttempt
+
+            user_ids = [row["user"].id for row in rows]
+            avg = AssessmentAttempt.objects.filter(
+                user_id__in=user_ids,
+                assessment__course=schedule.course,
+                status=AssessmentAttempt.Status.GRADED,
+            ).aggregate(avg=Avg("score"))["avg"]
+            calificacion_promedio = float(avg) if avg is not None else None
+
         return {
             "rows": rows,
             "total_inscritos": total_inscritos,
             "total_presentes": total_presentes,
             "total_ausentes": total_ausentes,
             "porcentaje_asistencia": porcentaje,
+            "calificacion_promedio": calificacion_promedio,
         }

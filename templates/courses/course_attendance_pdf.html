@@ -180,7 +180,7 @@
             <tr>
                 <td>
                     <div class="label">Fecha</div>
-                    <div class="value">{{ generated_at|date:"d/m/Y" }}</div>
+                    <div class="value">{% if schedule %}{{ schedule_date|date:"d/m/Y" }}{% else %}{{ generated_at|date:"d/m/Y" }}{% endif %}</div>
                 </td>
                 <td>
                     <div class="label">Proyecto</div>
@@ -200,9 +200,11 @@
                 </td>
             </tr>
             {% if schedule %}
-            {# SD#73: bloque ADITIVO, solo aparece cuando el PDF se genera
+            {% comment %}
+               SD#73: bloque ADITIVO, solo aparece cuando el PDF se genera
                filtrado por una programación. El reporte por curso y el
-               individual (SD#63) no pasan `schedule` y quedan idénticos. #}
+               individual (SD#63) no pasan `schedule` y quedan idénticos.
+            {% endcomment %}
             <tr>
                 <td>
                     <div class="label">Programación</div>
@@ -213,12 +215,20 @@
                     <div class="value">{% if schedule.suggested_end_date %}{{ schedule.suggested_end_date|date:"d/m/Y" }}{% else %}<span class="empty">Sin fecha</span>{% endif %}</div>
                 </td>
             </tr>
+            <tr>
+                <td colspan="2">
+                    <div class="label">Calificación total</div>
+                    <div class="value">{% if calificacion_promedio is not None %}{{ calificacion_promedio|floatformat:1 }}%{% else %}<span class="empty">Sin evaluaciones</span>{% endif %}</div>
+                </td>
+            </tr>
             {% endif %}
             <tr>
                 <td colspan="2" class="signature-cell">
-                    {# SD#73: cuando el PDF sale de una programación, el firmante es
+                    {% comment %}
+                       SD#73: cuando el PDF sale de una programación, el firmante es
                        su RESPONSABLE (requisito 4), no el instructor del curso. Se
-                       resuelve por contexto con fallback al comportamiento SD#63. #}
+                       resuelve por contexto con fallback al comportamiento SD#63.
+                    {% endcomment %}
                     <div class="label">{% if pdf_instructor %}Responsable{% else %}Instructor{% endif %}</div>
                     {% with signer=pdf_instructor|default:course.instructor %}
                     <div class="value">{% if signer %}{{ signer.get_full_name }}{% else %}<span class="empty">No asignado</span>{% endif %}</div>
@@ -232,6 +242,7 @@
             </tr>
         </table>
 
+        {% if not schedule %}
         <table class="activity-type-table">
             <tr>
                 <td class="activity-checkbox">{% if course.activity_type == "charla" %}X{% endif %}</td>
@@ -252,6 +263,10 @@
                 <td class="activity-value">{{ course.duration_hours }}</td>
             </tr>
         </table>
+        {% else %}
+        <div class="label">Tipo de actividad</div>
+        <div class="value">{{ schedule.get_activity_type_display|default:"No definido" }}</div>
+        {% endif %}
 
         <div class="section-title">Firmantes</div>
         <table class="signers-table">
