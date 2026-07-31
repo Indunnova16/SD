@@ -34,7 +34,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from pagos import alegra
-from pagos.models import DatosFacturacion, Pago, PlanServicio, Suscripcion
+from pagos.models import DatosFacturacion, Pago, PlanServicio, Suscripcion, calcular_n_meses
 from pagos.views import _avanzar_fecha_proximo_pago
 
 User = get_user_model()
@@ -124,9 +124,17 @@ class AvanzarFechaProximoPagoHelperTests(TestCase):
     def setUp(self):
         self.plan = PlanServicio.objects.create(nombre='Plan Test', precio=100000)
 
+    def _pago(self, suscripcion, n_meses=1, monto=None):
+        return Pago.objects.create(
+            suscripcion=suscripcion,
+            monto=monto if monto is not None else self.plan.precio * n_meses,
+            n_meses=n_meses,
+            estado='APROBADO',
+        )
+
     def test_sin_fecha_previa_activa_y_avanza_desde_hoy(self):
         s = Suscripcion.objects.create(plan=self.plan, estado='PENDIENTE')
-        _avanzar_fecha_proximo_pago(s)
+        _avanzar_fecha_proximo_pago(self._pago(s))
         s.refresh_from_db()
         self.assertEqual(s.estado, 'ACTIVA')
         self.assertIsNotNone(s.fecha_proximo_pago)
@@ -135,7 +143,7 @@ class AvanzarFechaProximoPagoHelperTests(TestCase):
     def test_con_fecha_previa_vigente_avanza_desde_esa_fecha_no_desde_hoy(self):
         futuro = timezone.localdate() + timedelta(days=10)
         s = Suscripcion.objects.create(plan=self.plan, estado='ACTIVA', fecha_proximo_pago=futuro)
-        _avanzar_fecha_proximo_pago(s)
+        _avanzar_fecha_proximo_pago(self._pago(s))
         s.refresh_from_db()
         self.assertGreater(s.fecha_proximo_pago, futuro)
 
@@ -143,9 +151,91 @@ class AvanzarFechaProximoPagoHelperTests(TestCase):
         s = Suscripcion.objects.create(
             plan=self.plan, estado='ACTIVA', fecha_proximo_pago=date(2026, 12, 15)
         )
-        _avanzar_fecha_proximo_pago(s)
+        _avanzar_fecha_proximo_pago(self._pago(s))
         s.refresh_from_db()
         self.assertEqual(s.fecha_proximo_pago, date(2027, 1, 15))
+
+    def test_vencida_avanza_desde_la_fecha_vencida_no_desde_hoy(self):
+        """Regresion del bug original: un pago de 1 mes mientras se deben 2
+        NO debe "blanquear" el atraso reseteando a hoy -- debe avanzar desde
+        la fecha vencida real, dejando 1 mes todavia pendiente."""
+        vencida_hace_2_meses = timezone.localdate() - timedelta(days=65)
+        s = Suscripcion.objects.create(
+            plan=self.plan, estado='ACTIVA', fecha_proximo_pago=vencida_hace_2_meses
+        )
+        _avanzar_fecha_proximo_pago(self._pago(s, n_meses=1))
+        s.refresh_from_db()
+        self.assertEqual(s.fecha_proximo_pago, _sumar_un_mes(vencida_hace_2_meses))
+        # todavia vencida (solo se pago 1 de los ~2 meses de atraso) -> sigue
+        # pidiendo pago, no quedo "al dia" artificialmente
+        self.assertTrue(s.requiere_pago)
+
+    def test_pago_de_2_meses_avanza_2_periodos(self):
+        s = Suscripcion.objects.create(
+            plan=self.plan, estado='ACTIVA', fecha_proximo_pago=date(2026, 5, 20)
+        )
+        _avanzar_fecha_proximo_pago(self._pago(s, n_meses=2, monto=self.plan.precio * 2))
+        s.refresh_from_db()
+        self.assertEqual(s.fecha_proximo_pago, date(2026, 7, 20))
+
+
+def _sumar_un_mes(fecha):
+    from calendar import monthrange
+    y, m, d = fecha.year, fecha.month, fecha.day
+    m += 1
+    if m > 12:
+        m = 1
+        y += 1
+    return date(y, m, min(d, monthrange(y, m)[1]))
+
+
+# ---------------------------------------------------------------------------
+# Nuevo (issue #92): calcular_n_meses + Suscripcion.meses_atraso
+# ---------------------------------------------------------------------------
+class CalcularNMesesTests(TestCase):
+    def test_un_mes_exacto(self):
+        self.assertEqual(calcular_n_meses(100000, 100000), 1)
+
+    def test_dos_meses_exactos(self):
+        self.assertEqual(calcular_n_meses(200000, 100000), 2)
+
+    def test_redondea_al_entero_mas_cercano(self):
+        self.assertEqual(calcular_n_meses(195000, 100000), 2)
+
+    def test_precio_cero_no_rompe_devuelve_1(self):
+        self.assertEqual(calcular_n_meses(50000, 0), 1)
+
+    def test_monto_menor_a_un_mes_nunca_devuelve_0(self):
+        self.assertEqual(calcular_n_meses(30000, 100000), 1)
+
+
+class MesesAtrasoPropertyTests(TestCase):
+    def setUp(self):
+        self.plan = PlanServicio.objects.create(nombre='Plan Test', precio=100000)
+
+    def test_sin_fecha_proximo_pago_cero(self):
+        s = Suscripcion.objects.create(plan=self.plan, estado='PENDIENTE')
+        self.assertEqual(s.meses_atraso, 0)
+
+    def test_fecha_futura_cero(self):
+        futuro = timezone.localdate() + timedelta(days=10)
+        s = Suscripcion.objects.create(plan=self.plan, estado='ACTIVA', fecha_proximo_pago=futuro)
+        self.assertEqual(s.meses_atraso, 0)
+
+    def test_vencida_mismo_mes_un_mes_de_atraso(self):
+        ayer = timezone.localdate() - timedelta(days=1)
+        s = Suscripcion.objects.create(plan=self.plan, estado='ACTIVA', fecha_proximo_pago=ayer)
+        self.assertEqual(s.meses_atraso, 1)
+
+    def test_vencida_hace_2_meses_calendario(self):
+        hoy = timezone.localdate()
+        y, m = hoy.year, hoy.month - 2
+        while m <= 0:
+            m += 12
+            y -= 1
+        vencida = date(y, m, hoy.day if hoy.day <= 28 else 28)
+        s = Suscripcion.objects.create(plan=self.plan, estado='ACTIVA', fecha_proximo_pago=vencida)
+        self.assertEqual(s.meses_atraso, 3)
 
 
 # ---------------------------------------------------------------------------

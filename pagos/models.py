@@ -3,6 +3,22 @@ from django.db.models import Q
 from django.utils import timezone
 
 
+def calcular_n_meses(monto, precio_mes):
+    """Cuantos meses cubre un pago de `monto` para un plan de `precio_mes`.
+
+    Redondea al entero mas cercano y nunca devuelve menos de 1 -- un pago
+    parcial/menor a un mes igual cuenta como 1 mes cubierto (evita que un
+    precio en 0, o un redondeo a la baja, deje avanzar la fecha 0 meses y la
+    suscripcion quede trabada en requiere_pago=True pese a tener un pago
+    aprobado). Misma formula que ya usaba alegra.py para la cantidad del
+    item de la factura -- unificada aca para que el avance de
+    fecha_proximo_pago y la facturacion nunca queden desincronizados."""
+    precio_mes = float(precio_mes or 0)
+    if precio_mes <= 0:
+        return 1
+    return max(1, round(float(monto) / precio_mes))
+
+
 class PlanServicio(models.Model):
     nombre = models.CharField('Nombre del plan', max_length=100)
     precio = models.DecimalField('Precio mensual (COP)', max_digits=12, decimal_places=2)
@@ -105,6 +121,23 @@ class Suscripcion(models.Model):
             return False
         return (timezone.localdate() - self.fecha_proximo_pago).days >= 5
 
+    @property
+    def meses_atraso(self):
+        """Meses completos de atraso respecto a fecha_proximo_pago. 0 si esta
+        al dia, sin fecha aun, o el pago no ha vencido. Sirve para sugerir
+        cuantos meses pagar de una vez en el checkout (issue: clientes que se
+        atrasan mas de un mes solo pagaban 1 y quedaban atrasados igual,
+        porque el sistema no distinguia "vencido hoy" de "vencido hace 2
+        meses")."""
+        hoy = timezone.localdate()
+        if not self.fecha_proximo_pago or self.fecha_proximo_pago >= hoy:
+            return 0
+        return (
+            (hoy.year - self.fecha_proximo_pago.year) * 12
+            + (hoy.month - self.fecha_proximo_pago.month)
+            + 1
+        )
+
 
 class Pago(models.Model):
     ESTADO_CHOICES = [
@@ -117,6 +150,10 @@ class Pago(models.Model):
 
     suscripcion = models.ForeignKey(Suscripcion, on_delete=models.CASCADE, related_name='pagos')
     monto = models.DecimalField('Monto (COP)', max_digits=12, decimal_places=2)
+    n_meses = models.PositiveSmallIntegerField(
+        'Meses cubiertos', default=1,
+        help_text='Cuantos meses de suscripcion cubre este pago (monto / precio del plan al momento del pago).'
+    )
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='PENDIENTE')
     wompi_transaction_id = models.CharField('ID Transaccion WOMPI', max_length=100, blank=True, db_index=True)
     wompi_reference = models.CharField('Referencia WOMPI', max_length=100, blank=True)

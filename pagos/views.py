@@ -13,34 +13,41 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView, ListView
 from apps.accounts.permissions import RolRequiredMixin, Rol
-from .models import PlanServicio, Suscripcion, Pago, DatosFacturacion
+from .models import PlanServicio, Suscripcion, Pago, DatosFacturacion, calcular_n_meses
 from . import wompi
 from . import alegra
 
 logger = logging.getLogger(__name__)
 
 
-def _avanzar_fecha_proximo_pago(suscripcion):
-    """Avanza fecha_proximo_pago un periodo (1 mes) tras un pago aprobado, y
-    marca la suscripcion como ACTIVA. Si ya habia fecha_proximo_pago vigente
-    (pago anticipado antes de vencer), se avanza desde esa fecha para no
-    perder dias ya pagados; si no hay fecha previa o ya vencio, se avanza
-    desde hoy. Mismo patron que ObrajeCRM/apps/pagos/views.py."""
+def _sumar_meses(fecha, n_meses):
+    y, m, d = fecha.year, fecha.month, fecha.day
+    m += n_meses
+    y += (m - 1) // 12
+    m = (m - 1) % 12 + 1
+    dia = min(d, monthrange(y, m)[1])
+    return date(y, m, dia)
+
+
+def _avanzar_fecha_proximo_pago(pago):
+    """Avanza fecha_proximo_pago `pago.n_meses` periodos tras un pago
+    aprobado, y marca la suscripcion como ACTIVA.
+
+    Avanza SIEMPRE desde la fecha_proximo_pago anterior (vigente o vencida),
+    nunca desde "hoy" -- si se reseteara a hoy cuando esta vencida, un cliente
+    atrasado 2 meses que paga 1 mes quedaria "al dia" artificialmente: el mes
+    que debia desaparece sin quedar registrado. Al avanzar desde la fecha
+    vencida real, si el pago no alcanza a cubrir todo el atraso la suscripcion
+    sigue en requiere_pago=True (correcto: todavia debe meses)."""
+    suscripcion = pago.suscripcion
     hoy = timezone.localdate()
     base = suscripcion.fecha_proximo_pago or hoy
-    if base < hoy:
-        base = hoy
-    y, m, d = base.year, base.month, base.day
-    m += 1
-    if m > 12:
-        m = 1
-        y += 1
-    dia = min(d, monthrange(y, m)[1])
     suscripcion.estado = 'ACTIVA'
-    suscripcion.fecha_proximo_pago = date(y, m, dia)
+    suscripcion.fecha_proximo_pago = _sumar_meses(base, pago.n_meses)
     suscripcion.save(update_fields=['estado', 'fecha_proximo_pago', 'updated_at'])
     logger.info(
-        f'Suscripcion {suscripcion.id}: proximo pago avanzado a {suscripcion.fecha_proximo_pago}'
+        f'Suscripcion {suscripcion.id}: proximo pago avanzado a '
+        f'{suscripcion.fecha_proximo_pago} ({pago.n_meses} mes(es) cubiertos por pago {pago.id})'
     )
 
 
@@ -151,9 +158,11 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
                 'VOIDED': 'RECHAZADO',
             }
 
+            n_meses = calcular_n_meses(amount, suscripcion.plan.precio) if suscripcion.plan else 1
             pago = Pago.objects.create(
                 suscripcion=suscripcion,
                 monto=amount,
+                n_meses=n_meses,
                 estado=estado_map.get(status, 'PENDIENTE'),
                 wompi_transaction_id=tx_id,
                 wompi_reference=reference,
@@ -161,7 +170,7 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
             )
 
             if status == 'APPROVED':
-                _avanzar_fecha_proximo_pago(suscripcion)
+                _avanzar_fecha_proximo_pago(pago)
                 try:
                     alegra.generar_factura_desde_pago(pago)
                 except Exception as e:
@@ -170,6 +179,8 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
             logger.info(f'Pago {pago.id} creado desde redirect WOMPI tx={tx_id} status={status}')
         except Exception as e:
             logger.error(f'Error procesando transaccion WOMPI {tx_id}: {e}')
+
+    MESES_LABEL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -185,6 +196,11 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
         context['datos_facturacion'] = (
             suscripcion.datos_facturacion if suscripcion and suscripcion.datos_facturacion_id else None
         )
+
+        meses_atraso = suscripcion.meses_atraso if suscripcion else 0
+        context['meses_atraso'] = meses_atraso
+        context['grid_meses'] = self._grid_meses(suscripcion)
+
         # Generate WOMPI integrity signature (unica por intento -- microsegundos,
         # no solo year+month, para que 2 intentos de pago en el mismo mes no
         # colisionen en la misma referencia y WOMPI rechace el segundo intento)
@@ -198,7 +214,54 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
             concat = f"{reference}{amount_cents}{currency}{integrity_key}"
             context['wompi_signature'] = hashlib.sha256(concat.encode()).hexdigest()
             context['wompi_reference'] = reference
+
+            # Opciones de pago por N meses (issue: clientes atrasados >1 mes
+            # solo podian pagar 1 mes por vez). N=1 mantiene la referencia SIN
+            # sufijo (compat con integraciones/tests existentes); N>1 agrega
+            # "-{n}m" -- nunca colisiona porque el timestamp base ya es unico
+            # por request, el sufijo solo distingue las opciones hermanas.
+            max_meses = min(12, max(6, meses_atraso + 1))
+            opciones_pago = []
+            for n in range(1, max_meses + 1):
+                ref_n = reference if n == 1 else f"{reference}-{n}m"
+                monto_n = amount_cents * n
+                concat_n = f"{ref_n}{monto_n}{currency}{integrity_key}"
+                opciones_pago.append({
+                    'n': n,
+                    'monto_centavos': monto_n,
+                    'reference': ref_n,
+                    'signature': hashlib.sha256(concat_n.encode()).hexdigest(),
+                })
+            context['opciones_pago'] = opciones_pago
+            context['opciones_pago_json'] = json.dumps(opciones_pago)
+            context['meses_sugeridos'] = max(1, meses_atraso)
         return context
+
+    def _grid_meses(self, suscripcion, ventana=6):
+        """Grilla de los ultimos `ventana` meses (el actual incluido): pagado
+        si el mes es anterior al mes de fecha_proximo_pago, pendiente si no.
+        No necesita reconstruir el historial exacto de Pago -- fecha_proximo_pago
+        YA es el cursor correcto de "hasta donde esta pagado" (una vez
+        corregido el bug de _avanzar_fecha_proximo_pago que la reseteaba a
+        hoy en vez de acumular el atraso real)."""
+        hoy = timezone.localdate()
+        fpp_mes = None
+        if suscripcion and suscripcion.fecha_proximo_pago:
+            fpp = suscripcion.fecha_proximo_pago
+            fpp_mes = fpp.year * 12 + (fpp.month - 1)
+
+        grid = []
+        total_actual = hoy.year * 12 + (hoy.month - 1)
+        for i in range(ventana - 1, -1, -1):
+            total = total_actual - i
+            y, m0 = divmod(total, 12)
+            pagado = fpp_mes is not None and total < fpp_mes
+            grid.append({
+                'label': f"{self.MESES_LABEL[m0]} {y}",
+                'pagado': pagado,
+                'es_actual': total == total_actual,
+            })
+        return grid
 
 
 class HistorialPagosView(RolRequiredMixin, ListView):
@@ -243,11 +306,17 @@ class WompiWebhookView(View):
                     'VOIDED': 'RECHAZADO',
                 }
 
+                suscripcion_actual = Suscripcion.objects.select_related('plan').first()
+                n_meses = (
+                    calcular_n_meses(amount, suscripcion_actual.plan.precio)
+                    if suscripcion_actual and suscripcion_actual.plan else 1
+                )
                 pago, created = Pago.objects.get_or_create(
                     wompi_transaction_id=tx_id,
                     defaults={
-                        'suscripcion': Suscripcion.objects.first(),
+                        'suscripcion': suscripcion_actual,
                         'monto': amount,
+                        'n_meses': n_meses,
                         'estado': 'PENDIENTE',
                         'wompi_reference': reference,
                     }
@@ -267,7 +336,7 @@ class WompiWebhookView(View):
 
                 if status == 'APPROVED' and not ya_estaba_aprobado:
                     if pago.suscripcion:
-                        _avanzar_fecha_proximo_pago(pago.suscripcion)
+                        _avanzar_fecha_proximo_pago(pago)
                     if not pago.alegra_invoice_id:
                         try:
                             alegra.generar_factura_desde_pago(pago)

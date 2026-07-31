@@ -84,14 +84,13 @@ def crear_factura(contacto_id, plan, pago):
     vencimiento = hoy + timedelta(days=30)
     monto_pago = float(pago.monto)
     precio_mes = float(plan.precio)
-    if precio_mes > 0:
-        meses = max(1, round(monto_pago / precio_mes))
-        if abs(meses * precio_mes - monto_pago) < 0.01:
-            quantity = meses
-            price = precio_mes
-        else:
-            quantity = 1
-            price = monto_pago
+    # pago.n_meses ya se calculo (calcular_n_meses) al crear el Pago -- misma
+    # fuente que uso _avanzar_fecha_proximo_pago para avanzar la suscripcion,
+    # asi la factura y el avance de fecha nunca quedan desincronizados.
+    meses = getattr(pago, 'n_meses', None) or 1
+    if precio_mes > 0 and abs(meses * precio_mes - monto_pago) < 0.01:
+        quantity = meses
+        price = precio_mes
     else:
         quantity = 1
         price = monto_pago

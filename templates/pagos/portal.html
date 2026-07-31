@@ -33,6 +33,15 @@
                 <span>Suscripcion activa</span>
             </div>
             {% else %}
+            {% if meses_atraso > 0 %}
+            <div class="alert alert-warning mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span>
+                    Deb{% if meses_atraso == 1 %}es 1 mes{% else %}es {{ meses_atraso }} meses{% endif %} de suscripcion.
+                    Podes ponerte al dia pagando varios meses en un solo pago.
+                </span>
+            </div>
+            {% endif %}
             {% if datos_facturacion %}
             <!-- Billing data summary -->
             <div class="alert alert-info text-left mt-4">
@@ -46,10 +55,24 @@
                 </div>
             </div>
 
+            <!-- Selector de meses a pagar -->
+            <div class="form-control text-left mt-4 mb-2 max-w-xs">
+                <label class="label" for="pago-meses-select"><span class="label-text">Cuantos meses queres pagar?</span></label>
+                <select id="pago-meses-select" class="select select-bordered select-sm">
+                    {% for o in opciones_pago %}
+                    <option value="{{ o.n }}" {% if o.n == meses_sugeridos %}selected{% endif %}>
+                        {{ o.n }} mes{{ o.n|pluralize:",es" }} -- ${{ o.monto_centavos|floatformat:0 }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <span class="label-text-alt mt-1">Total a pagar: $<span id="pago-monto-total">{{ monto_centavos|floatformat:0 }}</span> COP (centavos)</span>
+            </div>
+
             <!-- WOMPI payment button -->
-            <div class="mt-4">
+            <div class="mt-2" id="wompi-widget-container" data-opciones='{{ opciones_pago_json|escapejs }}'>
                 <form>
                     <script
+                        id="wompi-widget-script"
                         src="https://checkout.wompi.co/widget.js"
                         data-render="button"
                         data-public-key="{{ wompi_public_key }}"
@@ -62,6 +85,33 @@
                 </form>
                 <p class="text-xs opacity-50 mt-2">Pago seguro procesado por WOMPI. Se generara factura electronica automaticamente.</p>
             </div>
+            <script>
+            (function () {
+                var container = document.getElementById('wompi-widget-container');
+                var select = document.getElementById('pago-meses-select');
+                var totalEl = document.getElementById('pago-monto-total');
+                if (!container || !select) { return; }
+                var opciones = JSON.parse(container.dataset.opciones || '[]');
+                select.addEventListener('change', function () {
+                    var n = parseInt(select.value, 10);
+                    var opcion = opciones.filter(function (o) { return o.n === n; })[0];
+                    if (!opcion) { return; }
+                    var oldScript = document.getElementById('wompi-widget-script');
+                    var newScript = document.createElement('script');
+                    newScript.id = 'wompi-widget-script';
+                    newScript.src = 'https://checkout.wompi.co/widget.js';
+                    newScript.setAttribute('data-render', 'button');
+                    newScript.setAttribute('data-public-key', oldScript.getAttribute('data-public-key'));
+                    newScript.setAttribute('data-currency', 'COP');
+                    newScript.setAttribute('data-amount-in-cents', opcion.monto_centavos);
+                    newScript.setAttribute('data-reference', opcion.reference);
+                    newScript.setAttribute('data-signature:integrity', opcion.signature);
+                    newScript.setAttribute('data-redirect-url', oldScript.getAttribute('data-redirect-url'));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                    if (totalEl) { totalEl.textContent = opcion.monto_centavos; }
+                });
+            })();
+            </script>
             {% else %}
             <!-- No billing data yet -->
             <div class="mt-4">
@@ -77,6 +127,20 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Grilla de meses pagados/pendientes -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h3 class="card-title text-base mb-2">Estado por mes</h3>
+            <div class="flex flex-wrap gap-2">
+                {% for mes in grid_meses %}
+                <span class="badge {% if mes.pagado %}badge-success{% else %}badge-error{% endif %} {% if mes.es_actual %}ring ring-offset-1{% endif %}">
+                    {{ mes.label }} {% if mes.pagado %}&check;{% else %}&#10005;{% endif %}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
     <!-- Recent payments -->
     <div class="card bg-base-100 shadow-xl">
