@@ -109,6 +109,11 @@ urlpatterns = [
         name="export_schedule_attendance_pdf",
     ),
     path(
+        "attendance-reports/programaciones/<int:schedule_id>/export-pdf/<int:user_id>/",
+        views.export_schedule_attendance_pdf_individual,
+        name="export_schedule_attendance_pdf_individual",
+    ),
+    path(
         "attendance-reports/<int:course_id>/export-pdf/",
         views.export_course_attendance_pdf,
         name="export_course_attendance_pdf",
