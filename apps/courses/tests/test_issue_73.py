@@ -474,6 +474,58 @@ class ScheduleAttendanceSummaryTests(TestCase):
         self.assertEqual(summary["total_inscritos"], 0)
         self.assertEqual(summary["porcentaje_asistencia"], 0.0)
 
+    def test_presente_sobrevive_si_assignment_enrollment_queda_null(self):
+        """Gap 3 del comentario de validación 2026-07-30 ("por qué la
+        programación #5 muestra que nadie lo hizo") -- investigado por código,
+        sin acceso a BD prod.
+
+        Hipótesis a confirmar: ¿hay un problema real de sincronización entre
+        `ScheduleAssignment.enrollment` y el `Enrollment` real de la persona?
+
+        `ScheduleAssignment.enrollment` es `on_delete=SET_NULL`
+        (`models.py:1367-1375`): si el `Enrollment` original se borra (p.ej.
+        `management/commands/clear_courses.py`, el único borrador masivo del
+        repo) el FK queda en NULL. Este test simula exactamente ese estado y
+        confirma que `build_schedule_attendance_summary` NO se queda ciego:
+        el fallback (`services.py:861-864`, `Enrollment.objects.filter(user=,
+        course=).first()`) recupera igual el `Enrollment` real por
+        user+course y refleja `completion_signature` correctamente.
+
+        Conclusión de la investigación: no hay bug de sincronización en el
+        código -- el fallback es robusto. El síntoma reportado
+        ("programación #5 no refleja completaciones reales") se explica por
+        el scoping documentado y ya cubierto por
+        `test_roster_ignora_inscritos_del_curso_no_convocados`: el roster de
+        una programación son SOLO sus convocados (`ScheduleAssignment`), así
+        que alguien que completó el curso por una vía distinta a ESA
+        convocatoria puntual no aparece ahí aunque sí haya completado el
+        curso -- comportamiento por diseño (requisito 5 del issue: "dos
+        convocatorias del mismo curso no se mezclan"), no un defecto.
+        """
+        persona = _make_user()
+        schedule = _make_schedule(self.course, self.admin)
+        CourseScheduleService.convocar(
+            schedule, {persona.id: ScheduleAssignment.Source.USER}
+        )
+
+        enrollment = Enrollment.objects.get(user=persona, course=self.course)
+        enrollment.completion_signature = _png_file()
+        enrollment.completion_signed_at = timezone.now()
+        enrollment.save()
+
+        # Simula el FK huérfano (SET_NULL tras borrar/recrear el Enrollment
+        # por fuera del flujo de convocatoria).
+        assignment = ScheduleAssignment.objects.get(schedule=schedule, user=persona)
+        assignment.enrollment = None
+        assignment.save()
+
+        summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
+        row = summary["rows"][0]
+
+        self.assertTrue(row["presente"])
+        self.assertEqual(row["estado"], "Presente")
+        self.assertEqual(summary["total_presentes"], 1)
+
 
 # =============================================================================
 # Entregables 21, 22 -- Permisos por rol
@@ -860,6 +912,67 @@ class ScheduleResponsableAndPdfTests(TestCase):
             response["Location"],
         )
 
+    def test_export_pdf_individual_por_programacion_devuelve_pdf(self):
+        """Gap real 1 del comentario de validación 2026-07-30: faltaba la
+        4ta combinación (individual + filtrado por programación) -- el
+        cliente confirmó que `course_schedule_detail.html` solo tenía el
+        botón grupal, sin link 'Descargar individual' por fila."""
+        response = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.convocado.id],
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn(
+            f"asistencia_individual_programacion_{self.schedule.id}_{self.convocado.id}",
+            response["Content-Disposition"],
+        )
+        self.assertTrue(response.content.startswith(b"%PDF"))
+
+    def test_export_pdf_individual_por_programacion_404_si_no_convocado(self):
+        """`user_id` se resuelve contra el roster de ESTA programación, no un
+        lookup global de usuarios -- mismo criterio que el individual de
+        SD#63 (`export_course_attendance_pdf_individual`)."""
+        ajeno = _make_user()
+        response = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, ajeno.id],
+            )
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_export_pdf_individual_por_programacion_bloqueado_si_falta_info(self):
+        self.course.project_name = ""
+        self.course.save()
+
+        response = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.convocado.id],
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            reverse("courses:schedule_detail", args=[self.schedule.id]),
+            response["Location"],
+        )
+
+    def test_schedule_detail_ofrece_descargar_individual_por_fila(self):
+        """El template debe traer el link por fila (no solo el grupal)."""
+        response = self.client.get(
+            reverse("courses:schedule_detail", args=[self.schedule.id])
+        )
+        self.assertContains(
+            response,
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.convocado.id],
+            ),
+        )
+
     def _render_schedule_pdf(self, **context_overrides):
         """Arma el MISMO context que `views.export_schedule_attendance_pdf` y
         renderiza el template real -- helper compartido por los tests de
@@ -1075,7 +1188,9 @@ class MyCoursesConvocatoriaBadgeTests(TestCase):
 
 class CourseScheduleFormTests(TestCase):
     def setUp(self):
+        self.client = Client()
         self.admin = _make_user(rol=User.Rol.ADMINISTRADOR)
+        self.client.force_login(self.admin)
         self.course = _make_course(self.admin)
         self.draft = _make_course(self.admin, status=Course.Status.DRAFT)
 
@@ -1117,3 +1232,54 @@ class CourseScheduleFormTests(TestCase):
         form = CourseScheduleForm()
         choices = dict(form.fields["job_positions"].choices)
         self.assertIn("Cargo Derivado SD73", choices)
+
+    def test_activity_type_es_parte_del_form(self):
+        """`activity_type` ya estaba en `Meta.fields` (forms.py:711) pero el
+        template nunca lo renderizaba -- gap real 2 del comentario de
+        validación 2026-07-30 ('el campo existe en el backend pero es
+        invisible para quien crea la programación')."""
+        form = CourseScheduleForm()
+        self.assertIn("activity_type", form.fields)
+
+    def test_crear_programacion_guarda_activity_type_elegido(self):
+        """Punto 3 del comentario 2026-07-29: se pregunta en la
+        programación como selección única (reusa `Course.ActivityType`)."""
+        persona = _make_user()
+        response = self.client.post(
+            reverse("courses:schedule_create"),
+            {
+                "course": self.course.id,
+                "name": "Turno con actividad",
+                "notes": "",
+                "activity_type": Course.ActivityType.SIMULACRO,
+                "users": [persona.id],
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        schedule = CourseSchedule.objects.get(name="Turno con actividad")
+        self.assertEqual(schedule.activity_type, Course.ActivityType.SIMULACRO)
+
+
+class CourseScheduleFormTemplateTests(TestCase):
+    """Gap real 2: el `<select>` de `activity_type` debe estar en el HTML
+    servido, no solo en `Meta.fields` del form."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = _make_user(rol=User.Rol.ADMINISTRADOR)
+        self.client.force_login(self.admin)
+        self.course = _make_course(self.admin)
+
+    def test_form_nueva_programacion_renderiza_activity_type(self):
+        response = self.client.get(reverse("courses:schedule_create"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="activity_type"')
+        self.assertContains(response, "Tipo de actividad")
+
+    def test_form_editar_programacion_renderiza_activity_type(self):
+        schedule = _make_schedule(self.course, self.admin)
+        response = self.client.get(
+            reverse("courses:schedule_edit", args=[schedule.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="activity_type"')

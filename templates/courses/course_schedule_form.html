@@ -59,6 +59,16 @@
                             <span class="text-error text-xs mt-1">{{ form.responsable.errors }}</span>
                         {% endif %}
                     </div>
+                    <div class="form-control">
+                        <label class="label" for="{{ form.activity_type.id_for_label }}">
+                            <span class="label-text">{{ form.activity_type.label }}</span>
+                        </label>
+                        {{ form.activity_type }}
+                        <span class="text-xs text-gray-500 mt-1">{{ form.activity_type.help_text }}</span>
+                        {% if form.activity_type.errors %}
+                            <span class="text-error text-xs mt-1">{{ form.activity_type.errors }}</span>
+                        {% endif %}
+                    </div>
                     <div class="form-control md:col-span-2">
                         <label class="label" for="{{ form.notes.id_for_label }}">
                             <span class="label-text">{{ form.notes.label }}</span>

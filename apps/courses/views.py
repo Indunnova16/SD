@@ -3050,3 +3050,106 @@ def export_schedule_attendance_pdf(request, schedule_id):
     filename = f"asistencia_programacion_{schedule.id}_{timezone.now().strftime('%Y%m%d')}.pdf"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+@login_required
+def export_schedule_attendance_pdf_individual(request, schedule_id, user_id):
+    """PDF individual (un solo firmante) FILTRADO por programación -- gap real 1
+    del comentario de validación 2026-07-30 sobre SD#73.
+
+    Antes de este fix existían solo 3 variantes del PDF de asistencia:
+      - grupal por curso completo (SD#63, `export_course_attendance_pdf`)
+      - individual por curso completo (SD#63, `export_course_attendance_pdf_individual`)
+      - grupal filtrado por programación (SD#73, `export_schedule_attendance_pdf`)
+    Faltaba la 4ta combinación (individual + filtrado por programación),
+    confirmada como gap real por el cliente: `course_schedule_detail.html`
+    solo tenía el botón grupal, sin ningún link "Descargar individual" por
+    fila del roster (a diferencia de `course_attendance_report_detail.html`,
+    que sí lo tiene para el reporte por curso completo).
+
+    Decisión de arquitectura (no reabrir): mismo patrón que
+    `export_course_attendance_pdf_individual` hace sobre el reporte grupal de
+    SD#63 -- reusa `export_schedule_attendance_pdf`/
+    `build_schedule_attendance_summary` (fecha estable, calificación promedio
+    de LA PROGRAMACIÓN, responsable/firma) parametrizado con `rows=[fila]` +
+    `is_individual=True`, en vez de triplicar ese armado de contexto.
+
+    `user_id` se resuelve contra el roster de ESTA programación específica
+    (`ScheduleAssignment` de este `schedule`), no un lookup global de `User`:
+    alguien convocado a OTRA programación del mismo curso (o no convocado a
+    ninguna) da 404, mismo criterio que el individual de SD#63.
+    """
+    if err := _attendance_export_required(request):
+        return err
+
+    from io import BytesIO
+
+    from django.template.loader import render_to_string
+
+    from xhtml2pdf import pisa
+
+    schedule = get_object_or_404(
+        CourseSchedule.objects.select_related("course", "responsable"), pk=schedule_id
+    )
+    course = schedule.course
+
+    missing = _course_attendance_missing_fields(course)
+    if missing:
+        messages.error(
+            request,
+            "Complete los siguientes campos del curso antes de descargar el "
+            f"reporte de asistencia: {', '.join(missing)}.",
+        )
+        return redirect("courses:schedule_detail", schedule_id=schedule.id)
+
+    summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
+    row = next((r for r in summary["rows"] if r["user"].id == user_id), None)
+    if row is None:
+        raise Http404("El usuario indicado no fue convocado a esta programación.")
+
+    pdf_instructor = schedule.responsable or course.instructor
+    signature_url = schedule.responsable_signature_url
+    if not schedule.responsable and course.instructor and course.instructor.signature:
+        try:
+            signature_url = course.instructor.signature.url
+        except Exception:
+            signature_url = ""
+
+    context = {
+        "course": course,
+        "schedule": schedule,
+        "rows": [row],
+        "total_inscritos": 1,
+        "total_presentes": 1 if row["presente"] else 0,
+        "total_ausentes": 0 if row["presente"] else 1,
+        "porcentaje_asistencia": 100.0 if row["presente"] else 0.0,
+        # Calificación promedio de LA PROGRAMACIÓN (no del individuo) -- mismo
+        # campo agregado que el grupal, así el PDF individual no contradice
+        # el grupal si se descargan los dos (punto 2 del rebote, criterio
+        # "Calificación total del curso").
+        "calificacion_promedio": summary["calificacion_promedio"],
+        "schedule_date": schedule.suggested_end_date or schedule.created_at.date(),
+        "generated_at": timezone.now(),
+        "request_user": request.user,
+        "pdf_instructor": pdf_instructor,
+        "instructor_signature_url": signature_url,
+        "is_individual": True,
+    }
+    context.update(_attendance_pdf_branding_context())
+
+    html_string = render_to_string("courses/course_attendance_pdf.html", context)
+
+    result = BytesIO()
+    pdf = pisa.CreatePDF(html_string, dest=result, encoding="utf-8")
+
+    if pdf.err:
+        messages.error(request, "Error al generar el PDF individual de la programación.")
+        return redirect("courses:schedule_detail", schedule_id=schedule.id)
+
+    response = HttpResponse(result.getvalue(), content_type="application/pdf")
+    filename = (
+        f"asistencia_individual_programacion_{schedule.id}_{user_id}_"
+        f"{timezone.now().strftime('%Y%m%d')}.pdf"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
