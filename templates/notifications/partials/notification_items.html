@@ -60,14 +60,16 @@
                     <!-- Actions -->
                     <div class="flex items-center gap-2">
                         {% if notification.action_url %}
-                            {# issue #119: hx-get sobre este <a> interceptaba el click (htmx
-                               previene la navegacion nativa en CUALQUIER elemento con
-                               hx-get/post) y ademas apuntaba a una vista @require_POST
-                               (notifications:mark-read) -> 405 -> toast global "Error en la
-                               solicitud". Resultado: "Ir al curso" nunca navegaba. Fix:
-                               anchor plano (navega via href de verdad) + fetch keepalive
-                               fire-and-forget en background para preservar el marcado
-                               como leida, sin bloquear el click. #}
+                            {% comment %}
+                            issue #119: hx-get sobre este <a> interceptaba el click (htmx
+                            previene la navegacion nativa en CUALQUIER elemento con
+                            hx-get/post) y ademas apuntaba a una vista @require_POST
+                            (notifications:mark-read) -> 405 -> toast global "Error en la
+                            solicitud". Resultado: "Ir al curso" nunca navegaba. Fix:
+                            anchor plano (navega via href de verdad) + fetch keepalive
+                            fire-and-forget en background para preservar el marcado
+                            como leida, sin bloquear el click.
+                            {% endcomment %}
                             <a href="{{ notification.action_url }}"
                                class="btn btn-primary btn-sm"
                                data-mark-read-url="{% url 'notifications:mark-read' notification.id %}"
