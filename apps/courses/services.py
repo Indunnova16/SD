@@ -855,17 +855,38 @@ class CourseScheduleService:
 
         rows = []
         total_presentes = 0
+        graded_scores = []
+        from apps.assessments.models import AssessmentAttempt
+
         for assignment in assignments:
             user = assignment.user
-            enrollment = assignment.enrollment
-            if enrollment is None:
-                enrollment = Enrollment.objects.filter(
-                    user=user, course=schedule.course
-                ).first()
+            # `ScheduleAssignment.enrollment` is a convenience link created at
+            # convocatoria time, not the source of truth.  Legacy data can
+            # retain a stale non-null FK after an enrollment was recreated.
+            enrollment = Enrollment.objects.filter(
+                user=user, course=schedule.course
+            ).first()
 
             presente = bool(enrollment and enrollment.completion_signature)
             if presente:
                 total_presentes += 1
+
+            latest_graded_attempt = (
+                AssessmentAttempt.objects.filter(
+                    user=user,
+                    assessment__course=schedule.course,
+                    status=AssessmentAttempt.Status.GRADED,
+                )
+                .order_by("-graded_at", "-started_at", "-pk")
+                .first()
+            )
+            score = (
+                float(latest_graded_attempt.score)
+                if latest_graded_attempt and latest_graded_attempt.score is not None
+                else None
+            )
+            if score is not None:
+                graded_scores.append(score)
 
             signature_image_url = ""
             if presente:
@@ -885,6 +906,7 @@ class CourseScheduleService:
                     "signed_at": enrollment.completion_signed_at if enrollment else None,
                     "signature_image_url": signature_image_url,
                     "source": assignment.get_source_display(),
+                    "score": score,
                 }
             )
 
@@ -893,18 +915,8 @@ class CourseScheduleService:
         porcentaje = round(total_presentes / total_inscritos * 100, 1) if total_inscritos else 0.0
 
         calificacion_promedio = None
-        if total_inscritos:
-            from django.db.models import Avg
-
-            from apps.assessments.models import AssessmentAttempt
-
-            user_ids = [row["user"].id for row in rows]
-            avg = AssessmentAttempt.objects.filter(
-                user_id__in=user_ids,
-                assessment__course=schedule.course,
-                status=AssessmentAttempt.Status.GRADED,
-            ).aggregate(avg=Avg("score"))["avg"]
-            calificacion_promedio = float(avg) if avg is not None else None
+        if graded_scores:
+            calificacion_promedio = sum(graded_scores) / len(graded_scores)
 
         return {
             "rows": rows,

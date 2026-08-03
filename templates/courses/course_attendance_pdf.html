@@ -276,8 +276,9 @@
                     <th style="width: 25%;">Nombre completo</th>
                     <th style="width: 14%;">Cédula</th>
                     <th style="width: 16%;">Cargo</th>
+                    {% if schedule %}<th style="width: 10%;">Calificación</th>{% endif %}
                     <th style="width: 21%;">Firma</th>
-                    <th style="width: 19%;">Fecha de firma</th>
+                    <th style="width: 15%;">Fecha de firma</th>
                 </tr>
             </thead>
             <tbody>
@@ -287,6 +288,7 @@
                     <td>{{ row.full_name }}</td>
                     <td>{{ row.document_number }}</td>
                     <td>{{ row.job_position|default:"—" }}</td>
+                    {% if schedule %}<td>{% if row.score is not None %}{{ row.score|floatformat:1 }}%{% else %}<span class="empty">—</span>{% endif %}</td>{% endif %}
                     <td>
                         {% if row.signature_image_url %}
                             <img class="signature-img" src="{{ row.signature_image_url }}" alt="Firma">
@@ -300,7 +302,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
+                    <td colspan="{% if schedule %}7{% else %}6{% endif %}" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
                 </tr>
                 {% endfor %}
             </tbody>

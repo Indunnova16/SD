@@ -526,6 +526,58 @@ class ScheduleAttendanceSummaryTests(TestCase):
         self.assertEqual(row["estado"], "Presente")
         self.assertEqual(summary["total_presentes"], 1)
 
+    def test_presente_usa_enrollment_canonico_si_fk_del_assignment_es_stale(self):
+        """Un FK no nulo pero de otro curso no puede ocultar la completitud real."""
+        persona = _make_user()
+        otro_curso = _make_course(self.admin)
+        schedule = _make_schedule(self.course, self.admin)
+        CourseScheduleService.convocar(
+            schedule, {persona.id: ScheduleAssignment.Source.USER}
+        )
+
+        canonical = Enrollment.objects.get(user=persona, course=self.course)
+        canonical.completion_signature = _png_file()
+        canonical.completion_signed_at = timezone.now()
+        canonical.save()
+        stale = Enrollment.objects.create(user=persona, course=otro_curso)
+        assignment = ScheduleAssignment.objects.get(schedule=schedule, user=persona)
+        assignment.enrollment = stale
+        assignment.save(update_fields=["enrollment"])
+
+        row = CourseScheduleService.build_schedule_attendance_summary(schedule)["rows"][0]
+        self.assertTrue(row["presente"])
+
+    def test_score_por_fila_es_el_intento_graded_mas_reciente(self):
+        from apps.assessments.models import Assessment, AssessmentAttempt
+
+        persona = _make_user()
+        schedule = _make_schedule(self.course, self.admin)
+        CourseScheduleService.convocar(
+            schedule, {persona.id: ScheduleAssignment.Source.USER}
+        )
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación SD73",
+            passing_score=60,
+            created_by=self.admin,
+        )
+        older = AssessmentAttempt.objects.create(
+            user=persona, assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED, score=40,
+        )
+        newer = AssessmentAttempt.objects.create(
+            user=persona, assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED, score=90,
+        )
+        newer.graded_at = timezone.now()
+        newer.save(update_fields=["graded_at"])
+        older.graded_at = newer.graded_at - timedelta(minutes=1)
+        older.save(update_fields=["graded_at"])
+
+        summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
+        self.assertEqual(summary["rows"][0]["score"], 90.0)
+        self.assertEqual(summary["calificacion_promedio"], 90.0)
+
 
 # =============================================================================
 # Entregables 21, 22 -- Permisos por rol

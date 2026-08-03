@@ -99,6 +99,7 @@
                             <th>Cedula</th>
                             <th>Cargo</th>
                             <th>Convocado por</th>
+                            <th>Calificación</th>
                             <th>Estado</th>
                             <th>Fecha de firma</th>
                             <th>Descargar</th>
@@ -111,6 +112,13 @@
                                 <td>{{ row.document_number }}</td>
                                 <td>{{ row.job_position|default:"—" }}</td>
                                 <td class="text-xs text-gray-500">{{ row.source }}</td>
+                                <td>
+                                    {% if row.score is not None %}
+                                        {{ row.score|floatformat:1 }}%
+                                    {% else %}
+                                        <span class="text-gray-400">—</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if row.presente %}
                                         <span class="badge badge-success badge-sm">Presente</span>
@@ -144,7 +152,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center text-gray-400 py-8">No hay personas convocadas en esta programacion.</td>
+                                <td colspan="8" class="text-center text-gray-400 py-8">No hay personas convocadas en esta programacion.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
