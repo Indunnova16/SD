@@ -196,6 +196,36 @@ class GitHubFeedbackClient:
             )
         return comentarios
 
+    def comentar_issue(self, issue_number, cuerpo):
+        """Publica un comentario en un issue SIN cerrarlo.
+
+        Issue #71 ronda 4: extraído del bloque que `cerrar_issue` ya usaba
+        para postear el comentario de "quién resolvió" — reutilizado acá
+        para que el portal pueda comentar un ticket (seguimiento) de forma
+        independiente de resolverlo.
+
+        Devuelve el `id` del comentario creado. Levanta GitHubClientError
+        ante cualquier fallo (red, status != 201).
+        """
+        try:
+            response = requests.post(
+                f"{GITHUB_API_BASE}/repos/{self.repo}/issues/{issue_number}/comments",
+                json={"body": cuerpo},
+                headers=self._headers(),
+                timeout=DEFAULT_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as exc:
+            raise GitHubClientError(
+                f"Error de red comentando el issue {issue_number}: {exc}"
+            ) from exc
+
+        if response.status_code != 201:
+            raise GitHubClientError(
+                f"GitHub devolvió status inesperado comentando el issue "
+                f"{issue_number}: {response.status_code} — {response.text}"
+            )
+        return response.json().get("id")
+
     def cerrar_issue(self, issue_number, comentario=None):
         """Cierra un issue; si viene `comentario`, lo postea antes de cerrar.
 
@@ -208,25 +238,7 @@ class GitHubFeedbackClient:
         comment_id = None
 
         if comentario:
-            try:
-                resp_comentario = requests.post(
-                    f"{GITHUB_API_BASE}/repos/{self.repo}/issues/{issue_number}/comments",
-                    json={"body": comentario},
-                    headers=self._headers(),
-                    timeout=DEFAULT_TIMEOUT_SECONDS,
-                )
-            except requests.RequestException as exc:
-                raise GitHubClientError(
-                    f"Error de red comentando el issue {issue_number}: {exc}"
-                ) from exc
-
-            if resp_comentario.status_code != 201:
-                raise GitHubClientError(
-                    f"GitHub devolvió status inesperado comentando el issue "
-                    f"{issue_number}: {resp_comentario.status_code} — "
-                    f"{resp_comentario.text}"
-                )
-            comment_id = resp_comentario.json().get("id")
+            comment_id = self.comentar_issue(issue_number, comentario)
 
         try:
             response = requests.patch(

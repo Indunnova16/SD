@@ -107,6 +107,51 @@
         {% endif %}
     </div>
 
+    <!-- Comentar sin resolver (issue #71 ronda 4): independiente del botón
+         de resolver, disponible aunque el ticket ya esté resuelto (un
+         seguimiento posterior no debería exigir reabrir el caso). -->
+    <div class="border-t border-gray-200 dark:border-gray-700 mt-6 pt-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Agregar un comentario</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            Contanos más sin marcar el caso como resuelto — ej. "sigue pasando" o una aclaración.
+        </p>
+        <form method="post"
+              action="{% url 'feedback:comentar' ticket_id=ticket.id %}"
+              id="form-comentar"
+              class="space-y-3">
+            {% csrf_token %}
+            <div class="form-control">
+                <label class="sr-only" for="{{ comentario_form.nombre.id_for_label }}">Tu nombre</label>
+                <input type="text"
+                       name="nombre"
+                       id="{{ comentario_form.nombre.id_for_label }}"
+                       placeholder="Tu nombre"
+                       class="input input-bordered w-full{% if comentario_form.nombre.errors %} input-error{% endif %}"
+                       value="{{ comentario_form.nombre.value|default:'' }}">
+                {% for error in comentario_form.nombre.errors %}
+                <div class="label" aria-live="polite">
+                    <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-control">
+                <label class="sr-only" for="{{ comentario_form.comentario.id_for_label }}">Comentario</label>
+                <textarea name="comentario"
+                          id="{{ comentario_form.comentario.id_for_label }}"
+                          rows="3"
+                          placeholder="Escribí tu comentario…"
+                          class="textarea textarea-bordered w-full{% if comentario_form.comentario.errors %} textarea-error{% endif %}">{{ comentario_form.comentario.value|default:'' }}</textarea>
+                {% for error in comentario_form.comentario.errors %}
+                <div class="label" aria-live="polite">
+                    <span class="label-text-alt text-error" role="alert">{{ error }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {{ comentario_form.website }}
+            <button type="submit" class="btn btn-outline">Enviar comentario</button>
+        </form>
+    </div>
+
     <!-- Resolver el caso ("ni puede resolver el caso"). POST-only. -->
     {% if not ticket.esta_resuelto %}
     <div class="border-t border-gray-200 dark:border-gray-700 mt-6 pt-6">

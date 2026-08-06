@@ -10,6 +10,19 @@
     </a>
 </div>
 
+<!-- Búsqueda pública por número de ticket (issue #71 ronda 4). GET-only,
+     la procesa `buscar_view`. -->
+<form method="get" action="{% url 'feedback:buscar' %}"
+      class="flex gap-2 mb-6" role="search">
+    <input type="number"
+           name="numero"
+           min="1"
+           placeholder="Buscar por número de ticket"
+           class="input input-bordered w-full max-w-xs"
+           aria-label="Número de ticket">
+    <button type="submit" class="btn btn-outline">Buscar</button>
+</form>
+
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl divide-y divide-gray-200 dark:divide-gray-700 overflow-hidden">
     {% for ticket in page_obj %}
     <a href="{% url 'feedback:detalle' ticket.id %}"

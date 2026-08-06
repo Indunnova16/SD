@@ -23,6 +23,7 @@ class FeedbackTicketAdmin(admin.ModelAdmin):
         "estado",
         "sincronizado_github",
         "created_at",
+        "ip_reportante",
     ]
     list_filter = ["estado", "sincronizado_github", "created_at"]
     search_fields = ["asunto", "nombre_reportante", "descripcion"]
@@ -35,6 +36,7 @@ class FeedbackTicketAdmin(admin.ModelAdmin):
         "resuelto_at",
         "created_at",
         "updated_at",
+        "ip_reportante",
     ]
 
 

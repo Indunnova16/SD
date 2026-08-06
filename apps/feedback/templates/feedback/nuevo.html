@@ -7,6 +7,26 @@
 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Reportar un nuevo ticket</h2>
 
+    {% if duplicados %}
+    <!-- Detección de posibles duplicados (issue #71 ronda 4): advertencia
+         NO bloqueante, el usuario decide si de verdad es un caso nuevo. -->
+    <div class="alert alert-warning mb-6" role="status" aria-live="polite" data-testid="alerta-duplicados">
+        <div>
+            <p class="font-medium mb-2">Ya hay ticket(s) abiertos que se parecen a este:</p>
+            <ul class="list-disc list-inside space-y-1">
+                {% for duplicado in duplicados %}
+                <li>
+                    <a href="{% url 'feedback:detalle' duplicado.id %}" target="_blank" rel="noopener" class="link">
+                        #{{ duplicado.id }} — {{ duplicado.asunto }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            <p class="text-sm mt-2">Revisá si tu caso ya está reportado. Si es un problema distinto, confirmá abajo para crear el ticket igual.</p>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="post" enctype="multipart/form-data" id="form-nuevo-ticket" novalidate>
         {% csrf_token %}
 
@@ -110,7 +130,17 @@
              ocultamiento adicional a nivel de template — sigue en el DOM. -->
         {{ form.website }}
 
+        {% if duplicados %}
+        <!-- El usuario ya vio la advertencia de duplicados: este botón
+             manda `confirmar_duplicado=true` SOLO porque es el control que
+             disparó el submit (name/value del botón), sin depender de JS. -->
+        <button type="submit" name="confirmar_duplicado" value="true"
+                class="btn btn-warning w-full">
+            Sí, es un caso distinto — crear igual
+        </button>
+        {% else %}
         <button type="submit" class="btn btn-primary w-full">Enviar</button>
+        {% endif %}
     </form>
 </div>
 {% endblock %}

@@ -49,12 +49,76 @@ class NuevoTicketForm(forms.Form):
             }
         ),
     )
+    # Issue #71 ronda 4 (detección de duplicados): campo oculto que el
+    # template setea a "1" cuando el usuario ya vio la advertencia de
+    # posibles duplicados y confirmó que quiere crear el ticket de todas
+    # formas. `required=False` + default "" para no romper el submit inicial
+    # (sin advertencia todavía).
+    confirmar_duplicado = forms.BooleanField(required=False, widget=forms.HiddenInput)
 
     def clean_website(self):
         website = self.cleaned_data.get("website", "")
         if website:
             # Mensaje genérico a propósito: NO mencionar "bot"/"honeypot"/
             # "spam" para no darle pistas a quien intente evadir el filtro.
+            raise forms.ValidationError(
+                _("No se pudo procesar el formulario, intentá de nuevo.")
+            )
+        return website
+
+
+class BuscarTicketForm(forms.Form):
+    """Búsqueda pública por número de ticket (issue #71 ronda 4).
+
+    Se acepta el `id` interno (el que aparece en la URL del detalle) o el
+    número de issue de GitHub — el usuario no necesariamente sabe cuál de
+    los dos es "el número de su ticket", así que `buscar_view` prueba ambos.
+    """
+
+    numero = forms.IntegerField(
+        label=_("Número de ticket"),
+        min_value=1,
+        required=True,
+        error_messages={
+            "invalid": _("Ingresá solo el número de tu ticket."),
+        },
+    )
+
+
+class ComentarioTicketForm(forms.Form):
+    """Comentario de seguimiento desde el portal, independiente de resolver.
+
+    Issue #71 ronda 4 — reclamo explícito: "agregar la opción de comentar
+    desde el portal, independiente de resolver". Mismo honeypot que el resto
+    de los forms públicos del portal.
+    """
+
+    nombre = forms.CharField(
+        label=_("Tu nombre"),
+        min_length=2,
+        max_length=120,
+        required=True,
+    )
+    comentario = forms.CharField(
+        label=_("Comentario"),
+        min_length=3,
+        required=True,
+        widget=forms.Textarea,
+    )
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "style": "position:absolute;left:-9999px",
+                "tabindex": "-1",
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    def clean_website(self):
+        website = self.cleaned_data.get("website", "")
+        if website:
             raise forms.ValidationError(
                 _("No se pudo procesar el formulario, intentá de nuevo.")
             )

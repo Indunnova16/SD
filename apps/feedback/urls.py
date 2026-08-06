@@ -15,6 +15,8 @@ app_name = "feedback"
 urlpatterns = [
     path("", views.lista_view, name="lista"),
     path("nuevo/", views.nuevo_view, name="nuevo"),
+    path("buscar/", views.buscar_view, name="buscar"),
     path("<int:ticket_id>/", views.detalle_view, name="detalle"),
     path("<int:ticket_id>/resolver/", views.resolver_view, name="resolver"),
+    path("<int:ticket_id>/comentar/", views.comentar_view, name="comentar"),
 ]

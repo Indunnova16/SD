@@ -55,6 +55,14 @@ class FeedbackTicket(models.Model):
     )
     error_sincronizacion = models.TextField(_("Error de sincronización"), blank=True)
 
+    # Issue #71 ronda 4: el reportante ya tenía fecha/hora automática desde
+    # v1.0 (`created_at`, abajo). La IP nunca se capturaba — la auditoría del
+    # revisor (2026-08-01) pidió confirmarlo/asegurarlo. Se puebla en
+    # `nuevo_view` best-effort (nunca bloquea la creación del ticket).
+    ip_reportante = models.GenericIPAddressField(
+        _("IP del reportante"), null=True, blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

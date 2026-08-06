@@ -31,9 +31,12 @@ Responsabilidades:
 """
 
 import logging
+import re
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_ipv46_address
 from django.db import transaction
 from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
@@ -53,6 +56,79 @@ PREFIJOS_MIME_PERMITIDOS = ("image/", "audio/", "video/")
 # que un comentario nuevo del equipo aparezca casi enseguida.
 CACHE_TTL_COMENTARIOS = 60
 CACHE_KEY_COMENTARIOS = "feedback:comentarios:{issue_number}"
+
+
+def obtener_ip_cliente(request):
+    """Devuelve la IP del cliente HTTP (issue #71 ronda 4).
+
+    Replica el patrón ya usado en `apps.courses.utils.get_client_ip` en vez
+    de importarlo cross-app (apps.feedback no debe acoplarse a apps.courses
+    para algo tan chico). Prioriza `X-Forwarded-For` (Cloud Run está detrás
+    de un proxy, `REMOTE_ADDR` sería la IP del balanceador, no la del
+    usuario) y cae a `REMOTE_ADDR` si no viene. Nunca lanza: devuelve `None`
+    si no hay ninguno de los dos, para no bloquear la creación del ticket
+    por esto.
+    """
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[0].strip()
+    else:
+        ip = request.META.get("REMOTE_ADDR")
+
+    if not ip:
+        return None
+
+    # `X-Forwarded-For` es un header del cliente: no confiar en que trae un
+    # valor bien formado. `GenericIPAddressField` es un `inet` en Postgres —
+    # un valor inválido acá tumbaría el INSERT del ticket entero (issue #71
+    # ronda 4 no puede introducir esa regresión sobre la garantía "el ticket
+    # nunca se pierde").
+    try:
+        validate_ipv46_address(ip)
+    except ValidationError:
+        return None
+    return ip
+
+
+# Palabras demasiado comunes en español para que su coincidencia cuente como
+# señal de "mismo problema" al detectar duplicados (issue #71 ronda 4).
+STOPWORDS_DUPLICADOS = {
+    "para", "con", "los", "las", "del", "por", "que", "una", "uno", "esta",
+    "este", "sobre", "desde", "cuando", "donde", "como", "pero", "porque",
+    "está", "están", "sigue", "vuelve", "todo", "toda", "todos", "todas",
+}
+
+
+def _palabras_significativas(texto):
+    """Extrae palabras de ≥4 letras (sin stopwords) de un texto, en minúsculas."""
+    palabras = re.findall(r"[a-záéíóúñü]{4,}", (texto or "").lower())
+    return {p for p in palabras if p not in STOPWORDS_DUPLICADOS}
+
+
+def buscar_posibles_duplicados(asunto, excluir_id=None):
+    """Devuelve tickets ABIERTOS cuyo asunto comparte ≥2 palabras clave con
+    `asunto` (issue #71 ronda 4 — "detección de posibles tickets duplicados
+    por palabras clave").
+
+    Comparación simple e intencionalmente barata (sin librerías de
+    similitud): basta para el pedido literal del cliente ("aunque sea
+    básica"). Nunca bloquea la creación — el caller decide si mostrarlo como
+    advertencia no-bloqueante.
+    """
+    palabras_nuevo = _palabras_significativas(asunto)
+    if not palabras_nuevo:
+        return []
+
+    candidatos = FeedbackTicket.objects.filter(estado=FeedbackTicket.ESTADO_ABIERTO)
+    if excluir_id:
+        candidatos = candidatos.exclude(id=excluir_id)
+
+    posibles = []
+    for ticket in candidatos.only("id", "asunto", "created_at"):
+        comunes = palabras_nuevo & _palabras_significativas(ticket.asunto)
+        if len(comunes) >= 2:
+            posibles.append(ticket)
+    return posibles
 
 
 def normalizar_mime(content_type):
@@ -408,6 +484,45 @@ def resolver_ticket(ticket_id, resuelto_por):
         logger.error(
             "Ticket #%s: resuelto localmente pero falló el cierre del issue "
             "#%s en GitHub: %s",
+            ticket.pk,
+            ticket.github_issue_number,
+            exc,
+        )
+        return False
+
+    invalidar_cache_comentarios(ticket.github_issue_number)
+    return True
+
+
+def comentar_ticket(ticket_id, nombre, cuerpo):
+    """Publica un comentario de seguimiento en el issue de GitHub del ticket,
+    SIN cambiar su estado (issue #71 ronda 4 — "agregar la opción de
+    comentar desde el portal, independiente de resolver").
+
+    A diferencia de `resolver_ticket`, esto no tiene una versión "solo
+    local" con sentido: el comentario ES la acción, no hay nada que guardar
+    en `FeedbackTicket` si falla. Si el ticket todavía no se sincronizó con
+    GitHub (`github_issue_number` es `None`), no hay dónde comentar todavía
+    — se devuelve `False` para que la vista le pida al usuario reintentar en
+    unos segundos, en vez de dejar el comentario en el limbo.
+
+    Devuelve `True` si el comentario se publicó en GitHub, `False` si el
+    ticket aún no tiene issue asociado o si GitHub falló (se loguea el
+    error; no se propaga para no tumbar la request del usuario).
+    """
+    ticket = FeedbackTicket.objects.get(pk=ticket_id)
+
+    if not ticket.github_issue_number:
+        return False
+
+    texto = (
+        f"**{nombre}** comentó desde el portal de SD - Cursos:\n\n{cuerpo}"
+    )
+    try:
+        GitHubFeedbackClient().comentar_issue(ticket.github_issue_number, texto)
+    except GitHubClientError as exc:
+        logger.error(
+            "Ticket #%s: falló publicar comentario en el issue #%s: %s",
             ticket.pk,
             ticket.github_issue_number,
             exc,
