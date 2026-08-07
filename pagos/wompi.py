@@ -60,3 +60,36 @@ def verify_webhook_signature(event_data, received_signature):
         return hmac.compare_digest(computed, received_signature)
     except Exception:
         return False
+
+
+def listar_transacciones(from_date, until_date, page_size=200):
+    """Lista transacciones del merchant entre 2 fechas (paginado completo).
+
+    OJO: el merchant de WOMPI es COMPARTIDO por todo el portafolio Indunnova
+    (una sola cuenta, un solo wompi-router) -- esto devuelve transacciones de
+    TODAS las apps. Filtrar por prefijo de referencia (WOMPI_REFERENCE_PREFIX)
+    antes de usar. Formato de fecha: 'YYYY-MM-DDTHH:MM:SS'.
+    """
+    txs = []
+    page = 1
+    while True:
+        resp = requests.get(
+            f"{get_base_url()}/transactions",
+            headers=get_headers(),
+            params={
+                'from_date': from_date,
+                'until_date': until_date,
+                'page_size': page_size,
+                'page': page,
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        data = payload.get('data', [])
+        txs.extend(data)
+        total = payload.get('meta', {}).get('total_results', len(txs))
+        if len(data) < page_size or len(txs) >= total:
+            break
+        page += 1
+    return txs
