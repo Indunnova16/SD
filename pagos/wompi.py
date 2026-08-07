@@ -36,13 +36,19 @@ def verify_webhook_signature(event_data, received_signature):
     try:
         properties = event_data.get('signature', {}).get('properties', [])
         timestamp = event_data.get('timestamp')
-        tx = event_data.get('data', {}).get('transaction', {})
+        # Las `properties` de WOMPI son rutas con punto relativas a `data`
+        # (p.ej. "transaction.id", "transaction.status"), por eso se
+        # resuelven desde `data` -- NO desde `data.transaction` ya
+        # desanidado, que duplicaba el prefijo "transaction" y explotaba
+        # con "'str' object has no attribute 'get'" en el 2do segmento
+        # (bug portfolio-wide, ya parchado en pagos-template#12 y en
+        # FormasFuturo Refs #68).
+        data = event_data.get('data', {})
 
         values = []
         for prop in properties:
-            keys = prop.split('.')
-            val = tx
-            for k in keys:
+            val = data
+            for k in prop.split('.'):
                 val = val.get(k, '') if isinstance(val, dict) else ''
             values.append(str(val))
 
