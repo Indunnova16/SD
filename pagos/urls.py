@@ -8,4 +8,5 @@ urlpatterns = [
     path('facturacion/', views.DatosFacturacionView.as_view(), name='facturacion'),
     path('historial/', views.HistorialPagosView.as_view(), name='historial'),
     path('webhook/', views.WompiWebhookView.as_view(), name='webhook'),
+    path('cron/conciliar-wompi/', views.cron_conciliar_wompi, name='cron_conciliar_wompi'),
 ]

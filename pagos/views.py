@@ -349,3 +349,27 @@ class WompiWebhookView(View):
         except Exception as e:
             logger.error(f'WOMPI webhook error: {e}')
             return JsonResponse({'status': 'error'}, status=400)
+
+
+@csrf_exempt
+def cron_conciliar_wompi(request):
+    """Endpoint para Cloud Scheduler — conciliación diaria contra WOMPI.
+
+    URL: /pagos/cron/conciliar-wompi/   Método: POST
+    Solo DETECTA (nunca registra): cada faltante queda logueado como ERROR
+    con marcador CONCILIACION_WOMPI (dispara la alerta de Cloud Logging).
+    Registrar es decisión humana via `manage.py conciliar_pagos_wompi --crear`.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido. Use POST.'}, status=405)
+    from .conciliacion import detectar_faltantes
+    try:
+        faltantes = detectar_faltantes(dias=7)
+    except Exception as e:
+        logger.exception('CONCILIACION_WOMPI: fallo consultando la API de WOMPI')
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({
+        'success': True,
+        'faltantes': len(faltantes),
+        'tx_ids': [t.get('id') for t in faltantes],
+    })
