@@ -218,7 +218,7 @@
             <tr>
                 <td colspan="2">
                     <div class="label">Calificación total</div>
-                    <div class="value">{% if calificacion_promedio is not None %}{{ calificacion_promedio|floatformat:1 }}%{% else %}<span class="empty">Sin evaluaciones</span>{% endif %}</div>
+                    <div class="value">{% if calificacion_promedio is not None %}{{ calificacion_promedio|floatformat:1 }}{% else %}<span class="empty">Sin evaluaciones</span>{% endif %}</div>
                 </td>
             </tr>
             {% endif %}
@@ -288,7 +288,7 @@
                     <td>{{ row.full_name }}</td>
                     <td>{{ row.document_number }}</td>
                     <td>{{ row.job_position|default:"—" }}</td>
-                    {% if schedule %}<td>{% if row.score is not None %}{{ row.score|floatformat:1 }}%{% else %}<span class="empty">—</span>{% endif %}</td>{% endif %}
+                    {% if schedule %}<td>{% if row.score is not None %}{{ row.score|floatformat:1 }}{% else %}<span class="empty">—</span>{% endif %}</td>{% endif %}
                     <td>
                         {% if row.signature_image_url %}
                             <img class="signature-img" src="{{ row.signature_image_url }}" alt="Firma">
