@@ -19,6 +19,7 @@ puede rebotar:
 """
 
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
@@ -1116,21 +1117,22 @@ class ScheduleResponsableAndPdfTests(TestCase):
         assessment = Assessment.objects.create(
             course=self.course,
             title="Evaluación SD73",
-            passing_score=60,
+            passing_score=Decimal("3.00"),
             created_by=self.admin,
         )
         AssessmentAttempt.objects.create(
             user=self.convocado,
             assessment=assessment,
             status=AssessmentAttempt.Status.GRADED,
-            score=80,
+            score=Decimal("4.00"),
         )
 
         html = self._render_schedule_pdf()
 
         self.assertIn("Calificación total", html)
         # Formateo localizado es-CO (LANGUAGE_CODE): coma decimal, no punto.
-        self.assertIn("80,0%", html)
+        # Escala 0-5 (SD#121): 4.00 se muestra "4,0".
+        self.assertIn("4,0", html)
 
     def test_pdf_calificacion_total_sin_evaluaciones(self):
         """Punto 3, caso borde: nadie ha presentado evaluación -> sin dividir

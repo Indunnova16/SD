@@ -73,7 +73,7 @@ class SubmitAttemptIdempotencyTest(TestCase):
             title="Evaluacion Issue 61",
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -112,7 +112,7 @@ class SubmitAttemptIdempotencyTest(TestCase):
         self.attempt.refresh_from_db()
         self.assertEqual(self.attempt.status, AssessmentAttempt.Status.GRADED)
         self.assertTrue(self.attempt.passed)
-        self.assertEqual(self.attempt.score, Decimal("100.00"))
+        self.assertEqual(self.attempt.score, Decimal("5.00"))
 
     def test_second_submit_on_same_attempt_redirects_not_404(self):
         """Reproduccion + validacion del fix: antes de este cambio, este

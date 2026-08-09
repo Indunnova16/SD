@@ -20,6 +20,7 @@ formatter run cannot silently re-break Alpine.
 
 import re
 from datetime import date
+from decimal import Decimal
 
 from django.template.loader import render_to_string
 from django.test import TestCase
@@ -77,7 +78,7 @@ class BuilderAlpineXDataRegressionTests(TestCase):
             title="Evaluacion XData",
             description="d",
             assessment_type="quiz",
-            passing_score=70,
+            passing_score=Decimal("3.50"),
             time_limit=30,
             max_attempts=3,
             status="draft",

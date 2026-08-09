@@ -87,7 +87,7 @@ class BuilderAddQuizLessonIssue38Tests(TestCase):
         self.legacy_assessment = Assessment.objects.create(
             title="Evaluacion legacy SD38",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=3,
             course=self.course,
             lesson=self.legacy_lesson,
@@ -422,7 +422,7 @@ class BuilderEditExistingQuestionIssue38Tests(TestCase):
         self.assessment = Assessment.objects.create(
             title="Evaluacion SD38 edit",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=3,
             course=self.course,
             lesson=self.lesson,

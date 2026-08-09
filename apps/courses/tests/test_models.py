@@ -376,7 +376,7 @@ class TestLesson:
         """Test lesson metadata JSON field."""
         quiz = QuizLessonFactory()
         assert "passing_score" in quiz.metadata
-        assert quiz.metadata["passing_score"] == 70
+        assert quiz.metadata["passing_score"] == 3.5
 
     def test_lesson_video_url(self):
         """Test video URL for video lessons."""

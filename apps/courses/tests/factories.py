@@ -230,7 +230,7 @@ class QuizLessonFactory(LessonFactory):
     duration = factory.Faker("random_int", min=10, max=20)
     metadata = factory.LazyFunction(
         lambda: {
-            "passing_score": 70,
+            "passing_score": 3.5,
             "max_attempts": 3,
             "time_limit": 30,
         }

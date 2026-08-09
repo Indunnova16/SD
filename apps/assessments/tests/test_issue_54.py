@@ -113,7 +113,7 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=self.quiz_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -262,7 +262,7 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=None,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -306,7 +306,7 @@ class AttemptResultContinueButtonTest(TestCase):
     auto-completado backend; nunca toco el template para exponer un enlace
     de continuacion tras aprobar -- exactamente el hueco que el cliente
     reporto de nuevo el 2026-07-13 (screenshot /assessments/result/66/,
-    curso/leccion 64/108, Intento 6, 100%, Aprobado).
+    curso/leccion 64/108, Intento 6, 5.0, Aprobado).
 
     `test_continue_button_present_and_points_to_next_lesson` es a la vez la
     reproduccion (habria fallado contra el HEAD previo a este fix -- el
@@ -361,7 +361,7 @@ class AttemptResultContinueButtonTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=self.quiz_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("4.00"),
             max_attempts=0,  # unlimited -- needed to replay several attempts below
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
@@ -383,8 +383,8 @@ class AttemptResultContinueButtonTest(TestCase):
 
     def test_continue_button_present_and_points_to_next_lesson(self):
         """Dato-legacy-like: replay 5 failed attempts + 1 passed one to reach
-        attempt_number=6 / score=100.00 -- mirroring the exact shape of the
-        real client record (attempt id=66: attempt_number=6, score=100.00,
+        attempt_number=6 / score=5.00 -- mirroring the exact shape of the
+        real client record (attempt id=66: attempt_number=6, score=5.00,
         passed=True) that F2 could not attach a local test to directly (it
         belongs to a live prod user, no BD write access from F3/F2 -- see
         F2_OUTPUT reproduccion.limitacion). Passing must render
@@ -402,7 +402,7 @@ class AttemptResultContinueButtonTest(TestCase):
         attempt.refresh_from_db()
 
         self.assertEqual(attempt.attempt_number, 6)
-        self.assertEqual(attempt.score, Decimal("100.00"))
+        self.assertEqual(attempt.score, Decimal("5.00"))
         self.assertTrue(attempt.passed)
 
         response = self.client.get(reverse("assessments:result", args=[attempt.id]))
@@ -410,7 +410,7 @@ class AttemptResultContinueButtonTest(TestCase):
 
         # Sub-item 4 del plan_accion (reproceso): Intento/puntaje siguen
         # correctos post-cambio -- no regression on the pre-existing stats.
-        self.assertContains(response, "100%")
+        self.assertContains(response, "5.0")
         self.assertContains(response, "Aprobado")
 
         # El fix en si: boton nuevo presente y apuntando a la leccion
@@ -463,7 +463,7 @@ class AttemptResultContinueButtonTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=None,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("4.00"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )

@@ -54,7 +54,7 @@ class AssessmentAPITests(TestCase):
             description="Descripción de la evaluación",
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
-            passing_score=70,
+            passing_score=3.5,
             time_limit=30,
             max_attempts=3,
             status=Assessment.Status.PUBLISHED,
@@ -117,7 +117,7 @@ class AssessmentAPITests(TestCase):
             "description": "Descripción nueva",
             "assessment_type": "exam",
             "course": self.course.id,
-            "passing_score": 80,
+            "passing_score": 3.5,
             "time_limit": 60,
             "max_attempts": 2,
         }
@@ -208,7 +208,7 @@ class AssessmentAttemptAPITests(TestCase):
             description="Descripción",
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
-            passing_score=70,
+            passing_score=3.5,
             time_limit=30,
             max_attempts=2,
             status=Assessment.Status.PUBLISHED,
@@ -421,7 +421,7 @@ class DecimalFormsAndBuilderTests(TestCase):
             title="Eval Decimal",
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.DRAFT,
             created_by=self.staff,
         )
@@ -433,21 +433,21 @@ class DecimalFormsAndBuilderTests(TestCase):
             data={
                 "title": "X",
                 "assessment_type": "quiz",
-                "passing_score": "75.5",
+                "passing_score": "3.5",
                 "max_attempts": "3",
             }
         )
         self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(form.cleaned_data["passing_score"], Decimal("75.5"))
+        self.assertEqual(form.cleaned_data["passing_score"], Decimal("3.5"))
 
-    def test_quick_assessment_form_rejects_over_100(self):
+    def test_quick_assessment_form_rejects_over_5(self):
         from apps.courses.forms import QuickAssessmentForm
 
         form = QuickAssessmentForm(
             data={
                 "title": "X",
                 "assessment_type": "quiz",
-                "passing_score": "100.5",
+                "passing_score": "5.01",
                 "max_attempts": "3",
             }
         )
@@ -458,9 +458,9 @@ class DecimalFormsAndBuilderTests(TestCase):
         from apps.courses.forms import AssessmentEditForm
 
         form = AssessmentEditForm(instance=self.assessment)
-        # Rendered widget value must use a dot (es-CO would otherwise emit "80,00")
+        # Rendered widget value must use a dot (es-CO would otherwise emit "3,50")
         rendered = str(form["passing_score"])
-        self.assertIn('value="80.00"', rendered)
+        self.assertIn('value="3.50"', rendered)
         self.assertIn('step="0.01"', rendered)
 
         bound = AssessmentEditForm(
@@ -468,7 +468,7 @@ class DecimalFormsAndBuilderTests(TestCase):
                 "title": "Eval Decimal",
                 "description": "",
                 "assessment_type": "quiz",
-                "passing_score": "62.75",
+                "passing_score": "3.25",
                 "max_attempts": "3",
                 "status": "draft",
             },
@@ -477,9 +477,9 @@ class DecimalFormsAndBuilderTests(TestCase):
         self.assertTrue(bound.is_valid(), bound.errors)
         obj = bound.save()
         obj.refresh_from_db()
-        self.assertEqual(obj.passing_score, Decimal("62.75"))
+        self.assertEqual(obj.passing_score, Decimal("3.25"))
 
-    def test_edit_form_rejects_passing_score_over_100(self):
+    def test_edit_form_rejects_passing_score_over_5(self):
         from apps.courses.forms import AssessmentEditForm
 
         bound = AssessmentEditForm(
@@ -487,7 +487,7 @@ class DecimalFormsAndBuilderTests(TestCase):
                 "title": "Eval Decimal",
                 "description": "",
                 "assessment_type": "quiz",
-                "passing_score": "120.00",
+                "passing_score": "5.01",
                 "max_attempts": "3",
                 "status": "draft",
             },

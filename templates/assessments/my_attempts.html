@@ -48,7 +48,7 @@
                             <td>
                                 {% if attempt.score is not None %}
                                     <span class="font-medium {% if attempt.passed %}text-success{% else %}text-error{% endif %}">
-                                        {{ attempt.score|floatformat:0 }}%
+                                        {{ attempt.score|floatformat:1 }}
                                     </span>
                                 {% else %}
                                     -
