@@ -73,7 +73,7 @@ class UpdateProgressQuizGateTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=self.quiz_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -178,7 +178,7 @@ class UpdateProgressQuizGateTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=other_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -240,7 +240,7 @@ class LessonViewQuizGateTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=self.quiz_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )

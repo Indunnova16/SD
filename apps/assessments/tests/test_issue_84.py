@@ -99,7 +99,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Quiz con preguntas SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=self.course,
             created_by=self.staff,
@@ -137,7 +137,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Quiz sin preguntas SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=self.course,
             created_by=self.staff,
@@ -172,7 +172,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Quiz con limite SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=1,
             course=self.course,
             created_by=self.staff,
@@ -215,7 +215,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Quiz en progreso SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=self.course,
             created_by=self.staff,
@@ -292,7 +292,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         assessment_28_like = Assessment.objects.create(
             title="Evaluacion seguridad vial",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=course_63_like,
             lesson=lesson_98_like,
@@ -373,7 +373,7 @@ class AssessmentDetailNoQuestionsIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Evaluacion sin preguntas detalle SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=self.course,
             created_by=self.staff,
@@ -395,7 +395,7 @@ class AssessmentDetailNoQuestionsIssue84Tests(TestCase):
         assessment = Assessment.objects.create(
             title="Evaluacion con preguntas detalle SD84",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             course=self.course,
             created_by=self.staff,

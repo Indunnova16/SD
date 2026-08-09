@@ -3,6 +3,7 @@ Tests for course builder web views (HTMX endpoints).
 """
 
 from datetime import date
+from decimal import Decimal
 
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -71,7 +72,7 @@ class BuilderEditAssessmentViewTests(TestCase):
             title="Quiz inicial",
             description="desc original",
             assessment_type="quiz",
-            passing_score=70,
+            passing_score=3.5,
             time_limit=30,
             max_attempts=3,
             shuffle_questions=True,
@@ -164,7 +165,7 @@ class BuilderEditAssessmentViewTests(TestCase):
         self.assertEqual(resp.status_code, 400)
         # assessment unchanged
         self.assessment.refresh_from_db()
-        self.assertEqual(self.assessment.passing_score, 70)
+        self.assertEqual(self.assessment.passing_score, Decimal("3.50"))
 
     def test_post_forbidden_for_other_user(self):
         self.client.force_login(self.other)
@@ -258,7 +259,7 @@ class BuilderEditAssessmentPublishGuardIssue84Tests(TestCase):
             title="Evaluacion sin preguntas SD84",
             description="",
             assessment_type="quiz",
-            passing_score=80,
+            passing_score=Decimal("3.50"),
             max_attempts=0,
             status="draft",
             course=self.course,
