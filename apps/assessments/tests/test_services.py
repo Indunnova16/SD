@@ -493,6 +493,115 @@ class QuestionBankServiceTest(TestCase):
         self.assertFalse(result["is_valid"])
         self.assertIn("no tiene preguntas", result["errors"][0])
 
+    def test_validate_assessment_rejects_passing_score_above_five(self):
+        """Passing scores above the 0-5 scale are invalid."""
+        self.assessment.passing_score = Decimal("5.01")
+
+        result = QuestionBankService.validate_assessment(self.assessment)
+
+        self.assertFalse(result["is_valid"])
+        self.assertIn("mayor a 5", result["errors"][0])
+
+    def test_validate_assessment_accepts_passing_score_at_scale_limit(self):
+        """Passing scores at or below 5 remain valid."""
+        self.assessment.passing_score = Decimal("5.00")
+
+        result = QuestionBankService.validate_assessment(self.assessment)
+
+        self.assertTrue(result["is_valid"])
+
+
+class ScaleFiveScoringTest(TestCase):
+    """Tests for individual score calculations on the 0-5 scale."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            email="scale5-admin@test.com",
+            password="testpass123",
+            first_name="Admin",
+            last_name="Scale",
+            document_number="5000001",
+            job_position="Administrator",
+            hire_date=date(2020, 1, 1),
+            is_staff=True,
+        )
+        self.user = User.objects.create_user(
+            email="scale5-user@test.com",
+            password="testpass123",
+            first_name="Test",
+            last_name="Scale",
+            document_number="5000002",
+            job_position="Technician",
+            hire_date=date(2021, 1, 1),
+        )
+        self.course = Course.objects.create(
+            code="SCALE-5",
+            title="Scale Five Course",
+            created_by=self.admin,
+            status=Course.Status.PUBLISHED,
+        )
+        self.assessment = Assessment.objects.create(
+            title="Scale Five Assessment",
+            assessment_type=Assessment.Type.QUIZ,
+            course=self.course,
+            passing_score=Decimal("2.50"),
+            status=Assessment.Status.PUBLISHED,
+            created_by=self.admin,
+        )
+        self.questions = []
+        self.correct_answers = []
+        for order in (1, 2):
+            question = Question.objects.create(
+                assessment=self.assessment,
+                question_type=Question.Type.SINGLE_CHOICE,
+                text=f"Question {order}",
+                points=Decimal("1.00"),
+                order=order,
+            )
+            correct = Answer.objects.create(
+                question=question,
+                text="Correct",
+                is_correct=True,
+                order=1,
+            )
+            Answer.objects.create(question=question, text="Wrong", is_correct=False, order=2)
+            self.questions.append(question)
+            self.correct_answers.append(correct)
+
+    def _attempt_with_answers(self, correct_count):
+        attempt = AssessmentService.start_attempt(self.user, self.assessment)
+        for index, question in enumerate(self.questions):
+            selected = [self.correct_answers[index].id] if index < correct_count else []
+            AssessmentService.submit_answer(attempt, question, selected_answer_ids=selected)
+        return attempt
+
+    def test_grade_attempt_perfect_score_is_five(self):
+        """Two correct answers out of two produce 5.00."""
+        attempt = self._attempt_with_answers(2)
+
+        AssessmentService.grade_attempt(attempt)
+
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.score, Decimal("5.00"))
+
+    def test_auto_grade_attempt_half_score_is_two_and_a_half(self):
+        """One correct answer out of two produces 2.50."""
+        attempt = self._attempt_with_answers(1)
+
+        AssessmentService.auto_grade_attempt(attempt)
+
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.score, Decimal("2.50"))
+
+    def test_calculate_score_half_score_is_two_and_a_half(self):
+        """Recalculation uses the same 0-5 scale."""
+        attempt = self._attempt_with_answers(1)
+
+        AssessmentService.calculate_score(attempt)
+
+        attempt.refresh_from_db()
+        self.assertEqual(attempt.score, Decimal("2.50"))
+
 
 class DecimalScoringTest(TestCase):
     """Tests for decimal points / scoring support (issue #39).

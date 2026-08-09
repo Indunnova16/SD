@@ -310,7 +310,7 @@ class AssessmentService:
                     points_earned += Decimal(str(attempt_answer.points_awarded))
 
             attempt.points_earned = points_earned.quantize(Decimal("0.01"))
-            attempt.score = ((points_earned / total_points) * 100).quantize(Decimal("0.01"))
+            attempt.score = ((points_earned / total_points) * 5).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
 
         attempt.status = AssessmentAttempt.Status.GRADED
@@ -650,7 +650,7 @@ class AssessmentService:
         attempt.points_earned = earned_points.quantize(Decimal("0.01"))
 
         if total_points > 0:
-            attempt.score = ((earned_points / total_points) * 100).quantize(Decimal("0.01"))
+            attempt.score = ((earned_points / total_points) * 5).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
         else:
             attempt.score = Decimal("0.00")
@@ -699,7 +699,7 @@ class AssessmentService:
         attempt.points_earned = earned_points.quantize(Decimal("0.01"))
 
         if total_points > 0:
-            attempt.score = ((earned_points / total_points) * 100).quantize(Decimal("0.01"))
+            attempt.score = ((earned_points / total_points) * 5).quantize(Decimal("0.01"))
             attempt.passed = attempt.score >= attempt.assessment.passing_score
         else:
             attempt.score = Decimal("0.00")
@@ -849,8 +849,8 @@ class QuestionBankService:
                     )
 
         # Check passing score
-        if assessment.passing_score > 100:
-            errors.append("El puntaje mínimo no puede ser mayor a 100%")
+        if assessment.passing_score > 5:
+            errors.append("El puntaje mínimo no puede ser mayor a 5")
         elif assessment.passing_score < 0:
             errors.append("El puntaje mínimo no puede ser negativo")
 
