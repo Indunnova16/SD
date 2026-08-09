@@ -499,10 +499,10 @@ class QuickAssessmentForm(forms.Form):
         widget=forms.Select(attrs={"class": "select select-bordered w-full"}),
     )
     passing_score = forms.DecimalField(
-        label=_("Puntaje minimo (%)"),
-        initial=Decimal("80.00"),
+        label=_("Puntaje minimo (0-5)"),
+        initial=Decimal("3.50"),
         min_value=Decimal("0"),
-        max_value=Decimal("100"),
+        max_value=Decimal("5"),
         max_digits=5,
         decimal_places=2,
         localize=False,  # es-CO: evitar coma decimal que vacia el input number
@@ -510,7 +510,7 @@ class QuickAssessmentForm(forms.Form):
             attrs={
                 "class": "input input-bordered w-full",
                 "min": "0",
-                "max": "100",
+                "max": "5",
                 "step": "0.01",
             }
         ),
@@ -538,9 +538,10 @@ class AssessmentEditForm(forms.ModelForm):
     # Override the auto-generated field to disable es-CO localization
     # (Decimal con coma "80,00" vacia el <input type=number> en el navegador).
     passing_score = forms.DecimalField(
-        label=_("Puntaje minimo (%)"),
+        label=_("Puntaje minimo (0-5)"),
+        initial=Decimal("3.50"),
         min_value=Decimal("0"),
-        max_value=Decimal("100"),
+        max_value=Decimal("5"),
         max_digits=5,
         decimal_places=2,
         localize=False,
@@ -548,7 +549,7 @@ class AssessmentEditForm(forms.ModelForm):
             attrs={
                 "class": "input input-bordered input-sm w-full",
                 "min": "0",
-                "max": "100",
+                "max": "5",
                 "step": "0.01",
             }
         ),
@@ -605,8 +606,8 @@ class AssessmentEditForm(forms.ModelForm):
 
     def clean_passing_score(self):
         value = self.cleaned_data.get("passing_score")
-        if value is None or value < 0 or value > 100:
-            raise forms.ValidationError(_("Debe estar entre 0 y 100."))
+        if value is None or value < 0 or value > 5:
+            raise forms.ValidationError(_("Debe estar entre 0 y 5."))
         return value
 
     def clean_time_limit(self):

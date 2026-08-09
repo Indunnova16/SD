@@ -1,5 +1,7 @@
 """Management command to fix quiz lessons without assessments."""
 
+from decimal import Decimal
+
 from django.core.management.base import BaseCommand
 
 from apps.assessments.models import Assessment
@@ -20,7 +22,7 @@ class Command(BaseCommand):
                     Assessment.objects.create(
                         title=lesson.title,
                         assessment_type="quiz",
-                        passing_score=80,
+                        passing_score=Decimal("3.50"),
                         max_attempts=0,
                         course=course,
                         lesson=lesson,

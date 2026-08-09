@@ -40,6 +40,15 @@ STORAGES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
+# base.py apunta CACHES a un Redis real (redis://localhost:6379/0) -- no hay
+# Redis en el entorno de CI/self-verify. LocMemCache evita que cualquier test
+# que toque el cache (login/axes/sesiones) falle con "Connection refused".
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
 ]
