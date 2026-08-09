@@ -44,6 +44,26 @@ percentage_max_validator = MaxValueValidator(
 
 
 # =============================================================================
+# 0-5 Scale Validators
+# =============================================================================
+
+
+def validate_0_5_scale(value):
+    """
+    Validate that a value is between 0 and 5 (inclusive).
+
+    Usage:
+        passing_score = models.DecimalField(validators=[validate_0_5_scale])
+    """
+    if value < 0 or value > 5:
+        raise ValidationError(
+            _("%(value)s no es un puntaje válido. Debe estar entre 0 y 5."),
+            params={"value": value},
+            code="invalid_0_5_scale",
+        )
+
+
+# =============================================================================
 # Duration Validators
 # =============================================================================
 

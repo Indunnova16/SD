@@ -7,7 +7,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.validators import validate_percentage
+from apps.core.validators import validate_0_5_scale
 
 
 class AssessmentManager(models.Manager):
@@ -64,12 +64,12 @@ class Assessment(models.Model):
         blank=True,
     )
     passing_score = models.DecimalField(
-        _("Puntaje mínimo (%)"),
+        _("Puntaje mínimo"),
         max_digits=5,
         decimal_places=2,
-        default=Decimal("80.00"),
-        help_text=_("Porcentaje mínimo para aprobar"),
-        validators=[validate_percentage],
+        default=Decimal("3.50"),
+        help_text=_("Puntaje mínimo para aprobar (escala 0-5)"),
+        validators=[validate_0_5_scale],
     )
     time_limit = models.PositiveIntegerField(
         _("Tiempo límite (minutos)"),
@@ -255,7 +255,7 @@ class AssessmentAttempt(models.Model):
     )
     attempt_number = models.PositiveIntegerField(_("Número de intento"), default=1)
     score = models.DecimalField(
-        _("Puntaje (%)"),
+        _("Puntaje"),
         max_digits=5,
         decimal_places=2,
         null=True,
