@@ -20,10 +20,10 @@
             <!-- Score -->
             <div class="text-center mb-4">
                 <div class="radial-progress {% if attempt.passed %}text-success{% else %}text-error{% endif %} mx-auto"
-                     style="--value:{{ attempt.score|floatformat:'0u' }};
+                     style="--value:{% widthratio attempt.score 5 100 %};
                             --size:8rem;
                             --thickness:8px">
-                    <span class="text-2xl font-bold">{{ attempt.score|floatformat:0 }}%</span>
+                    <span class="text-2xl font-bold">{{ attempt.score|floatformat:1 }}</span>
                 </div>
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ attempt.points_earned|floatformat:"-2u" }}/{{ assessment.total_points|floatformat:"-2u" }} puntos
@@ -41,7 +41,7 @@
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-500 dark:text-gray-400">Mínimo para aprobar</span>
-                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score|floatformat:"-2u" }}%</span>
+                    <span class="font-medium text-gray-900 dark:text-white">{{ assessment.passing_score|floatformat:1 }}</span>
                 </div>
             </div>
             <!-- Actions -->
