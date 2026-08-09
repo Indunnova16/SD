@@ -113,7 +113,7 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=self.quiz_lesson,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )
@@ -262,7 +262,7 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
             lesson=None,
-            passing_score=Decimal("80.00"),
+            passing_score=Decimal("3.50"),
             status=Assessment.Status.PUBLISHED,
             created_by=self.admin,
         )

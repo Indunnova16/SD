@@ -117,7 +117,7 @@ class AssessmentAPITests(TestCase):
             "description": "Descripción nueva",
             "assessment_type": "exam",
             "course": self.course.id,
-            "passing_score": 80,
+            "passing_score": 3.5,
             "time_limit": 60,
             "max_attempts": 2,
         }

@@ -57,7 +57,7 @@ class AssessmentServiceTest(TestCase):
             title="Test Assessment",
             assessment_type=Assessment.Type.QUIZ,
             course=self.course,
-            passing_score=70,
+            passing_score=3.5,
             max_attempts=3,
             time_limit=30,
             status=Assessment.Status.PUBLISHED,
@@ -240,7 +240,7 @@ class AssessmentServiceTest(TestCase):
         submitted = AssessmentService.submit_attempt(attempt)
 
         self.assertEqual(submitted.status, AssessmentAttempt.Status.GRADED)
-        self.assertEqual(submitted.score, 100)
+        self.assertEqual(submitted.score, 5)
         self.assertTrue(submitted.passed)
 
     def test_submit_attempt_fail(self):
@@ -267,7 +267,7 @@ class AssessmentServiceTest(TestCase):
 
         results = AssessmentService.get_attempt_results(attempt)
 
-        self.assertEqual(results["score"], 100)
+        self.assertEqual(results["score"], 5)
         self.assertTrue(results["passed"])
         self.assertEqual(len(results["questions"]), 3)
 
@@ -293,7 +293,7 @@ class AssessmentServiceTest(TestCase):
         stats = AssessmentService.get_assessment_statistics(self.assessment)
 
         self.assertEqual(stats["total_attempts"], 3)
-        self.assertEqual(stats["average_score"], 100)
+        self.assertEqual(stats["average_score"], 5)
         self.assertEqual(stats["pass_rate"], 100)
 
     def test_submit_short_answer_no_autograde(self):
@@ -677,7 +677,7 @@ class DecimalScoringTest(TestCase):
 
     def test_grade_attempt_decimal_score_quantized(self):
         """Score is computed from decimal points and quantized to 2 dp."""
-        a = self._assessment(Decimal("75.00"))
+        a = self._assessment(Decimal("3.75"))
         q1, a1_ok = self._single_choice(a, Decimal("4.5"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("3.8"), 2)  # noqa: F841
         attempt = AssessmentService.start_attempt(self.user, a)
@@ -687,13 +687,13 @@ class DecimalScoringTest(TestCase):
         AssessmentService.grade_attempt(attempt)
         attempt.refresh_from_db()
         self.assertEqual(attempt.points_earned, Decimal("4.50"))
-        self.assertEqual(attempt.score, Decimal("54.22"))
+        self.assertEqual(attempt.score, Decimal("2.71"))
         self.assertEqual(attempt.score.as_tuple().exponent, -2)
         self.assertFalse(attempt.passed)
 
     def test_passing_borderline_equal(self):
         """A score exactly equal to passing_score (decimal) passes."""
-        a = self._assessment(Decimal("50.00"))
+        a = self._assessment(Decimal("2.50"))
         q1, a1_ok = self._single_choice(a, Decimal("5.0"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("5.0"), 2)
         attempt = AssessmentService.start_attempt(self.user, a)
@@ -701,12 +701,12 @@ class DecimalScoringTest(TestCase):
         AssessmentService.submit_answer(attempt, q2, selected_answer_ids=[])
         AssessmentService.grade_attempt(attempt)
         attempt.refresh_from_db()
-        self.assertEqual(attempt.score, Decimal("50.00"))
+        self.assertEqual(attempt.score, Decimal("2.50"))
         self.assertTrue(attempt.passed)
 
     def test_passing_decimal_threshold(self):
-        """passing_score of 75.5 is honored against a decimal score."""
-        a = self._assessment(Decimal("75.50"))
+        """A score just below a decimal passing threshold does not pass."""
+        a = self._assessment(Decimal("3.80"))
         q1, a1_ok = self._single_choice(a, Decimal("75.0"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("25.0"), 2)
         attempt = AssessmentService.start_attempt(self.user, a)
@@ -714,8 +714,8 @@ class DecimalScoringTest(TestCase):
         AssessmentService.submit_answer(attempt, q2, selected_answer_ids=[])
         AssessmentService.grade_attempt(attempt)
         attempt.refresh_from_db()
-        # 75 / 100 = 75.00 < 75.50 -> not passed
-        self.assertEqual(attempt.score, Decimal("75.00"))
+        # 75 / 100 * 5 = 3.75 < 3.80 -> not passed.
+        self.assertEqual(attempt.score, Decimal("3.75"))
         self.assertFalse(attempt.passed)
 
     def test_grade_attempt_total_points_zero(self):
@@ -739,7 +739,7 @@ class DecimalScoringTest(TestCase):
 
     def test_perfect_score_high_decimals(self):
         """A perfect attempt yields exactly 100.00 (no float drift)."""
-        a = self._assessment(Decimal("90.00"))
+        a = self._assessment(Decimal("4.50"))
         q1, a1_ok = self._single_choice(a, Decimal("33.33"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("33.33"), 2)
         q3, a3_ok = self._single_choice(a, Decimal("33.34"), 3)
@@ -749,7 +749,7 @@ class DecimalScoringTest(TestCase):
         AssessmentService.grade_attempt(attempt)
         attempt.refresh_from_db()
         self.assertEqual(attempt.points_earned, Decimal("100.00"))
-        self.assertEqual(attempt.score, Decimal("100.00"))
+        self.assertEqual(attempt.score, Decimal("5.00"))
         self.assertTrue(attempt.passed)
 
     def test_grade_essay_answer_decimal(self):
@@ -786,7 +786,7 @@ class DecimalScoringTest(TestCase):
 
     def test_legacy_integer_points_still_grade(self):
         """Legacy-style integer points must still produce a correct decimal score."""
-        a = self._assessment(Decimal("60.00"))
+        a = self._assessment(Decimal("3.00"))
         # Integer-valued points (as legacy rows would have post-migration: 10.00, 5.00)
         q1, a1_ok = self._single_choice(a, Decimal("10.00"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("5.00"), 2)
@@ -795,13 +795,13 @@ class DecimalScoringTest(TestCase):
         AssessmentService.submit_answer(attempt, q2, selected_answer_ids=[])
         AssessmentService.grade_attempt(attempt)
         attempt.refresh_from_db()
-        # 10 / 15 * 100 = 66.67 -> passed (>= 60)
-        self.assertEqual(attempt.score, Decimal("66.67"))
+        # 10 / 15 * 5 = 3.33 -> passed (>= 3.00)
+        self.assertEqual(attempt.score, Decimal("3.33"))
         self.assertTrue(attempt.passed)
 
     def test_auto_grade_attempt_decimal(self):
         """auto_grade_attempt accumulates decimal points correctly."""
-        a = self._assessment(Decimal("50.00"))
+        a = self._assessment(Decimal("2.50"))
         q1, a1_ok = self._single_choice(a, Decimal("2.5"), 1)
         q2, a2_ok = self._single_choice(a, Decimal("2.5"), 2)
         attempt = AssessmentService.start_attempt(self.user, a)
@@ -810,5 +810,5 @@ class DecimalScoringTest(TestCase):
         AssessmentService.auto_grade_attempt(attempt)
         attempt.refresh_from_db()
         self.assertEqual(attempt.points_earned, Decimal("5.00"))
-        self.assertEqual(attempt.score, Decimal("100.00"))
+        self.assertEqual(attempt.score, Decimal("5.00"))
         self.assertTrue(attempt.passed)
