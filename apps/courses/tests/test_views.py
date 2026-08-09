@@ -125,7 +125,7 @@ class BuilderEditAssessmentViewTests(TestCase):
                 "title": "Quiz actualizado",
                 "description": "nueva desc",
                 "assessment_type": "exam",
-                "passing_score": 85,
+                "passing_score": "3.50",
                 "time_limit": 45,
                 "max_attempts": 5,
                 "shuffle_questions": "on",
@@ -142,7 +142,7 @@ class BuilderEditAssessmentViewTests(TestCase):
         self.assertEqual(self.assessment.title, "Quiz actualizado")
         self.assertEqual(self.assessment.description, "nueva desc")
         self.assertEqual(self.assessment.assessment_type, "exam")
-        self.assertEqual(self.assessment.passing_score, 85)
+        self.assertEqual(self.assessment.passing_score, 3.5)
         self.assertEqual(self.assessment.time_limit, 45)
         self.assertEqual(self.assessment.max_attempts, 5)
         self.assertEqual(self.assessment.status, "published")
@@ -198,7 +198,7 @@ class BuilderEditAssessmentViewTests(TestCase):
                 "title": "Quiz",
                 "description": "",
                 "assessment_type": "quiz",
-                "passing_score": 80,
+                "passing_score": "3.50",
                 "time_limit": "",
                 "max_attempts": 3,
                 "status": "draft",
@@ -277,7 +277,7 @@ class BuilderEditAssessmentPublishGuardIssue84Tests(TestCase):
                 "title": self.assessment_no_questions.title,
                 "description": "",
                 "assessment_type": "quiz",
-                "passing_score": 80,
+                "passing_score": "3.50",
                 "time_limit": "",
                 "max_attempts": 0,
                 "status": status,

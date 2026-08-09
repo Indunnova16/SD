@@ -1304,7 +1304,7 @@ def builder_add_lesson(request, course_id, module_id):
                         assessment = Assessment.objects.create(
                             title=lesson.title,
                             assessment_type="quiz",
-                            passing_score=80,
+                            passing_score=Decimal("3.50"),
                             max_attempts=0,
                             course=course,
                             lesson=lesson,
@@ -1480,7 +1480,7 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                             assessment = Assessment.objects.create(
                                 title=lesson.title,
                                 assessment_type="quiz",
-                                passing_score=80,
+                                passing_score=Decimal("3.50"),
                                 max_attempts=0,
                                 course=course,
                                 lesson=lesson,
