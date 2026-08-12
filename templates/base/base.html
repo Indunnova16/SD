@@ -26,8 +26,16 @@
             document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
         })();
         </script>
-        <!-- Tailwind CSS (via CDN for development, replace with build for production) -->
-        <script src="https://cdn.tailwindcss.com" nonce="{{ request.csp_nonce }}"></script>
+        <!-- Tailwind CSS — servido localmente (#133).
+             Antes colgaba de https://cdn.tailwindcss.com: ese host republicó el
+             2026-08-06 y su raíz pasa a responder 302 con caché de solo 4h, así que
+             cada navegador lo re-pedía 6 veces al día. Si ese pedido no llegaba
+             (proxy corporativo, red lenta, bloqueador), Tailwind no generaba NADA de
+             CSS y la página se veía en crudo: el logo ocupando la pantalla, el menú
+             suelto. Tailwind ya no documenta esa dirección y el propio archivo avisa
+             que no es para producción. Sirviéndolo desde acá viaja por la misma
+             conexión que ya trajo la página. -->
+        <script src="{% static 'vendor/tailwind-3.4.17.min.js' %}" nonce="{{ request.csp_nonce }}"></script>
         <script nonce="{{ request.csp_nonce }}">
         tailwind.config = {
             darkMode: 'class',
@@ -65,19 +73,19 @@
             },
         }
         </script>
-        <!-- DaisyUI -->
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css"
+        <!-- DaisyUI — servido localmente (#133) -->
+        <link href="{% static 'vendor/daisyui-4.10.1.full.min.css' %}"
               rel="stylesheet"
               type="text/css" />
-        <!-- Alpine.js -->
+        <!-- Alpine.js — servido localmente (#133). Antes venía con el rango 3.x.x
+             (versión no fijada); ahora queda clavada la que se probó. -->
         <script defer
-                src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+                src="{% static 'vendor/alpinejs-3.min.js' %}"
                 nonce="{{ request.csp_nonce }}"></script>
-        <!-- HTMX -->
-        <script src="https://unpkg.com/htmx.org@1.9.12/dist/htmx.min.js"
-                crossorigin="anonymous"
+        <!-- HTMX — servido localmente (#133) -->
+        <script src="{% static 'vendor/htmx-1.9.12.min.js' %}"
                 nonce="{{ request.csp_nonce }}"></script>
-        <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/loading-states.js"
+        <script src="{% static 'vendor/htmx-loading-states-1.9.12.js' %}"
                 nonce="{{ request.csp_nonce }}"></script>
         <!-- HTMX Configuration -->
         <meta name="htmx-config"

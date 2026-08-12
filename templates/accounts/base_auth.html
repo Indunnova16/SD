@@ -20,8 +20,9 @@
             document.documentElement.setAttribute('data-theme', d ? 'dark' : 'light');
         })();
         </script>
-        <!-- Tailwind CSS & DaisyUI -->
-        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Tailwind CSS & DaisyUI — servidos localmente (#133).
+             Ver comentario extendido en templates/base/base.html. -->
+        <script src="{% static 'vendor/tailwind-3.4.17.min.js' %}"></script>
         <script>
         tailwind.config = {
             darkMode: 'class',
@@ -59,13 +60,14 @@
             },
         }
         </script>
-        <link href="https://cdn.jsdelivr.net/npm/daisyui@4.10.1/dist/full.min.css"
+        <link href="{% static 'vendor/daisyui-4.10.1.full.min.css' %}"
               rel="stylesheet"
               type="text/css" />
-        <!-- Alpine.js & HTMX -->
+        <!-- Alpine.js & HTMX — servidos localmente (#133).
+             HTMX venía en 1.9.11 acá y 1.9.12 en base/base.html; se unifica en 1.9.12. -->
         <script defer
-                src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+                src="{% static 'vendor/alpinejs-3.min.js' %}"></script>
+        <script src="{% static 'vendor/htmx-1.9.12.min.js' %}"></script>
         <style>
         [x-cloak] { display: none !important; }
         .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
