@@ -129,10 +129,15 @@
                                 </div>
                             </div>
                         {% elif lesson.video_url %}
-                            <!-- External Video (YouTube/Vimeo) with duration-based tracking -->
+                            <!-- External Video (YouTube) -- SD#136: progreso real via YouTube
+                                 IFrame API (onStateChange/getDuration), no reloj de pared. El
+                                 iframe necesita enablejsapi=1 + un id unico para que
+                                 externalVideoTracker() pueda adjuntar un YT.Player sobre el
+                                 elemento existente (ver script mas abajo). -->
                             <div x-data="externalVideoTracker()" class="mb-6">
                                 <div class="aspect-video bg-black rounded-lg overflow-hidden">
-                                    <iframe src="{{ lesson.video_url }}"
+                                    <iframe id="yt-player-{{ lesson.id }}"
+                                            src="{{ lesson.video_url }}{% if '?' in lesson.video_url %}&{% else %}?{% endif %}enablejsapi=1&origin={{ request.scheme }}://{{ request.get_host }}"
                                             class="w-full h-full"
                                             title="{{ lesson.title }}"
                                             allowfullscreen
@@ -646,37 +651,153 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
-    // External video tracker (duration-based for YouTube/Vimeo)
+    // External video tracker (SD#136: real progress via YouTube IFrame API).
+    // Antes: reloj de pared (elapsed += 1s/tick de pestana abierta) contra
+    // lesson.duration*60 (estimacion en minutos cargada a mano por el autor)
+    // -- si la estimacion era mayor a la duracion real del video, el umbral
+    // de 95% nunca se alcanzaba en una sesion realista (SD#136). Ahora:
+    // escucha onStateChange del reproductor real (YT.PlayerState.ENDED) y
+    // usa player.getDuration()/getCurrentTime() -- duracion REAL, no una
+    // adivinanza. Fallback: si la IFrame API no carga (red bloqueada, o a
+    // futuro una URL no-YouTube), degrada al reloj de pared de siempre, sin
+    // regresion respecto al comportamiento previo.
     Alpine.data('externalVideoTracker', () => ({
         videoProgress: {{ progress.progress_percent|default:"0" }},
         elapsed: 0,
-        totalDuration: {{ lesson.duration|default:"0" }} * 60, // Convert minutes to seconds
+        totalDuration: {{ lesson.duration|default:"0" }} * 60, // Fallback: minutos -> segundos
         progressUrl: "{% url 'courses:update_video_progress' course.id lesson.id %}",
         csrfToken: "{{ csrf_token }}",
+        _iframeId: "yt-player-{{ lesson.id }}",
         _interval: null,
+        _sendInterval: null,
+        _fallbackTimeout: null,
+        _player: null,
+        _playerReady: false,
+        _maxReachedSeconds: 0,
 
         init() {
+            // Semilla no-regresiva: arranca desde el progreso ya guardado
+            // (estimado con el reloj de pared viejo) para que la barra no
+            // retroceda visualmente mientras el player real se conecta.
             if (this.totalDuration > 0 && this.videoProgress < 100) {
-                // Restore elapsed from saved progress
-                this.elapsed = (this.videoProgress / 100) * this.totalDuration;
-                // Track time the page is open as video watching time
-                this._interval = setInterval(() => {
-                    this.elapsed += 1;
-                    this.videoProgress = Math.min((this.elapsed / this.totalDuration) * 100, 100);
-                    if (Math.floor(this.elapsed) % 30 === 0) {
-                        this.sendProgress(this.videoProgress >= 95);
-                    }
-                    if (this.videoProgress >= 95) {
-                        this.sendProgress(true);
-                        clearInterval(this._interval);
-                        setTimeout(() => { window.location.reload(); }, 1000);
-                    }
-                }, 1000);
+                this._maxReachedSeconds = (this.videoProgress / 100) * this.totalDuration;
+                this.elapsed = this._maxReachedSeconds;
             }
+            if (this.videoProgress < 100) {
+                this._loadYouTubeApi();
+            }
+        },
+
+        _loadYouTubeApi() {
+            if (window.YT && window.YT.Player) {
+                this._initPlayer();
+                return;
+            }
+            const prevCallback = window.onYouTubeIframeAPIReady;
+            window.onYouTubeIframeAPIReady = () => {
+                if (typeof prevCallback === 'function') prevCallback();
+                this._initPlayer();
+            };
+            if (!window._ytIframeApiTagInjected) {
+                window._ytIframeApiTagInjected = true;
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                tag.nonce = "{{ request.csp_nonce }}";
+                document.head.appendChild(tag);
+            }
+            // Si la API no confirma un player listo en unos segundos
+            // (red bloqueada, script fallido), degradar al reloj de pared.
+            this._fallbackTimeout = setTimeout(() => {
+                if (!this._playerReady) this._startWallClockFallback();
+            }, 4000);
+        },
+
+        _initPlayer() {
+            if (this._playerReady || !document.getElementById(this._iframeId)) return;
+            try {
+                this._player = new YT.Player(this._iframeId, {
+                    events: {
+                        onReady: () => {
+                            this._playerReady = true;
+                            if (this._fallbackTimeout) clearTimeout(this._fallbackTimeout);
+                            // Si el fallback de reloj de pared ya habia
+                            // arrancado (API lenta), lo detenemos: el
+                            // player real es la fuente de verdad ahora.
+                            if (this._interval) {
+                                clearInterval(this._interval);
+                                this._interval = null;
+                            }
+                            this._startRealTracking();
+                        },
+                        onStateChange: (event) => {
+                            if (event.data === YT.PlayerState.ENDED) {
+                                this._onRealEnded();
+                            }
+                        },
+                        onError: () => {
+                            if (!this._playerReady) this._startWallClockFallback();
+                        },
+                    },
+                });
+            } catch (e) {
+                this._startWallClockFallback();
+            }
+        },
+
+        _startRealTracking() {
+            this._sendInterval = setInterval(() => {
+                if (!this._player || typeof this._player.getCurrentTime !== 'function') return;
+                const current = this._player.getCurrentTime();
+                const realDuration = this._player.getDuration();
+                if (realDuration > 0) {
+                    this.totalDuration = realDuration;
+                    if (current > this._maxReachedSeconds) {
+                        this._maxReachedSeconds = current;
+                    }
+                    this.elapsed = this._maxReachedSeconds;
+                    this.videoProgress = Math.min((this._maxReachedSeconds / realDuration) * 100, 100);
+                    this.sendProgress(this.videoProgress >= 95);
+                }
+            }, 5000);
+        },
+
+        _onRealEnded() {
+            const realDuration = (this._player && this._player.getDuration()) || this.totalDuration;
+            this._maxReachedSeconds = Math.max(this._maxReachedSeconds, realDuration);
+            this.elapsed = this._maxReachedSeconds;
+            this.totalDuration = realDuration;
+            this.videoProgress = 100;
+            this.sendProgress(true);
+            if (this._sendInterval) clearInterval(this._sendInterval);
+            setTimeout(() => { window.location.reload(); }, 1000);
+        },
+
+        // Degradacion controlada -- comportamiento identico al de antes de
+        // SD#136 (reloj de pared), usado solo si la IFrame API no responde.
+        _startWallClockFallback() {
+            if (this._interval || this.totalDuration <= 0 || this.videoProgress >= 100) return;
+            this._interval = setInterval(() => {
+                this.elapsed += 1;
+                if (this.elapsed > this._maxReachedSeconds) {
+                    this._maxReachedSeconds = this.elapsed;
+                }
+                this.videoProgress = Math.min((this.elapsed / this.totalDuration) * 100, 100);
+                if (Math.floor(this.elapsed) % 30 === 0) {
+                    this.sendProgress(this.videoProgress >= 95);
+                }
+                if (this.videoProgress >= 95) {
+                    this.sendProgress(true);
+                    clearInterval(this._interval);
+                    this._interval = null;
+                    setTimeout(() => { window.location.reload(); }, 1000);
+                }
+            }, 1000);
         },
 
         destroy() {
             if (this._interval) clearInterval(this._interval);
+            if (this._sendInterval) clearInterval(this._sendInterval);
+            if (this._fallbackTimeout) clearTimeout(this._fallbackTimeout);
         },
 
         sendProgress(completed) {
@@ -688,7 +809,7 @@ document.addEventListener('alpine:init', () => {
                 },
                 body: JSON.stringify({
                     current_time: this.elapsed,
-                    max_reached: this.elapsed,
+                    max_reached: this._maxReachedSeconds,
                     duration: this.totalDuration,
                     completed: completed,
                 }),
