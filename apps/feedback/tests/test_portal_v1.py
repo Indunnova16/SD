@@ -17,8 +17,11 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.feedback.github_client import (
+    ASSIGNEE_TICKET_PORTAL,
     LABEL_PORTAL_WEB,
     LABEL_PORTAL_WEB_COLOR,
+    LABEL_URGENTE,
+    MENCION_INDUNNOVA,
     GitHubClientError,
     GitHubFeedbackClient,
 )
@@ -126,8 +129,8 @@ class GithubClientTestCase(TestCase):
         )
         self.assertIn("Ana Pérez", payload["body"])
         self.assertIn("![captura.png](https://example.com/captura.png)", payload["body"])
-        self.assertEqual(payload["labels"], ["portal-web"])
-        self.assertEqual(payload["assignees"], ["Indunnova"])
+        self.assertEqual(payload["labels"], [LABEL_PORTAL_WEB, LABEL_URGENTE])
+        self.assertEqual(payload["assignees"], [ASSIGNEE_TICKET_PORTAL])
 
     @patch("apps.feedback.github_client.requests.post")
     def test_asegurar_label_portal_web_idempotente_creada(self, mock_post):
@@ -437,6 +440,40 @@ class SincronizarTicketTestCase(TestCase):
         self.assertEqual(
             ticket.github_url, "https://github.com/Indunnova16/SD/issues/55"
         )
+        self.assertEqual(ticket.error_sincronizacion, "")
+        # Issue #71 ronda 5: ya no se asigna a Indunnova (crear_issue asigna
+        # mbrt26 + label Urgente, ver GithubClientTestCase) — en su lugar se
+        # comenta el issue mencionándolo.
+        mock_client.comentar_issue.assert_called_once()
+        comentario_args = mock_client.comentar_issue.call_args[0]
+        self.assertEqual(comentario_args[0], 55)
+        self.assertIn(MENCION_INDUNNOVA, comentario_args[1])
+
+    @patch("apps.feedback.services.GitHubFeedbackClient")
+    def test_comentario_de_aviso_falla_no_afecta_ticket_sincronizado(
+        self, mock_client_cls
+    ):
+        """Issue #71 ronda 5: si el issue se crea bien pero el comentario de
+        aviso a Indunnova falla (red/GitHub caído en ese segundo), el ticket
+        NO debe quedar marcado como no-sincronizado — lo crítico (el issue
+        existe) ya ocurrió; el comentario es best-effort."""
+        ticket = self._ticket()
+        mock_client = mock_client_cls.return_value
+        mock_client.crear_issue.return_value = {
+            "number": 56,
+            "html_url": "https://github.com/Indunnova16/SD/issues/56",
+            "id": 124,
+        }
+        mock_client.comentar_issue.side_effect = GitHubClientError(
+            "timeout comentando"
+        )
+
+        resultado = sincronizar_ticket(ticket.pk)  # NO debe lanzar
+
+        self.assertTrue(resultado)
+        ticket.refresh_from_db()
+        self.assertTrue(ticket.sincronizado_github)
+        self.assertEqual(ticket.github_issue_number, 56)
         self.assertEqual(ticket.error_sincronizacion, "")
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
@@ -773,8 +810,19 @@ class IntegracionEndToEndTestCase(TestCase):
         self.assertIn(datos["descripcion"], payload["body"])
         self.assertIn(datos["nombre_reportante"], payload["body"])
         self.assertIn("captura.png", payload["body"])
-        self.assertEqual(payload["labels"], ["portal-web"])
-        self.assertEqual(payload["assignees"], ["Indunnova"])
+        self.assertEqual(payload["labels"], [LABEL_PORTAL_WEB, LABEL_URGENTE])
+        self.assertEqual(payload["assignees"], [ASSIGNEE_TICKET_PORTAL])
+
+        # (e) además del issue, se publicó el comentario automático
+        # etiquetando a Indunnova (issue #71, ronda 5 — reemplaza la
+        # asignación directa que tenía antes).
+        comment_calls = [
+            llamada
+            for llamada in mock_post.call_args_list
+            if llamada.args and llamada.args[0].endswith("/issues/77/comments")
+        ]
+        self.assertEqual(len(comment_calls), 1)
+        self.assertIn(MENCION_INDUNNOVA, comment_calls[0].kwargs["json"]["body"])
 
     @patch("apps.feedback.github_client.requests.post")
     def test_resiliencia_end_to_end_github_caido_no_pierde_el_ticket(

@@ -21,6 +21,13 @@ TITLE_MAX_LENGTH = 256
 LABEL_PORTAL_WEB = "portal-web"
 LABEL_PORTAL_WEB_COLOR = "fbca04"
 LABEL_PORTAL_WEB_DESCRIPTION = "Ticket reportado desde el portal web de feedback"
+LABEL_URGENTE = "Urgente"
+# Issue #71 (2026-08-15, decisión Miguel + Indunnova en reunión): los tickets
+# creados desde el portal se asignan a mbrt26 (no a Indunnova directo) — la
+# notificación a Indunnova pasa a ser un comentario automático (ver
+# ASSIGNEE_TICKET_PORTAL / services.comentar_mencion_indunnova).
+ASSIGNEE_TICKET_PORTAL = "mbrt26"
+MENCION_INDUNNOVA = "@Indunnova"
 DEFAULT_TIMEOUT_SECONDS = 15
 
 # Timeout más corto para leer comentarios: corre en el camino crítico de
@@ -125,8 +132,8 @@ class GitHubFeedbackClient:
         payload = {
             "title": title,
             "body": body,
-            "labels": [LABEL_PORTAL_WEB],
-            "assignees": ["Indunnova"],
+            "labels": [LABEL_PORTAL_WEB, LABEL_URGENTE],
+            "assignees": [ASSIGNEE_TICKET_PORTAL],
         }
 
         try:

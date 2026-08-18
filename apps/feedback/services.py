@@ -42,7 +42,11 @@ from django.utils import timezone
 from PIL import Image, UnidentifiedImageError
 
 from apps.feedback import gemini_client
-from apps.feedback.github_client import GitHubClientError, GitHubFeedbackClient
+from apps.feedback.github_client import (
+    MENCION_INDUNNOVA,
+    GitHubClientError,
+    GitHubFeedbackClient,
+)
 from apps.feedback.models import FeedbackAttachment, FeedbackTicket
 
 logger = logging.getLogger(__name__)
@@ -360,6 +364,26 @@ def sincronizar_ticket(ticket_id):
             "error_sincronizacion",
         ]
     )
+
+    # Issue #71 (2026-08-15): el issue ya no se ASIGNA a Indunnova (queda
+    # asignado a mbrt26 + label Urgente, ver github_client.crear_issue) — en
+    # su lugar se le avisa con un comentario. Best-effort: el ticket YA quedó
+    # sincronizado arriba (lo crítico), un comentario fallido no debe marcar
+    # el ticket como no-sincronizado ni perderse en silencio, solo loguearse.
+    try:
+        client.comentar_issue(
+            resultado["number"],
+            f"{MENCION_INDUNNOVA} nuevo ticket del portal — revisar y dar seguimiento.",
+        )
+    except GitHubClientError as exc:
+        logger.error(
+            "Ticket #%s: issue #%s creado pero falló el comentario de aviso a "
+            "Indunnova: %s",
+            ticket_id,
+            resultado["number"],
+            exc,
+        )
+
     return True
 
 
