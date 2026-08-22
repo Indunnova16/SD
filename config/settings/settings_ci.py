@@ -29,6 +29,11 @@ DATABASES = {
 }
 
 # Django >=4.2 usa STORAGES; en repos más viejos el dict extra es inofensivo.
+try:
+    del STATICFILES_STORAGE
+except NameError:
+    pass
+
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
@@ -57,5 +62,8 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {'null': {'class': 'logging.NullHandler'}},
-    'root': {'handlers': ['null'], 'level': 'CRITICAL'},
+    # NIVEL WARNING, no CRITICAL: el NullHandler ya silencia la salida, pero el
+    # nivel debe DEJAR PASAR los records o caplog/assertLogs no capturan nada y
+    # un test legitimo que verifica logger.warning() falla en falso (claude-skills#456).
+    'root': {'handlers': ['null'], 'level': 'WARNING'},
 }
