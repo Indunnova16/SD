@@ -192,6 +192,7 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
         context['wompi_public_key'] = settings.WOMPI_PUBLIC_KEY
         if plan:
             context['monto_centavos'] = int(plan.precio * 100)
+            context['monto_pesos'] = int(plan.precio)
         context['wompi_sandbox'] = getattr(settings, 'WOMPI_SANDBOX', True)
         context['datos_facturacion'] = (
             suscripcion.datos_facturacion if suscripcion and suscripcion.datos_facturacion_id else None
@@ -229,6 +230,7 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
                 opciones_pago.append({
                     'n': n,
                     'monto_centavos': monto_n,
+                    'monto_pesos': int(plan.precio * n),
                     'reference': ref_n,
                     'signature': hashlib.sha256(concat_n.encode()).hexdigest(),
                 })

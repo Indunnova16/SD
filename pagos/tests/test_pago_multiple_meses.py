@@ -99,7 +99,7 @@ class CheckoutOpcionesPagoTests(TestCase):
         self.assertNotContains(r, 'meses de suscripcion')
         self.assertContains(r, 'Cuantos meses queres pagar?')
         self.assertContains(r, 'id="pago-meses-select"')
-        self.assertContains(r, '1 mes -- $10000000')
+        self.assertContains(r, '1 mes -- $100.000')
 
     def test_atrasado_render_muestra_banner_y_opcion_de_3_meses(self):
         hoy = timezone.localdate()
@@ -114,7 +114,7 @@ class CheckoutOpcionesPagoTests(TestCase):
         )
         r = self.client.get(reverse('pagos:portal'))
         self.assertContains(r, 'Debes 3 meses de suscripcion')
-        self.assertContains(r, '3 meses -- $30000000')
+        self.assertContains(r, '3 meses -- $300.000')
         # opcion sugerida (N=3) debe venir seleccionada en el <select>
         self.assertContains(r, f'value="3" selected')
 

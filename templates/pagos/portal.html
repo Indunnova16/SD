@@ -61,11 +61,11 @@
                 <select id="pago-meses-select" class="select select-bordered select-sm">
                     {% for o in opciones_pago %}
                     <option value="{{ o.n }}" {% if o.n == meses_sugeridos %}selected{% endif %}>
-                        {{ o.n }} mes{{ o.n|pluralize:",es" }} -- ${{ o.monto_centavos|floatformat:0 }}
+                        {{ o.n }} mes{{ o.n|pluralize:",es" }} -- ${{ o.monto_pesos|floatformat:0|intcomma }}
                     </option>
                     {% endfor %}
                 </select>
-                <span class="label-text-alt mt-1">Total a pagar: $<span id="pago-monto-total">{{ monto_centavos|floatformat:0 }}</span> COP (centavos)</span>
+                <span class="label-text-alt mt-1">Total a pagar: $<span id="pago-monto-total">{{ monto_pesos|floatformat:0|intcomma }}</span> COP</span>
             </div>
 
             <!-- WOMPI payment button -->
@@ -108,7 +108,7 @@
                     newScript.setAttribute('data-signature:integrity', opcion.signature);
                     newScript.setAttribute('data-redirect-url', oldScript.getAttribute('data-redirect-url'));
                     oldScript.parentNode.replaceChild(newScript, oldScript);
-                    if (totalEl) { totalEl.textContent = opcion.monto_centavos; }
+                    if (totalEl) { totalEl.textContent = opcion.monto_pesos.toLocaleString('es-CO'); }
                 });
             })();
             </script>
