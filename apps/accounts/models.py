@@ -90,6 +90,7 @@ class User(AbstractUser):
         EJECUTOR = "EJECUTOR", _("Ejecutor")
         COORDINADOR = "COORDINADOR", _("Coordinador")
         ADMINISTRADOR = "ADMINISTRADOR", _("Administrador")
+        TESORERIA = "TESORERIA", _("Tesorería")
 
     # Remove username field, use email or document for login
     username = None

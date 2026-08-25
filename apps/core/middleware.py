@@ -5,6 +5,7 @@ Custom middleware for the SD LMS project.
 import time
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -41,3 +42,38 @@ class SessionInactivityMiddleware(MiddlewareMixin):
 
         request.session["_last_activity"] = now
         return None
+
+
+class TesoreriaScopeMiddleware(MiddlewareMixin):
+    """
+    Restringe el rol TESORERIA (issue #144) EXCLUSIVAMENTE al módulo de
+    pagos. El resto de las apps del portal solo exigen `@login_required`
+    sin chequeo de rol adicional (ver `apps.accounts.permissions`), así que
+    sin este middleware un usuario TESORERIA tendría acceso amplio a
+    cursos/evaluaciones/certificaciones/reportes/gamificación vía esas
+    vistas. Punto único de verdad — no toca ninguna vista existente.
+
+    Whitelist mínima además de `/pagos/`: login/logout (para poder
+    autenticarse y salir) y `/notifications/` (el navbar de `base.html`
+    hace polling de `/notifications/unread-count/` en TODAS las páginas,
+    incluida `/pagos/` — bloquearlo rompería el badge con 403 constantes).
+    """
+
+    ALLOWED_PREFIXES = (
+        "/pagos/",
+        "/accounts/login/",
+        "/accounts/logout/",
+        "/notifications/",
+        "/static/",
+        "/media/",
+    )
+
+    def process_request(self, request):
+        if not request.user.is_authenticated:
+            return None
+        if getattr(request.user, "rol", None) != request.user.Rol.TESORERIA:
+            return None
+        if request.path.startswith(self.ALLOWED_PREFIXES):
+            return None
+        messages.error(request, "Tu cuenta solo tiene acceso al módulo de pagos.")
+        return redirect("pagos:portal")

@@ -87,6 +87,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
     "apps.core.middleware.SessionInactivityMiddleware",
+    "apps.core.middleware.TesoreriaScopeMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

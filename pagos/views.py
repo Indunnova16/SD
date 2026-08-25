@@ -52,7 +52,7 @@ def _avanzar_fecha_proximo_pago(pago):
 
 
 class DatosFacturacionView(RolRequiredMixin, TemplateView):
-    allowed_roles = (Rol.ADMINISTRADOR,)
+    allowed_roles = (Rol.ADMINISTRADOR, Rol.TESORERIA)
     redirect_url = 'reports:dashboard'
     template_name = 'pagos/datos_facturacion.html'
 
@@ -126,7 +126,7 @@ class DatosFacturacionView(RolRequiredMixin, TemplateView):
 
 
 class PagoPortalView(RolRequiredMixin, TemplateView):
-    allowed_roles = (Rol.ADMINISTRADOR,)
+    allowed_roles = (Rol.ADMINISTRADOR, Rol.TESORERIA)
     redirect_url = 'reports:dashboard'
     template_name = 'pagos/portal.html'
 
@@ -267,7 +267,7 @@ class PagoPortalView(RolRequiredMixin, TemplateView):
 
 
 class HistorialPagosView(RolRequiredMixin, ListView):
-    allowed_roles = (Rol.ADMINISTRADOR,)
+    allowed_roles = (Rol.ADMINISTRADOR, Rol.TESORERIA)
     redirect_url = 'reports:dashboard'
     model = Pago
     template_name = 'pagos/historial.html'
