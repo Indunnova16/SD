@@ -20,6 +20,8 @@ assigns a string to that FK and is unrelated to this feature.
 
 from datetime import date
 from decimal import Decimal
+import subprocess
+import tempfile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
@@ -450,6 +452,121 @@ class ScheduleAttendancePdfTemplateTests(TestCase):
 
         self.assertIn("No registra una evaluación calificada con respuestas.", html)
         self.assertNotIn("<td>Oral</td>", html)
+
+
+class ScheduleAttendancePdfDownloadRegressionTests(TestCase):
+    """SD#140: downloads authenticated render the selected attempt end to end."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = _make_user(is_staff=True)
+        self.coordinator = _make_user(rol=User.Rol.COORDINADOR)
+        self.course, _module = _make_course(self.admin)
+        self.course.project_name = "Proyecto PDF SD140"
+        self.course.activity_type = Course.ActivityType.CAPACITACION
+        self.course.instructor = self.admin
+        self.course.save(update_fields=["project_name", "activity_type", "instructor"])
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria regresión SD140",
+            created_by=self.admin,
+        )
+        self.attendee = _make_user()
+        enrollment = Enrollment.objects.create(user=self.attendee, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.attendee,
+            enrollment=enrollment,
+        )
+        self.unassigned_user = _make_user()
+
+        from apps.assessments.models import Assessment, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación integrada",
+            modality=Assessment.Modality.ORAL,
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+        question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="¿Cuál es el control crítico?",
+            order=1,
+        )
+        AssessmentAttempt.objects.create(
+            user=self.attendee,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("3.75"),
+        )
+        best = AssessmentAttempt.objects.create(
+            user=self.attendee,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("5.00"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=best,
+            question=question,
+            text_answer="Verificar el anclaje antes de iniciar.",
+        )
+
+    def _pdf_text(self, content):
+        with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
+            pdf_file.write(content)
+            pdf_file.flush()
+            return subprocess.run(
+                ["pdftotext", "-layout", pdf_file.name, "-"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+
+    def test_coordinator_downloads_group_and_individual_pdfs_with_best_attempt(self):
+        self.client.force_login(self.coordinator)
+        group = self.client.get(
+            reverse("courses:export_schedule_attendance_pdf", args=[self.schedule.id])
+        )
+        individual = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.attendee.id],
+            )
+        )
+
+        for response in (group, individual):
+            with self.subTest(response=response["Content-Disposition"]):
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["Content-Type"], "application/pdf")
+                self.assertTrue(response.content.startswith(b"%PDF"))
+
+        group_text = self._pdf_text(group.content)
+        individual_text = self._pdf_text(individual.content)
+        self.assertIn("5.0", group_text)
+        self.assertIn("Oral", group_text)
+        self.assertIn("¿Cuál es el control crítico?", individual_text)
+        self.assertIn("Verificar el anclaje antes de iniciar.", individual_text)
+
+    def test_anonymous_user_cannot_download_schedule_pdf(self):
+        response = self.client.get(
+            reverse("courses:export_schedule_attendance_pdf", args=[self.schedule.id])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response["Location"])
+
+    def test_individual_pdf_returns_404_for_user_outside_schedule(self):
+        self.client.force_login(self.coordinator)
+        response = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.unassigned_user.id],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
 
 
 class ExportAttendancePdfViewTests(TestCase):
