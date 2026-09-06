@@ -102,6 +102,15 @@ RUN useradd -m -u 1000 appuser
 # Set working directory
 WORKDIR /app
 
+# Cache-bust del layer de código (SD#140): con --cache-from :latest, un COPY
+# sin nada que cambie entre líneas puede reusar la capa vieja aunque el
+# contenido real del repo haya cambiado -- deploy "verde" con código stale
+# (imagen no trae el commit que dice traer). Este ARG/RUN garantiza cache-miss
+# en cada SHA distinto, justo antes del COPY, sin perder el cache de apt/pip
+# de arriba (ver memoria feedback_deploy_buildkit_cache_stale_gitsha).
+ARG GIT_SHA=dev
+RUN echo "code build ${GIT_SHA}"
+
 # Copy application code
 COPY --chown=appuser:appuser . .
 

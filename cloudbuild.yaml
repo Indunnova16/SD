@@ -33,6 +33,7 @@ steps:
       - |
         docker build \
           --cache-from ${_IMAGE}:latest \
+          --build-arg GIT_SHA=${_SHA} \
           --target production \
           -t ${_IMAGE}:${_SHA} \
           -t ${_IMAGE}:latest \
