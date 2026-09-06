@@ -59,6 +59,12 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
+# django-axes exige `request` en authenticate(); self.client.login() del test
+# Client de Django no lo pasa -> AxesBackendRequestParameterRequired en
+# cualquier test que loguee así (SD#145). Runtime (base.py/cloudrun.py) sigue
+# protegido; esto solo aplica a la suite rápida de self-verify.
+AXES_ENABLED = False
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
