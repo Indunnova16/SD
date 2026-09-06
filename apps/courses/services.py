@@ -2,11 +2,14 @@
 Business logic services for course management.
 """
 
+import json
 import logging
+import math
 import mimetypes
 import os
 import uuid
 import zipfile
+from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
@@ -259,6 +262,61 @@ class EnrollmentService:
         return lesson_progress
 
     @staticmethod
+    @transaction.atomic
+    def recover_external_video_progress(
+        enrollment: Enrollment,
+        lesson: Lesson,
+        *,
+        current_time: float,
+        max_reached: float,
+        duration: float,
+        completed: bool,
+    ) -> LessonProgress:
+        """Persist external-video progress without erasing a legacy attempt.
+
+        SD#140 resumes enrollments that were created before the YouTube player
+        started reporting its real duration.  A resumed player can report a
+        duration that differs from the manually configured lesson duration;
+        its update must therefore be monotonic.  In particular, a stale or
+        retried browser request must never lower saved progress, time spent,
+        completion data, or a completed enrollment/certificate downstream.
+        """
+        if not all(
+            math.isfinite(value) and value >= 0 for value in (current_time, max_reached, duration)
+        ):
+            raise ValueError("El progreso de video debe contener valores numéricos no negativos.")
+
+        progress, _ = LessonProgress.objects.select_for_update().get_or_create(
+            enrollment=enrollment,
+            lesson=lesson,
+        )
+        saved_position = progress.last_position or {}
+        saved_max = float(saved_position.get("max_reached", 0) or 0)
+        recovered_max = max(max_reached, saved_max)
+
+        # The real player duration is authoritative when present.  Retain a
+        # previous duration only for an incomplete retry that cannot report it.
+        effective_duration = duration or float(saved_position.get("duration", 0) or 0)
+        progress.last_position = {
+            "video_seconds": max(current_time, float(saved_position.get("video_seconds", 0) or 0)),
+            "max_reached": recovered_max,
+            "duration": effective_duration,
+        }
+        if effective_duration > 0:
+            recovered_percent = Decimal(str(min((recovered_max / effective_duration) * 100, 100)))
+            progress.progress_percent = max(progress.progress_percent, recovered_percent)
+        progress.time_spent = max(progress.time_spent, int(recovered_max))
+
+        if completed or (effective_duration > 0 and recovered_max / effective_duration >= 0.95):
+            if not progress.is_completed:
+                progress.is_completed = True
+                progress.completed_at = timezone.now()
+
+        progress.save()
+        EnrollmentService.update_enrollment_progress(enrollment)
+        return progress
+
+    @staticmethod
     def update_enrollment_progress(enrollment: Enrollment) -> Enrollment:
         """
         Recalculate enrollment progress based on lesson completion.
@@ -287,7 +345,17 @@ class EnrollmentService:
         ).count()
 
         progress = (completed_lessons / total_lessons) * 100
-        enrollment.progress = round(progress, 2)
+        calculated_progress = round(progress, 2)
+
+        # A late retry from a legacy video tracker must not turn a completed
+        # enrollment back into a partial one.  Completion can already have a
+        # signature and issued certificate attached; those records represent
+        # valid history even when an old LessonProgress row is inconsistent.
+        if not (
+            enrollment.status == Enrollment.Status.COMPLETED
+            and enrollment.progress > calculated_progress
+        ):
+            enrollment.progress = calculated_progress
 
         if enrollment.progress > 0 and enrollment.status == Enrollment.Status.ENROLLED:
             enrollment.status = Enrollment.Status.IN_PROGRESS
@@ -832,6 +900,43 @@ class CourseScheduleService:
             return None
 
     @staticmethod
+    def _pdf_attempt_answers(attempt):
+        """Return a stable, human-readable representation of an attempt.
+
+        The individual attendance PDF needs the answer text, not ORM objects:
+        keeping that representation here lets both the schedule and individual
+        exports use the exact attempt that produced the displayed score.
+        """
+        answers = []
+        for attempt_answer in attempt.attempt_answers.all():
+            question = attempt_answer.question
+            selected = [answer.text for answer in attempt_answer.selected_answers.all()]
+            response = ", ".join(selected)
+
+            if not response and question.question_type == "matching":
+                try:
+                    pairs = json.loads(attempt_answer.text_answer or "[]")
+                    response = "; ".join(
+                        f"{pair['left']} → {pair['right']}"
+                        for pair in pairs
+                        if "left" in pair and "right" in pair
+                    )
+                except (TypeError, ValueError):
+                    response = attempt_answer.text_answer
+            if not response:
+                response = attempt_answer.text_answer or "Sin respuesta"
+
+            answers.append(
+                {
+                    "question": question.text,
+                    "question_type": question.get_question_type_display(),
+                    "response": response,
+                    "is_correct": attempt_answer.is_correct,
+                }
+            )
+        return answers
+
+    @staticmethod
     def build_schedule_attendance_summary(schedule: CourseSchedule) -> dict:
         """Roster de asistencia de UNA programación (requisito 5 del issue).
 
@@ -856,7 +961,9 @@ class CourseScheduleService:
         rows = []
         total_presentes = 0
         graded_scores = []
-        from apps.assessments.models import AssessmentAttempt
+        from django.db.models import Prefetch
+
+        from apps.assessments.models import AssessmentAttempt, AttemptAnswer
 
         for assignment in assignments:
             user = assignment.user
@@ -869,18 +976,28 @@ class CourseScheduleService:
             if presente:
                 total_presentes += 1
 
-            latest_graded_attempt = (
+            best_graded_attempt = (
                 AssessmentAttempt.objects.filter(
                     user=user,
                     assessment__course=schedule.course,
                     status=AssessmentAttempt.Status.GRADED,
+                    score__gte=Decimal("0"),
+                    score__lte=Decimal("5"),
                 )
-                .order_by("-graded_at", "-started_at", "-pk")
+                .prefetch_related(
+                    Prefetch(
+                        "attempt_answers",
+                        queryset=AttemptAnswer.objects.select_related("question")
+                        .prefetch_related("selected_answers")
+                        .order_by("question__order", "pk"),
+                    )
+                )
+                .order_by("-score", "-graded_at", "-started_at", "-pk")
                 .first()
             )
             score = (
-                float(latest_graded_attempt.score)
-                if latest_graded_attempt and latest_graded_attempt.score is not None
+                float(best_graded_attempt.score)
+                if best_graded_attempt and best_graded_attempt.score is not None
                 else None
             )
             if score is not None:
@@ -905,6 +1022,12 @@ class CourseScheduleService:
                     "signature_image_url": signature_image_url,
                     "source": assignment.get_source_display(),
                     "score": score,
+                    "assessment_attempt": best_graded_attempt,
+                    "assessment_answers": (
+                        CourseScheduleService._pdf_attempt_answers(best_graded_attempt)
+                        if best_graded_attempt
+                        else []
+                    ),
                 }
             )
 

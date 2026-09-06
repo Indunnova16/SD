@@ -33,19 +33,22 @@ API), y que el reproductor de `content_file` (HTML5 nativo, ruta separada
 que el fix NO debe tocar) sigue renderizando igual que antes.
 
 El comportamiento end-to-end real (gate se desbloquea con progreso REAL del
-reproductor) esta cubierto por el journey E2E mutativo
-`SPRINTS/RUN_2026-08-14_2002/journeys/SD_136.yaml`, que simula el payload
+reproductor) esta cubierto por el journey E2E mutativo de SD#136, que simula el payload
 exacto que la IFrame API envia al terminar el video (duration=largo real,
 no una estimacion) contra el mismo endpoint `update_video_progress`.
 """
 
+import json
 from datetime import date
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.courses.models import Category, Course, Enrollment, Lesson, Module
+from apps.certifications.models import Certificate
+from apps.courses.models import Category, Course, Enrollment, Lesson, LessonProgress, Module
 
 _SEQ = [13600]
 
@@ -247,3 +250,119 @@ class ContentFileVideoPlayerNoRegressionTests(TestCase):
         self.assertNotIn("enablejsapi", content)
         self.assertNotIn('id="yt-player-', content)
         self.assertNotIn("<iframe", content)
+
+
+class LegacyExternalVideoRecoveryTests(TestCase):
+    """SD#140: retomar una inscripción anterior usa la duración real sin resetear datos."""
+
+    def setUp(self):
+        self.client = Client()
+        self.creator = _make_user()
+        self.student = _make_user()
+        self.course, module = _make_course_and_module(self.creator)
+        self.lesson = Lesson.objects.create(
+            module=module,
+            title="Video legacy SD140",
+            lesson_type=Lesson.Type.VIDEO,
+            video_url="https://www.youtube.com/watch?v=fPaZMO6k4mc",
+            duration=2,
+            order=0,
+            is_mandatory=True,
+        )
+        self.enrollment = Enrollment.objects.create(
+            user=self.student,
+            course=self.course,
+            status=Enrollment.Status.IN_PROGRESS,
+            progress="0.83",
+        )
+        self.url = reverse("courses:update_video_progress", args=[self.course.id, self.lesson.id])
+
+    def _post_progress(self, **payload):
+        self.client.force_login(self.student)
+        response = self.client.post(
+            self.url,
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def test_legacy_partial_progress_recovers_from_real_player_completion(self):
+        """Registro anterior al fix (1s/120s) termina con los 37s reales, sin reset."""
+        legacy = LessonProgress.objects.create(
+            enrollment=self.enrollment,
+            lesson=self.lesson,
+            progress_percent="0.83",
+            time_spent=1,
+            last_position={"video_seconds": 1, "max_reached": 1, "duration": 120},
+        )
+
+        response = self._post_progress(
+            current_time=37,
+            max_reached=37,
+            duration=37,
+            completed=True,
+        )
+
+        legacy.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertTrue(response.json()["is_completed"])
+        self.assertTrue(legacy.is_completed)
+        self.assertEqual(float(legacy.progress_percent), 100.0)
+        self.assertEqual(legacy.time_spent, 37)
+        self.assertEqual(legacy.last_position["duration"], 37.0)
+        self.assertEqual(self.enrollment.status, Enrollment.Status.COMPLETED)
+        self.assertEqual(float(self.enrollment.progress), 100.0)
+
+    def test_completed_legacy_enrollment_keeps_signature_and_certificate_on_retry(self):
+        """Una repetición tardía no degrada un curso/certificado ya completado."""
+        completed_at = timezone.now()
+        self.enrollment.status = Enrollment.Status.COMPLETED
+        self.enrollment.progress = 100
+        self.enrollment.completed_at = completed_at
+        self.enrollment.completion_signature = SimpleUploadedFile(
+            "legacy-signature.png", b"signature", content_type="image/png"
+        )
+        self.enrollment.completion_signed_at = completed_at
+        self.enrollment.save()
+        signature_name = self.enrollment.completion_signature.name
+        certificate = Certificate.objects.create(
+            user=self.student,
+            course=self.course,
+            certificate_number=f"SD140-LEGACY-{_next_seq()}",
+            status=Certificate.Status.ISSUED,
+            issued_at=completed_at,
+        )
+        legacy = LessonProgress.objects.create(
+            enrollment=self.enrollment,
+            lesson=self.lesson,
+            progress_percent="0.83",
+            time_spent=1,
+            last_position={"video_seconds": 1, "max_reached": 1, "duration": 120},
+        )
+
+        self._post_progress(current_time=0, max_reached=0, duration=37, completed=False)
+
+        legacy.refresh_from_db()
+        self.enrollment.refresh_from_db()
+        self.assertEqual(self.enrollment.status, Enrollment.Status.COMPLETED)
+        self.assertEqual(float(self.enrollment.progress), 100.0)
+        self.assertEqual(self.enrollment.completed_at, completed_at)
+        self.assertEqual(self.enrollment.completion_signature.name, signature_name)
+        self.assertTrue(
+            Certificate.objects.filter(pk=certificate.pk, status=Certificate.Status.ISSUED).exists()
+        )
+        self.assertEqual(legacy.time_spent, 1)
+        self.assertGreaterEqual(float(legacy.progress_percent), 0.83)
+
+    def test_invalid_legacy_payload_is_rejected_without_creating_progress(self):
+        """Borde: NaN no puede contaminar una inscripción existente."""
+        self.client.force_login(self.student)
+        response = self.client.post(
+            self.url,
+            data=json.dumps({"current_time": -1, "max_reached": 0, "duration": 37}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(LessonProgress.objects.filter(enrollment=self.enrollment).exists())

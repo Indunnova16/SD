@@ -495,6 +495,13 @@ class QuickAssessmentForm(forms.Form):
         ],
         widget=forms.Select(attrs={"class": "select select-bordered w-full"}),
     )
+    modality = forms.ChoiceField(
+        label=_("Modalidad"),
+        choices=Assessment.Modality.choices,
+        initial=Assessment.Modality.OTHER,
+        required=False,
+        widget=forms.Select(attrs={"class": "select select-bordered w-full"}),
+    )
     passing_score = forms.DecimalField(
         label=_("Puntaje minimo (0-5)"),
         initial=Decimal("3.50"),
@@ -532,6 +539,15 @@ class QuickAssessmentForm(forms.Form):
 class AssessmentEditForm(forms.ModelForm):
     """Form for editing all properties of an existing Assessment from the course builder."""
 
+    # Optional only for backwards compatibility with in-flight builder forms.
+    # New UI always submits it; an omitted legacy value preserves the record.
+    modality = forms.ChoiceField(
+        label=_("Modalidad"),
+        choices=Assessment.Modality.choices,
+        required=False,
+        widget=forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
+    )
+
     # Override the auto-generated field to disable es-CO localization
     # (Decimal con coma "80,00" vacia el <input type=number> en el navegador).
     passing_score = forms.DecimalField(
@@ -558,6 +574,7 @@ class AssessmentEditForm(forms.ModelForm):
             "title",
             "description",
             "assessment_type",
+            "modality",
             "passing_score",
             "time_limit",
             "max_attempts",
@@ -579,6 +596,7 @@ class AssessmentEditForm(forms.ModelForm):
             "assessment_type": forms.Select(
                 attrs={"class": "select select-bordered select-sm w-full"}
             ),
+            "modality": forms.Select(attrs={"class": "select select-bordered select-sm w-full"}),
             "time_limit": forms.NumberInput(
                 attrs={
                     "class": "input input-bordered input-sm w-full",
@@ -606,6 +624,9 @@ class AssessmentEditForm(forms.ModelForm):
         if value is None or value < 0 or value > 5:
             raise forms.ValidationError(_("Debe estar entre 0 y 5."))
         return value
+
+    def clean_modality(self):
+        return self.cleaned_data.get("modality") or self.instance.modality
 
     def clean_time_limit(self):
         value = self.cleaned_data.get("time_limit")

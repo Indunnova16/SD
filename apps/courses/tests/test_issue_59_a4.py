@@ -245,12 +245,12 @@ class ExportAttendancePdfAccessTests(AttendanceRosterAccessTestBase):
 
         self.assertEqual(response.status_code, 302)
 
-    def test_edge_staff_required_helper_untouched_for_other_views(self):
-        """Guard rail for the A4 constraint itself: `_staff_required` (used
-        by 9+ other views) must still reject COORDINADOR — only the new
-        `_attendance_export_required` widens access, not the shared
-        helper. Exercised indirectly via `course_builder`, one of the
-        views still gated by `_staff_required`."""
+    def test_edge_course_builder_allows_coordinator_for_assessment_properties(self):
+        """SD#140: Coordinador may open the builder to create/edit modality.
+
+        The original A4 guard remains true for the shared `_staff_required`;
+        the builder now uses the narrowly scoped assessment permission helper.
+        """
         self.client.force_login(self.coordinador)
         response = self.client.get(reverse("courses:course_builder", args=[self.course.id]))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)

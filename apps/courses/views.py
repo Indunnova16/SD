@@ -432,44 +432,25 @@ def update_video_progress(request, course_id, lesson_id):
     lesson = get_object_or_404(Lesson, id=lesson_id, module__course=course)
     enrollment = get_object_or_404(Enrollment, user=request.user, course=course)
 
-    progress, _ = LessonProgress.objects.get_or_create(
-        enrollment=enrollment,
-        lesson=lesson,
-    )
-
     try:
         data = json.loads(request.body)
-    except json.JSONDecodeError:
+        current_time = float(data.get("current_time", 0))
+        max_reached = float(data.get("max_reached", 0))
+        duration = float(data.get("duration", 0))
+    except (json.JSONDecodeError, TypeError, ValueError):
         return JsonResponse({"error": "Datos invalidos"}, status=400)
 
-    current_time = float(data.get("current_time", 0))
-    max_reached = float(data.get("max_reached", 0))
-    duration = float(data.get("duration", 0))
-    completed = data.get("completed", False)
-
-    # Anti-cheat: max_reached can only increase
-    saved_max = (progress.last_position or {}).get("max_reached", 0)
-    max_reached = max(max_reached, saved_max)
-
-    # Update progress
-    progress.last_position = {
-        "video_seconds": current_time,
-        "max_reached": max_reached,
-        "duration": duration,
-    }
-
-    if duration > 0:
-        progress.progress_percent = min((max_reached / duration) * 100, 100)
-
-    progress.time_spent = int(max_reached)
-
-    if completed or (duration > 0 and max_reached / duration >= 0.95):
-        if not progress.is_completed:
-            progress.is_completed = True
-            progress.completed_at = timezone.now()
-
-    progress.save()
-    EnrollmentService.update_enrollment_progress(enrollment)
+    try:
+        progress = EnrollmentService.recover_external_video_progress(
+            enrollment,
+            lesson,
+            current_time=current_time,
+            max_reached=max_reached,
+            duration=duration,
+            completed=data.get("completed", False) is True,
+        )
+    except ValueError:
+        return JsonResponse({"error": "Datos invalidos"}, status=400)
 
     return JsonResponse(
         {
@@ -1075,6 +1056,16 @@ def _staff_required(request):
     return None
 
 
+def _assessment_builder_required(request):
+    """Allow coordinators and administrators to work with course assessments."""
+    if not user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR):
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "No autorizado"}, status=403)
+        messages.error(request, "No tiene permisos para administrar evaluaciones.")
+        return redirect("courses:list")
+    return None
+
+
 def _get_available_assessments(course):
     """Get assessments available for assignment in this course."""
     from apps.assessments.models import Assessment
@@ -1117,7 +1108,7 @@ def _get_builder_context(course):
 @require_http_methods(["GET"])
 def course_builder(request, course_id):
     """Main course builder page."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     course = get_object_or_404(Course, id=course_id)
@@ -1667,7 +1658,7 @@ def builder_reorder_lessons(request, course_id, module_id):
 @require_http_methods(["POST"])
 def builder_create_quiz(request, course_id):
     """Create a new assessment from the builder."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     from apps.assessments.models import Assessment
@@ -1679,6 +1670,7 @@ def builder_create_quiz(request, course_id):
         assessment = Assessment.objects.create(
             title=form.cleaned_data["title"],
             assessment_type=form.cleaned_data["assessment_type"],
+            modality=form.cleaned_data["modality"],
             passing_score=form.cleaned_data["passing_score"],
             time_limit=form.cleaned_data.get("time_limit"),
             max_attempts=form.cleaned_data["max_attempts"],
@@ -1715,9 +1707,11 @@ def builder_edit_assessment(request, course_id, assessment_id):
     course = get_object_or_404(Course, id=course_id)
     assessment = get_object_or_404(Assessment, id=assessment_id, course=course)
 
-    # Permission: staff OR creator
+    # Permission: coordinators and administrators can edit any course assessment;
+    # its creator can also edit it.
     if not (
-        user_has_rol(request.user, Rol.ADMINISTRADOR) or assessment.created_by_id == request.user.id
+        user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR)
+        or assessment.created_by_id == request.user.id
     ):
         if request.headers.get("HX-Request"):
             return JsonResponse({"error": "No autorizado"}, status=403)
@@ -1770,7 +1764,7 @@ def builder_edit_assessment(request, course_id, assessment_id):
 @require_http_methods(["GET"])
 def builder_assessment_editor(request, course_id, assessment_id):
     """Return the assessment question editor partial."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     from apps.assessments.models import Assessment
@@ -3041,6 +3035,7 @@ def export_schedule_attendance_pdf(request, schedule_id):
         "request_user": request.user,
         "pdf_instructor": pdf_instructor,
         "instructor_signature_url": signature_url,
+        "is_individual": False,
     }
     context.update(_attendance_pdf_branding_context())
 

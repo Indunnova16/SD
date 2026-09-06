@@ -157,6 +157,23 @@
             border: 1px solid #d1d5db;
             padding: 6px 8px;
         }
+        .assessment-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        .assessment-detail-table th,
+        .assessment-detail-table td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .assessment-detail-table th {
+            background-color: #f3f4f6;
+            text-transform: uppercase;
+            font-size: 8pt;
+        }
         .footer {
             margin-top: 18px;
             border-top: 1px solid #d1d5db;
@@ -273,12 +290,13 @@
             <thead>
                 <tr>
                     <th style="width: 5%;">No.</th>
-                    <th style="width: 25%;">Nombre completo</th>
-                    <th style="width: 14%;">Cédula</th>
-                    <th style="width: 16%;">Cargo</th>
+                    <th style="width: 22%;">Nombre completo</th>
+                    <th style="width: 13%;">Cédula</th>
+                    <th style="width: 14%;">Cargo</th>
                     {% if schedule %}<th style="width: 10%;">Calificación</th>{% endif %}
-                    <th style="width: 21%;">Firma</th>
-                    <th style="width: 15%;">Fecha de firma</th>
+                    {% if schedule %}<th style="width: 10%;">Modalidad</th>{% endif %}
+                    <th style="width: 16%;">Firma</th>
+                    <th style="width: 10%;">Fecha de firma</th>
                 </tr>
             </thead>
             <tbody>
@@ -289,6 +307,7 @@
                     <td>{{ row.document_number }}</td>
                     <td>{{ row.job_position|default:"—" }}</td>
                     {% if schedule %}<td>{% if row.score is not None %}{{ row.score|floatformat:1 }}{% else %}<span class="empty">—</span>{% endif %}</td>{% endif %}
+                    {% if schedule %}<td>{% if row.assessment_attempt %}{{ row.assessment_attempt.assessment.get_modality_display }}{% else %}<span class="empty">—</span>{% endif %}</td>{% endif %}
                     <td>
                         {% if row.signature_image_url %}
                             <img class="signature-img" src="{{ row.signature_image_url }}" alt="Firma">
@@ -302,11 +321,37 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{% if schedule %}7{% else %}6{% endif %}" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
+                    <td colspan="{% if schedule %}8{% else %}6{% endif %}" class="empty" style="text-align: center;">No hay inscritos en este curso.</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        {% if is_individual %}
+        <div class="section-title">Detalle de la evaluación</div>
+        {% with row=rows.0 %}
+            {% if row.assessment_answers %}
+            <table class="assessment-detail-table">
+                <thead>
+                    <tr>
+                        <th style="width: 45%;">Pregunta</th>
+                        <th style="width: 55%;">Respuesta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for answer in row.assessment_answers %}
+                    <tr>
+                        <td>{{ answer.question }}</td>
+                        <td>{{ answer.response }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty">No registra una evaluación calificada con respuestas.</p>
+            {% endif %}
+        {% endwith %}
+        {% endif %}
 
         <div class="section-title">Eficacia de la Capacitación</div>
         <table class="efficacy-text-table">

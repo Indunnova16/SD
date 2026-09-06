@@ -45,6 +45,15 @@ Context: course, assessment, form
             </div>
             <div class="form-control">
                 <label class="label py-0">
+                    <span class="label-text text-xs">Modalidad</span>
+                </label>
+                {{ form.modality }}
+                {% if form.modality.errors %}
+                    <span class="text-error text-xs">{{ form.modality.errors|join:", " }}</span>
+                {% endif %}
+            </div>
+            <div class="form-control">
+                <label class="label py-0">
                     <span class="label-text text-xs">Estado</span>
                 </label>
                 {{ form.status }}

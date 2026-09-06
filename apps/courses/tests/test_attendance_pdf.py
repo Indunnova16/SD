@@ -18,7 +18,10 @@ the established pattern in test_views.py — the factory_boy UserFactory still
 assigns a string to that FK and is unrelated to this feature.
 """
 
+import subprocess
+import tempfile
 from datetime import date
+from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
@@ -30,10 +33,13 @@ from apps.courses.models import (
     AttendanceSignature,
     Category,
     Course,
+    CourseSchedule,
     Enrollment,
     Lesson,
     Module,
+    ScheduleAssignment,
 )
+from apps.courses.services import CourseScheduleService
 from apps.courses.views import _build_attendance_summary, _resolve_attendance_responsable
 
 # Minimal valid 1x1 transparent PNG, so ImageField validation passes.
@@ -212,6 +218,355 @@ class AttendanceSummaryTests(TestCase):
             self._sign(u)
         summary = _build_attendance_summary(self.course, self.lesson)
         self.assertEqual(summary["porcentaje_asistencia"], 100.0)
+
+
+class ScheduleAttendanceAttemptSummaryTests(TestCase):
+    """SD#140: the individual PDF receives the person's best valid attempt."""
+
+    def setUp(self):
+        self.admin = _make_user(is_staff=True)
+        self.course, _module = _make_course(self.admin)
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria PDF individual",
+            created_by=self.admin,
+        )
+        self.persona = _make_user()
+        enrollment = Enrollment.objects.create(user=self.persona, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.persona,
+            enrollment=enrollment,
+        )
+
+    def _assessment(self):
+        from apps.assessments.models import Assessment
+
+        return Assessment.objects.create(
+            course=self.course,
+            title="Evaluación de seguridad",
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+
+    def test_uses_highest_valid_graded_attempt_not_the_latest(self):
+        from apps.assessments.models import AssessmentAttempt
+
+        assessment = self._assessment()
+        AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("3.25"),
+        )
+        best = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.75"),
+        )
+        # A malformed legacy score is not a calificación de la escala 0-5.
+        AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("5.50"),
+        )
+
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertEqual(row["score"], 4.75)
+        self.assertEqual(row["assessment_attempt"].pk, best.pk)
+
+    def test_person_without_graded_attempt_has_no_score_or_answers(self):
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertIsNone(row["score"])
+        self.assertIsNone(row["assessment_attempt"])
+        self.assertEqual(row["assessment_answers"], [])
+
+    def test_best_attempt_exposes_selected_text_and_matching_answers_in_question_order(self):
+        from apps.assessments.models import Answer, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = self._assessment()
+        selected_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.MULTIPLE_CHOICE,
+            text="¿Qué EPP debe usar?",
+            order=2,
+        )
+        selected_answer = Answer.objects.create(
+            question=selected_question,
+            text="Casco y guantes",
+            is_correct=True,
+        )
+        text_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="Describa el procedimiento",
+            order=1,
+        )
+        matching_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.MATCHING,
+            text="Relacione el riesgo con el control",
+            order=3,
+        )
+        attempt = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.50"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=text_question,
+            text_answer="Verifico el área antes de iniciar.",
+        )
+        selected = AttemptAnswer.objects.create(attempt=attempt, question=selected_question)
+        selected.selected_answers.add(selected_answer)
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=matching_question,
+            text_answer='[{"left": "Ruido", "right": "Protección auditiva"}]',
+        )
+
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertEqual(row["assessment_attempt"].pk, attempt.pk)
+        self.assertEqual(
+            [answer["question"] for answer in row["assessment_answers"]],
+            [
+                "Describa el procedimiento",
+                "¿Qué EPP debe usar?",
+                "Relacione el riesgo con el control",
+            ],
+        )
+        self.assertEqual(
+            [answer["response"] for answer in row["assessment_answers"]],
+            [
+                "Verifico el área antes de iniciar.",
+                "Casco y guantes",
+                "Ruido → Protección auditiva",
+            ],
+        )
+
+
+class ScheduleAttendancePdfTemplateTests(TestCase):
+    """SD#140: schedule PDF exposes the selected person's assessment data."""
+
+    def setUp(self):
+        self.admin = _make_user(is_staff=True)
+        self.course, _module = _make_course(self.admin)
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria FT-HSEQ-60",
+            created_by=self.admin,
+        )
+        self.persona = _make_user()
+        enrollment = Enrollment.objects.create(user=self.persona, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.persona,
+            enrollment=enrollment,
+        )
+
+    def _render(self, *, is_individual=False):
+        from django.template.loader import render_to_string
+        from django.utils import timezone
+
+        from apps.courses.views import _attendance_pdf_branding_context
+
+        summary = CourseScheduleService.build_schedule_attendance_summary(self.schedule)
+        context = {
+            "course": self.course,
+            "schedule": self.schedule,
+            "rows": summary["rows"],
+            "total_inscritos": summary["total_inscritos"],
+            "total_presentes": summary["total_presentes"],
+            "total_ausentes": summary["total_ausentes"],
+            "porcentaje_asistencia": summary["porcentaje_asistencia"],
+            "calificacion_promedio": summary["calificacion_promedio"],
+            "schedule_date": self.schedule.created_at.date(),
+            "generated_at": timezone.now(),
+            "request_user": self.admin,
+            "pdf_instructor": None,
+            "instructor_signature_url": "",
+            "is_individual": is_individual,
+        }
+        context.update(_attendance_pdf_branding_context())
+        return render_to_string("courses/course_attendance_pdf.html", context)
+
+    def _graded_attempt_with_answer(self):
+        from apps.assessments.models import Assessment, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación de alturas",
+            modality=Assessment.Modality.ORAL,
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+        question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="¿Cuál es el control previo?",
+            order=1,
+        )
+        attempt = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.50"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=question,
+            text_answer="Reviso el arnés y el anclaje.",
+        )
+
+    def test_group_pdf_shows_individual_score_and_modality(self):
+        self._graded_attempt_with_answer()
+
+        html = self._render()
+
+        self.assertIn("Calificación", html)
+        self.assertIn("Modalidad", html)
+        self.assertIn("4,5", html)
+        self.assertIn("Oral", html)
+        self.assertNotIn("Detalle de la evaluación", html)
+
+    def test_individual_pdf_includes_selected_attempt_questions_and_answers(self):
+        self._graded_attempt_with_answer()
+
+        html = self._render(is_individual=True)
+
+        self.assertIn("4,5", html)
+        self.assertIn("Oral", html)
+        self.assertIn("Detalle de la evaluación", html)
+        self.assertIn("¿Cuál es el control previo?", html)
+        self.assertIn("Reviso el arnés y el anclaje.", html)
+
+    def test_individual_pdf_without_graded_attempt_explains_missing_detail(self):
+        html = self._render(is_individual=True)
+
+        self.assertIn("No registra una evaluación calificada con respuestas.", html)
+        self.assertNotIn("<td>Oral</td>", html)
+
+
+class ScheduleAttendancePdfDownloadRegressionTests(TestCase):
+    """SD#140: downloads authenticated render the selected attempt end to end."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = _make_user(is_staff=True)
+        self.coordinator = _make_user(rol=User.Rol.COORDINADOR)
+        self.course, _module = _make_course(self.admin)
+        self.course.project_name = "Proyecto PDF SD140"
+        self.course.activity_type = Course.ActivityType.CAPACITACION
+        self.course.instructor = self.admin
+        self.course.save(update_fields=["project_name", "activity_type", "instructor"])
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria regresión SD140",
+            created_by=self.admin,
+        )
+        self.attendee = _make_user()
+        enrollment = Enrollment.objects.create(user=self.attendee, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.attendee,
+            enrollment=enrollment,
+        )
+        self.unassigned_user = _make_user()
+
+        from apps.assessments.models import Assessment, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación integrada",
+            modality=Assessment.Modality.ORAL,
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+        question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="¿Cuál es el control crítico?",
+            order=1,
+        )
+        AssessmentAttempt.objects.create(
+            user=self.attendee,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("3.75"),
+        )
+        best = AssessmentAttempt.objects.create(
+            user=self.attendee,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("5.00"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=best,
+            question=question,
+            text_answer="Verificar el anclaje antes de iniciar.",
+        )
+
+    def _pdf_text(self, content):
+        with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
+            pdf_file.write(content)
+            pdf_file.flush()
+            return subprocess.run(
+                ["pdftotext", "-layout", pdf_file.name, "-"],
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+
+    def test_coordinator_downloads_group_and_individual_pdfs_with_best_attempt(self):
+        self.client.force_login(self.coordinator)
+        group = self.client.get(
+            reverse("courses:export_schedule_attendance_pdf", args=[self.schedule.id])
+        )
+        individual = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.attendee.id],
+            )
+        )
+
+        for response in (group, individual):
+            with self.subTest(response=response["Content-Disposition"]):
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response["Content-Type"], "application/pdf")
+                self.assertTrue(response.content.startswith(b"%PDF"))
+
+        group_text = self._pdf_text(group.content)
+        individual_text = self._pdf_text(individual.content)
+        self.assertIn("5.0", group_text)
+        self.assertIn("Oral", group_text)
+        self.assertIn("¿Cuál es el control crítico?", individual_text)
+        self.assertIn("Verificar el anclaje antes de iniciar.", individual_text)
+
+    def test_anonymous_user_cannot_download_schedule_pdf(self):
+        response = self.client.get(
+            reverse("courses:export_schedule_attendance_pdf", args=[self.schedule.id])
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response["Location"])
+
+    def test_individual_pdf_returns_404_for_user_outside_schedule(self):
+        self.client.force_login(self.coordinator)
+        response = self.client.get(
+            reverse(
+                "courses:export_schedule_attendance_pdf_individual",
+                args=[self.schedule.id, self.unassigned_user.id],
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
 
 
 class ExportAttendancePdfViewTests(TestCase):
