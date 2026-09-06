@@ -1056,6 +1056,16 @@ def _staff_required(request):
     return None
 
 
+def _assessment_builder_required(request):
+    """Allow coordinators and administrators to work with course assessments."""
+    if not user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR):
+        if request.headers.get("HX-Request"):
+            return JsonResponse({"error": "No autorizado"}, status=403)
+        messages.error(request, "No tiene permisos para administrar evaluaciones.")
+        return redirect("courses:list")
+    return None
+
+
 def _get_available_assessments(course):
     """Get assessments available for assignment in this course."""
     from apps.assessments.models import Assessment
@@ -1098,7 +1108,7 @@ def _get_builder_context(course):
 @require_http_methods(["GET"])
 def course_builder(request, course_id):
     """Main course builder page."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     course = get_object_or_404(Course, id=course_id)
@@ -1648,7 +1658,7 @@ def builder_reorder_lessons(request, course_id, module_id):
 @require_http_methods(["POST"])
 def builder_create_quiz(request, course_id):
     """Create a new assessment from the builder."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     from apps.assessments.models import Assessment
@@ -1660,6 +1670,7 @@ def builder_create_quiz(request, course_id):
         assessment = Assessment.objects.create(
             title=form.cleaned_data["title"],
             assessment_type=form.cleaned_data["assessment_type"],
+            modality=form.cleaned_data["modality"],
             passing_score=form.cleaned_data["passing_score"],
             time_limit=form.cleaned_data.get("time_limit"),
             max_attempts=form.cleaned_data["max_attempts"],
@@ -1696,9 +1707,11 @@ def builder_edit_assessment(request, course_id, assessment_id):
     course = get_object_or_404(Course, id=course_id)
     assessment = get_object_or_404(Assessment, id=assessment_id, course=course)
 
-    # Permission: staff OR creator
+    # Permission: coordinators and administrators can edit any course assessment;
+    # its creator can also edit it.
     if not (
-        user_has_rol(request.user, Rol.ADMINISTRADOR) or assessment.created_by_id == request.user.id
+        user_has_rol(request.user, Rol.COORDINADOR, Rol.ADMINISTRADOR)
+        or assessment.created_by_id == request.user.id
     ):
         if request.headers.get("HX-Request"):
             return JsonResponse({"error": "No autorizado"}, status=403)
@@ -1751,7 +1764,7 @@ def builder_edit_assessment(request, course_id, assessment_id):
 @require_http_methods(["GET"])
 def builder_assessment_editor(request, course_id, assessment_id):
     """Return the assessment question editor partial."""
-    if err := _staff_required(request):
+    if err := _assessment_builder_required(request):
         return err
 
     from apps.assessments.models import Assessment

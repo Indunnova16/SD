@@ -32,6 +32,16 @@ Context: course
         </div>
         <div class="form-control">
             <label class="label py-0">
+                <span class="label-text text-xs">Modalidad</span>
+            </label>
+            <select name="modality" class="select select-bordered select-xs w-full">
+                <option value="oral">Oral</option>
+                <option value="written">Escrita</option>
+                <option value="other" selected>Otra</option>
+            </select>
+        </div>
+        <div class="form-control">
+            <label class="label py-0">
                 <span class="label-text text-xs">Puntaje mínimo (0-5)</span>
             </label>
             <input type="number"

@@ -34,6 +34,13 @@ class Assessment(models.Model):
         PRACTICE = "practice", _("Práctica")
         SURVEY = "survey", _("Encuesta")
 
+    class Modality(models.TextChoices):
+        """How the assessment is administered, independently of its type."""
+
+        ORAL = "oral", _("Oral")
+        WRITTEN = "written", _("Escrita")
+        OTHER = "other", _("Otra")
+
     class Status(models.TextChoices):
         DRAFT = "draft", _("Borrador")
         PUBLISHED = "published", _("Publicado")
@@ -46,6 +53,13 @@ class Assessment(models.Model):
         max_length=20,
         choices=Type.choices,
         default=Type.QUIZ,
+    )
+    modality = models.CharField(
+        _("Modalidad"),
+        max_length=20,
+        choices=Modality.choices,
+        default=Modality.OTHER,
+        help_text=_("Forma en que se presenta la evaluación."),
     )
     course = models.ForeignKey(
         "courses.Course",
