@@ -18,10 +18,10 @@ the established pattern in test_views.py — the factory_boy UserFactory still
 assigns a string to that FK and is unrelated to this feature.
 """
 
-from datetime import date
-from decimal import Decimal
 import subprocess
 import tempfile
+from datetime import date
+from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase

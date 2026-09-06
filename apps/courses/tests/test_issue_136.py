@@ -349,7 +349,9 @@ class LegacyExternalVideoRecoveryTests(TestCase):
         self.assertEqual(float(self.enrollment.progress), 100.0)
         self.assertEqual(self.enrollment.completed_at, completed_at)
         self.assertEqual(self.enrollment.completion_signature.name, signature_name)
-        self.assertTrue(Certificate.objects.filter(pk=certificate.pk, status=Certificate.Status.ISSUED).exists())
+        self.assertTrue(
+            Certificate.objects.filter(pk=certificate.pk, status=Certificate.Status.ISSUED).exists()
+        )
         self.assertEqual(legacy.time_spent, 1)
         self.assertGreaterEqual(float(legacy.progress_percent), 0.83)
 

@@ -281,7 +281,9 @@ class EnrollmentService:
         retried browser request must never lower saved progress, time spent,
         completion data, or a completed enrollment/certificate downstream.
         """
-        if not all(math.isfinite(value) and value >= 0 for value in (current_time, max_reached, duration)):
+        if not all(
+            math.isfinite(value) and value >= 0 for value in (current_time, max_reached, duration)
+        ):
             raise ValueError("El progreso de video debe contener valores numéricos no negativos.")
 
         progress, _ = LessonProgress.objects.select_for_update().get_or_create(

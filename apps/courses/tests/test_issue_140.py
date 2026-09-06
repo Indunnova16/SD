@@ -71,8 +71,10 @@ class AssessmentModalityIssue140Tests(TestCase):
 
     def test_coordinator_updates_modality_and_editor_shows_all_choices(self):
         assessment = Assessment.objects.create(
-            title="Registro legacy", assessment_type=Assessment.Type.QUIZ,
-            course=self.course, created_by=self.admin,
+            title="Registro legacy",
+            assessment_type=Assessment.Type.QUIZ,
+            course=self.course,
+            created_by=self.admin,
         )
         edit_url = reverse("courses:builder_edit_assessment", args=[self.course.id, assessment.id])
         self.client.force_login(self.coordinator)
@@ -109,7 +111,10 @@ class AssessmentModalityIssue140Tests(TestCase):
 
     def test_legacy_create_without_modality_defaults_to_other(self):
         assessment = Assessment.objects.create(
-            title="Evaluación anterior", assessment_type=Assessment.Type.PRACTICE,
-            course=self.course, created_by=self.admin, passing_score=Decimal("3.50"),
+            title="Evaluación anterior",
+            assessment_type=Assessment.Type.PRACTICE,
+            course=self.course,
+            created_by=self.admin,
+            passing_score=Decimal("3.50"),
         )
         self.assertEqual(assessment.modality, Assessment.Modality.OTHER)
