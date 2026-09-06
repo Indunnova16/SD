@@ -19,6 +19,7 @@ assigns a string to that FK and is unrelated to this feature.
 """
 
 from datetime import date
+from decimal import Decimal
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
@@ -30,10 +31,13 @@ from apps.courses.models import (
     AttendanceSignature,
     Category,
     Course,
+    CourseSchedule,
     Enrollment,
     Lesson,
     Module,
+    ScheduleAssignment,
 )
+from apps.courses.services import CourseScheduleService
 from apps.courses.views import _build_attendance_summary, _resolve_attendance_responsable
 
 # Minimal valid 1x1 transparent PNG, so ImageField validation passes.
@@ -212,6 +216,138 @@ class AttendanceSummaryTests(TestCase):
             self._sign(u)
         summary = _build_attendance_summary(self.course, self.lesson)
         self.assertEqual(summary["porcentaje_asistencia"], 100.0)
+
+
+class ScheduleAttendanceAttemptSummaryTests(TestCase):
+    """SD#140: the individual PDF receives the person's best valid attempt."""
+
+    def setUp(self):
+        self.admin = _make_user(is_staff=True)
+        self.course, _module = _make_course(self.admin)
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria PDF individual",
+            created_by=self.admin,
+        )
+        self.persona = _make_user()
+        enrollment = Enrollment.objects.create(user=self.persona, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.persona,
+            enrollment=enrollment,
+        )
+
+    def _assessment(self):
+        from apps.assessments.models import Assessment
+
+        return Assessment.objects.create(
+            course=self.course,
+            title="Evaluación de seguridad",
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+
+    def test_uses_highest_valid_graded_attempt_not_the_latest(self):
+        from apps.assessments.models import AssessmentAttempt
+
+        assessment = self._assessment()
+        AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("3.25"),
+        )
+        best = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.75"),
+        )
+        # A malformed legacy score is not a calificación de la escala 0-5.
+        AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("5.50"),
+        )
+
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertEqual(row["score"], 4.75)
+        self.assertEqual(row["assessment_attempt"].pk, best.pk)
+
+    def test_person_without_graded_attempt_has_no_score_or_answers(self):
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertIsNone(row["score"])
+        self.assertIsNone(row["assessment_attempt"])
+        self.assertEqual(row["assessment_answers"], [])
+
+    def test_best_attempt_exposes_selected_text_and_matching_answers_in_question_order(self):
+        from apps.assessments.models import Answer, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = self._assessment()
+        selected_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.MULTIPLE_CHOICE,
+            text="¿Qué EPP debe usar?",
+            order=2,
+        )
+        selected_answer = Answer.objects.create(
+            question=selected_question,
+            text="Casco y guantes",
+            is_correct=True,
+        )
+        text_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="Describa el procedimiento",
+            order=1,
+        )
+        matching_question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.MATCHING,
+            text="Relacione el riesgo con el control",
+            order=3,
+        )
+        attempt = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.50"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=text_question,
+            text_answer="Verifico el área antes de iniciar.",
+        )
+        selected = AttemptAnswer.objects.create(attempt=attempt, question=selected_question)
+        selected.selected_answers.add(selected_answer)
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=matching_question,
+            text_answer='[{"left": "Ruido", "right": "Protección auditiva"}]',
+        )
+
+        row = CourseScheduleService.build_schedule_attendance_summary(self.schedule)["rows"][0]
+
+        self.assertEqual(row["assessment_attempt"].pk, attempt.pk)
+        self.assertEqual(
+            [answer["question"] for answer in row["assessment_answers"]],
+            [
+                "Describa el procedimiento",
+                "¿Qué EPP debe usar?",
+                "Relacione el riesgo con el control",
+            ],
+        )
+        self.assertEqual(
+            [answer["response"] for answer in row["assessment_answers"]],
+            [
+                "Verifico el área antes de iniciar.",
+                "Casco y guantes",
+                "Ruido → Protección auditiva",
+            ],
+        )
 
 
 class ExportAttendancePdfViewTests(TestCase):

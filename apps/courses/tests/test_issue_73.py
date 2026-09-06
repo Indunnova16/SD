@@ -520,7 +520,10 @@ class ScheduleAttendanceSummaryTests(TestCase):
         row = CourseScheduleService.build_schedule_attendance_summary(schedule)["rows"][0]
         self.assertTrue(row["presente"])
 
-    def test_score_por_fila_es_el_intento_graded_mas_reciente(self):
+    def test_score_por_fila_es_la_calificacion_maxima_entre_intentos(self):
+        """SD#140 (A2): la fuente por persona es la MÁXIMA nota 0-5 entre sus
+        intentos calificados, no el más reciente. El intento más ANTIGUO
+        aquí tiene la nota más alta y debe ganar igual."""
         from apps.assessments.models import Assessment, AssessmentAttempt
 
         persona = _make_user()
@@ -532,26 +535,26 @@ class ScheduleAttendanceSummaryTests(TestCase):
             passing_score=60,
             created_by=self.admin,
         )
-        older = AssessmentAttempt.objects.create(
+        older_higher = AssessmentAttempt.objects.create(
             user=persona,
             assessment=assessment,
             status=AssessmentAttempt.Status.GRADED,
-            score=40,
+            score=Decimal("4.5"),
         )
-        newer = AssessmentAttempt.objects.create(
+        newer_lower = AssessmentAttempt.objects.create(
             user=persona,
             assessment=assessment,
             status=AssessmentAttempt.Status.GRADED,
-            score=90,
+            score=Decimal("2.0"),
         )
-        newer.graded_at = timezone.now()
-        newer.save(update_fields=["graded_at"])
-        older.graded_at = newer.graded_at - timedelta(minutes=1)
-        older.save(update_fields=["graded_at"])
+        newer_lower.graded_at = timezone.now()
+        newer_lower.save(update_fields=["graded_at"])
+        older_higher.graded_at = newer_lower.graded_at - timedelta(minutes=1)
+        older_higher.save(update_fields=["graded_at"])
 
         summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
-        self.assertEqual(summary["rows"][0]["score"], 90.0)
-        self.assertEqual(summary["calificacion_promedio"], 90.0)
+        self.assertEqual(summary["rows"][0]["score"], 4.5)
+        self.assertEqual(summary["calificacion_promedio"], 4.5)
 
 
 # =============================================================================

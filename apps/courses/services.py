@@ -2,6 +2,7 @@
 Business logic services for course management.
 """
 
+import json
 import logging
 import math
 import mimetypes
@@ -897,6 +898,43 @@ class CourseScheduleService:
             return None
 
     @staticmethod
+    def _pdf_attempt_answers(attempt):
+        """Return a stable, human-readable representation of an attempt.
+
+        The individual attendance PDF needs the answer text, not ORM objects:
+        keeping that representation here lets both the schedule and individual
+        exports use the exact attempt that produced the displayed score.
+        """
+        answers = []
+        for attempt_answer in attempt.attempt_answers.all():
+            question = attempt_answer.question
+            selected = [answer.text for answer in attempt_answer.selected_answers.all()]
+            response = ", ".join(selected)
+
+            if not response and question.question_type == "matching":
+                try:
+                    pairs = json.loads(attempt_answer.text_answer or "[]")
+                    response = "; ".join(
+                        f"{pair['left']} → {pair['right']}"
+                        for pair in pairs
+                        if "left" in pair and "right" in pair
+                    )
+                except (TypeError, ValueError):
+                    response = attempt_answer.text_answer
+            if not response:
+                response = attempt_answer.text_answer or "Sin respuesta"
+
+            answers.append(
+                {
+                    "question": question.text,
+                    "question_type": question.get_question_type_display(),
+                    "response": response,
+                    "is_correct": attempt_answer.is_correct,
+                }
+            )
+        return answers
+
+    @staticmethod
     def build_schedule_attendance_summary(schedule: CourseSchedule) -> dict:
         """Roster de asistencia de UNA programación (requisito 5 del issue).
 
@@ -921,7 +959,9 @@ class CourseScheduleService:
         rows = []
         total_presentes = 0
         graded_scores = []
-        from apps.assessments.models import AssessmentAttempt
+        from django.db.models import Prefetch
+
+        from apps.assessments.models import AssessmentAttempt, AttemptAnswer
 
         for assignment in assignments:
             user = assignment.user
@@ -934,18 +974,28 @@ class CourseScheduleService:
             if presente:
                 total_presentes += 1
 
-            latest_graded_attempt = (
+            best_graded_attempt = (
                 AssessmentAttempt.objects.filter(
                     user=user,
                     assessment__course=schedule.course,
                     status=AssessmentAttempt.Status.GRADED,
+                    score__gte=Decimal("0"),
+                    score__lte=Decimal("5"),
                 )
-                .order_by("-graded_at", "-started_at", "-pk")
+                .prefetch_related(
+                    Prefetch(
+                        "attempt_answers",
+                        queryset=AttemptAnswer.objects.select_related("question")
+                        .prefetch_related("selected_answers")
+                        .order_by("question__order", "pk"),
+                    )
+                )
+                .order_by("-score", "-graded_at", "-started_at", "-pk")
                 .first()
             )
             score = (
-                float(latest_graded_attempt.score)
-                if latest_graded_attempt and latest_graded_attempt.score is not None
+                float(best_graded_attempt.score)
+                if best_graded_attempt and best_graded_attempt.score is not None
                 else None
             )
             if score is not None:
@@ -970,6 +1020,12 @@ class CourseScheduleService:
                     "signature_image_url": signature_image_url,
                     "source": assignment.get_source_display(),
                     "score": score,
+                    "assessment_attempt": best_graded_attempt,
+                    "assessment_answers": (
+                        CourseScheduleService._pdf_attempt_answers(best_graded_attempt)
+                        if best_graded_attempt
+                        else []
+                    ),
                 }
             )
 
