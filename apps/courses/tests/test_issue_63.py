@@ -1777,11 +1777,15 @@ class LegacyAttendancePdfBrandingTests(TestCase):
         content = response.getvalue() if hasattr(response, "getvalue") else response.content
         self.assertTrue(content.startswith(b"%PDF"))
 
-        text = _extract_pdf_text(self, content)
-        # "Fecha de firma" es el encabezado nuevo -- columna ancha, sale sin
-        # wrap. El cargo del firmante ("Operario Render") sí puede envolver
-        # en 2 líneas por el ancho reducido de esa columna -- se checkea por
-        # palabras sueltas para no depender del layout exacto de pdftotext.
-        self.assertIn("Fecha de firma", text)
-        self.assertIn("Operario", text)
-        self.assertIn("Render", text)
+        text_upper = _extract_pdf_text(self, content).upper()
+        # El encabezado "Fecha de firma" tiene `text-transform: uppercase` en
+        # attendance_pdf.html (queda "FECHA DE FIRMA" en el render real, no
+        # "Fecha de firma" como en el HTML fuente) y pdftotext puede intercalar
+        # su 2a línea con la fila NO./NOMBRE/CÉDULA/CARGO cuando envuelve --
+        # confirmado en vivo (issue SD#148). Se checkea por palabras sueltas
+        # case-insensitive (igual criterio que ya usaba el cargo del firmante)
+        # para validar el wiring sin depender del layout exacto de pdftotext.
+        self.assertIn("FECHA", text_upper)
+        self.assertIn("FIRMA", text_upper)
+        self.assertIn("OPERARIO", text_upper)
+        self.assertIn("RENDER", text_upper)

@@ -3,10 +3,12 @@ Business logic services for course management.
 """
 
 import logging
+import math
 import mimetypes
 import os
 import uuid
 import zipfile
+from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
@@ -259,6 +261,59 @@ class EnrollmentService:
         return lesson_progress
 
     @staticmethod
+    @transaction.atomic
+    def recover_external_video_progress(
+        enrollment: Enrollment,
+        lesson: Lesson,
+        *,
+        current_time: float,
+        max_reached: float,
+        duration: float,
+        completed: bool,
+    ) -> LessonProgress:
+        """Persist external-video progress without erasing a legacy attempt.
+
+        SD#140 resumes enrollments that were created before the YouTube player
+        started reporting its real duration.  A resumed player can report a
+        duration that differs from the manually configured lesson duration;
+        its update must therefore be monotonic.  In particular, a stale or
+        retried browser request must never lower saved progress, time spent,
+        completion data, or a completed enrollment/certificate downstream.
+        """
+        if not all(math.isfinite(value) and value >= 0 for value in (current_time, max_reached, duration)):
+            raise ValueError("El progreso de video debe contener valores numéricos no negativos.")
+
+        progress, _ = LessonProgress.objects.select_for_update().get_or_create(
+            enrollment=enrollment,
+            lesson=lesson,
+        )
+        saved_position = progress.last_position or {}
+        saved_max = float(saved_position.get("max_reached", 0) or 0)
+        recovered_max = max(max_reached, saved_max)
+
+        # The real player duration is authoritative when present.  Retain a
+        # previous duration only for an incomplete retry that cannot report it.
+        effective_duration = duration or float(saved_position.get("duration", 0) or 0)
+        progress.last_position = {
+            "video_seconds": max(current_time, float(saved_position.get("video_seconds", 0) or 0)),
+            "max_reached": recovered_max,
+            "duration": effective_duration,
+        }
+        if effective_duration > 0:
+            recovered_percent = Decimal(str(min((recovered_max / effective_duration) * 100, 100)))
+            progress.progress_percent = max(progress.progress_percent, recovered_percent)
+        progress.time_spent = max(progress.time_spent, int(recovered_max))
+
+        if completed or (effective_duration > 0 and recovered_max / effective_duration >= 0.95):
+            if not progress.is_completed:
+                progress.is_completed = True
+                progress.completed_at = timezone.now()
+
+        progress.save()
+        EnrollmentService.update_enrollment_progress(enrollment)
+        return progress
+
+    @staticmethod
     def update_enrollment_progress(enrollment: Enrollment) -> Enrollment:
         """
         Recalculate enrollment progress based on lesson completion.
@@ -287,7 +342,17 @@ class EnrollmentService:
         ).count()
 
         progress = (completed_lessons / total_lessons) * 100
-        enrollment.progress = round(progress, 2)
+        calculated_progress = round(progress, 2)
+
+        # A late retry from a legacy video tracker must not turn a completed
+        # enrollment back into a partial one.  Completion can already have a
+        # signature and issued certificate attached; those records represent
+        # valid history even when an old LessonProgress row is inconsistent.
+        if not (
+            enrollment.status == Enrollment.Status.COMPLETED
+            and enrollment.progress > calculated_progress
+        ):
+            enrollment.progress = calculated_progress
 
         if enrollment.progress > 0 and enrollment.status == Enrollment.Status.ENROLLED:
             enrollment.status = Enrollment.Status.IN_PROGRESS
