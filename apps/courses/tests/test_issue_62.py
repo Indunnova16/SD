@@ -201,9 +201,7 @@ class LessonFormAfterRequestPanelCollapseTests(TestCase):
             "courses/partials/builder/lesson_form.html",
             {"is_new": True, "course": self.course, "module": self.module},
         )
-        self.assertNotIn(
-            "if(event.detail.successful) { showAddLesson = false; }", html
-        )
+        self.assertNotIn("if(event.detail.successful) { showAddLesson = false; }", html)
 
     def test_happy_path_edit_form_has_no_after_request_handler(self):
         """El form de EDICION (is_new=False) no usa showAddLesson -- no debe
@@ -358,9 +356,7 @@ class ModuleDurationHoursTests(TestCase):
         cls.course = _make_course(cls.staff)
 
     def test_happy_path_zero_lessons_is_zero(self):
-        module = Module.objects.create(
-            course=self.course, title="Vacio", description="", order=0
-        )
+        module = Module.objects.create(course=self.course, title="Vacio", description="", order=0)
         self.assertEqual(module.duration_hours, 0.0)
 
     def test_edge_sum_and_round_matches_course_duration_hours_logic(self):
@@ -397,9 +393,7 @@ class BuilderDurationOobFragmentTests(TestCase):
 
     def test_happy_path_add_lesson_response_includes_updated_oob_totals(self):
         self.client.force_login(self.staff)
-        url = reverse(
-            "courses:builder_add_lesson", args=[self.course.id, self.module.id]
-        )
+        url = reverse("courses:builder_add_lesson", args=[self.course.id, self.module.id])
         response = self.client.post(
             url,
             data={
@@ -457,9 +451,7 @@ class CourseDetailListDurationHoursTests(TestCase):
 
     def test_happy_path_course_detail_shows_hours(self):
         course = _make_course(self.staff, status=Course.Status.PUBLISHED)
-        module = Module.objects.create(
-            course=course, title="M1", description="", order=0
-        )
+        module = Module.objects.create(course=course, title="M1", description="", order=0)
         Lesson.objects.create(
             module=module, title="L1", lesson_type=Lesson.Type.VIDEO, duration=90, order=0
         )

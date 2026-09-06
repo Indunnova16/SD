@@ -113,9 +113,7 @@ class ExternalVideoLessonIframeWiringTests(TestCase):
             is_mandatory=True,
         )
         self.enrollment = Enrollment.objects.create(user=self.student, course=self.course)
-        self.lesson_url = reverse(
-            "courses:lesson", args=[self.course.id, self.video_lesson.id]
-        )
+        self.lesson_url = reverse("courses:lesson", args=[self.course.id, self.video_lesson.id])
 
     def test_iframe_src_includes_enablejsapi(self):
         """SD#136 core fix: sin enablejsapi=1 la YouTube IFrame API no puede
@@ -129,9 +127,7 @@ class ExternalVideoLessonIframeWiringTests(TestCase):
         # convert_youtube_url_to_embed), asi que el src debe verse con
         # exactamente un "?" seguido de enablejsapi=1.
         self.video_lesson.refresh_from_db()
-        self.assertEqual(
-            self.video_lesson.video_url, "https://www.youtube.com/embed/fPaZMO6k4mc"
-        )
+        self.assertEqual(self.video_lesson.video_url, "https://www.youtube.com/embed/fPaZMO6k4mc")
         self.assertContains(
             resp,
             'src="https://www.youtube.com/embed/fPaZMO6k4mc?enablejsapi=1',
@@ -223,16 +219,14 @@ class ContentFileVideoPlayerNoRegressionTests(TestCase):
             is_mandatory=True,
         )
         self.enrollment = Enrollment.objects.create(user=self.student, course=self.course)
-        self.lesson_url = reverse(
-            "courses:lesson", args=[self.course.id, self.video_lesson.id]
-        )
+        self.lesson_url = reverse("courses:lesson", args=[self.course.id, self.video_lesson.id])
 
     def test_html5_video_player_still_renders(self):
         self.client.force_login(self.student)
         resp = self.client.get(self.lesson_url)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'x-data="videoPlayer()"')
-        self.assertContains(resp, "@ended=\"onEnded()\"")
+        self.assertContains(resp, '@ended="onEnded()"')
 
     def test_html5_video_player_does_not_use_external_tracker_wiring(self):
         """No-regresion: una leccion con `content_file` no debe caer por la

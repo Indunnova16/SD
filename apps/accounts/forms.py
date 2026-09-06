@@ -274,9 +274,7 @@ class RolSupervisorMixin:
             and self.instance.pk is not None
             and supervisor.pk == self.instance.pk
         ):
-            self.add_error(
-                "supervisor", _("Un usuario no puede ser supervisor de sí mismo.")
-            )
+            self.add_error("supervisor", _("Un usuario no puede ser supervisor de sí mismo."))
         return cleaned_data
 
 

@@ -87,9 +87,7 @@ class BulkImportRolExplicitoTests(TestCase):
         self.assertEqual(created, [])
         self.assertEqual(len(errors), 1)
         self.assertIn("rol_acceso", errors[0])
-        self.assertFalse(
-            User.objects.filter(document_number=row["numero_documento"]).exists()
-        )
+        self.assertFalse(User.objects.filter(document_number=row["numero_documento"]).exists())
 
 
 class BulkImportRolSugeridoTests(TestCase):
@@ -138,9 +136,7 @@ class BulkImportRolSinSugerenciaTests(TestCase):
     `rol_acceso` explícito — sin él, la fila se rechaza (no se adivina)."""
 
     def setUp(self):
-        self.jp_capataz = JobProfileType.objects.create(
-            code="CAPATAZ", name="Capataz", order=20
-        )
+        self.jp_capataz = JobProfileType.objects.create(code="CAPATAZ", name="Capataz", order=20)
 
     def test_capataz_sin_rol_acceso_es_error_listado(self):
         row = _row(perfil_ocupacional="CAPATAZ")
@@ -150,9 +146,7 @@ class BulkImportRolSinSugerenciaTests(TestCase):
         self.assertEqual(len(errors), 1)
         self.assertIn("CAPATAZ", errors[0])
         self.assertIn("rol_acceso", errors[0])
-        self.assertFalse(
-            User.objects.filter(document_number=row["numero_documento"]).exists()
-        )
+        self.assertFalse(User.objects.filter(document_number=row["numero_documento"]).exists())
 
     def test_capataz_con_rol_acceso_explicito_es_valido(self):
         row = _row(perfil_ocupacional="CAPATAZ", rol_acceso="COORDINADOR")
@@ -239,9 +233,7 @@ class BulkImportSupervisorTests(TestCase):
         self.assertEqual(created, [])
         self.assertEqual(len(errors), 1)
         self.assertIn("999999999", errors[0])
-        self.assertFalse(
-            User.objects.filter(document_number="600000112").exists()
-        )
+        self.assertFalse(User.objects.filter(document_number="600000112").exists())
 
     def test_supervisor_con_rol_ejecutor_es_error(self):
         """Misma regla del queryset de A2 (`supervisor` limitado a
@@ -256,9 +248,7 @@ class BulkImportSupervisorTests(TestCase):
         self.assertEqual(created, [])
         self.assertEqual(len(errors), 1)
         self.assertIn("600000101", errors[0])
-        self.assertFalse(
-            User.objects.filter(document_number="600000113").exists()
-        )
+        self.assertFalse(User.objects.filter(document_number="600000113").exists())
 
     def test_auto_supervision_es_error(self):
         """`supervisor_documento` igual a `numero_documento` de la misma
@@ -272,9 +262,7 @@ class BulkImportSupervisorTests(TestCase):
         self.assertEqual(created, [])
         self.assertEqual(len(errors), 1)
         self.assertIn("sí mismo", errors[0])
-        self.assertFalse(
-            User.objects.filter(document_number="600000114").exists()
-        )
+        self.assertFalse(User.objects.filter(document_number="600000114").exists())
 
 
 class GenerateTemplateColumnsTests(TestCase):
@@ -284,8 +272,9 @@ class GenerateTemplateColumnsTests(TestCase):
         content = BulkUploadService.generate_template()
         self.assertTrue(content)
 
-        import openpyxl
         from io import BytesIO
+
+        import openpyxl
 
         wb = openpyxl.load_workbook(BytesIO(content))
         ws = wb["Usuarios"]
@@ -349,8 +338,9 @@ class ExportPendingUsersColumnsTests(TestCase):
         )
 
     def _headers_and_row(self, content):
-        import openpyxl
         from io import BytesIO
+
+        import openpyxl
 
         wb = openpyxl.load_workbook(BytesIO(content))
         ws = wb["Pendientes"]

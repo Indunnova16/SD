@@ -64,7 +64,9 @@ class InspectionTestCase(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="inspector@test.com", password="password", first_name="Inspector",
+            email="inspector@test.com",
+            password="password",
+            first_name="Inspector",
             hire_date=date(2020, 1, 1),
         )
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
@@ -102,7 +104,9 @@ class FindingTestCase(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="inspector@test.com", password="password", first_name="Inspector",
+            email="inspector@test.com",
+            password="password",
+            first_name="Inspector",
             hire_date=date(2020, 1, 1),
         )
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
@@ -135,12 +139,18 @@ class CorrectiveActionTestCase(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="inspector@test.com", password="password", first_name="Inspector",
-            hire_date=date(2020, 1, 1), document_number="900000001",
+            email="inspector@test.com",
+            password="password",
+            first_name="Inspector",
+            hire_date=date(2020, 1, 1),
+            document_number="900000001",
         )
         self.responsible = User.objects.create_user(
-            email="resp@test.com", password="password", first_name="Responsible",
-            hire_date=date(2020, 1, 1), document_number="900000002",
+            email="resp@test.com",
+            password="password",
+            first_name="Responsible",
+            hire_date=date(2020, 1, 1),
+            document_number="900000002",
         )
         self.category = EquipmentCategory.objects.create(name="Excavadoras")
         self.equipment = Equipment.objects.create(

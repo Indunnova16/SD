@@ -54,7 +54,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.accounts.models import User
-from apps.assessments.models import Answer, Assessment, AssessmentAttempt, Question
+from apps.assessments.models import Answer, Assessment, Question
 from apps.assessments.services import AssessmentService
 from apps.courses.models import Course, Enrollment, Lesson, LessonProgress, Module
 from apps.courses.services import EnrollmentService
@@ -281,9 +281,7 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
         attempt.refresh_from_db()
 
         self.assertTrue(attempt.passed)
-        self.assertFalse(
-            LessonProgress.objects.filter(enrollment=self.enrollment).exists()
-        )
+        self.assertFalse(LessonProgress.objects.filter(enrollment=self.enrollment).exists())
 
     def test_no_enrollment_does_not_raise(self):
         """A passed attempt from a user with no Enrollment in the course
@@ -296,7 +294,9 @@ class AutoCompleteLessonProgressOnPassTest(TestCase):
         attempt.refresh_from_db()
         self.assertTrue(attempt.passed)
         self.assertFalse(
-            LessonProgress.objects.filter(lesson=self.quiz_lesson, enrollment__user=self.admin).exists()
+            LessonProgress.objects.filter(
+                lesson=self.quiz_lesson, enrollment__user=self.admin
+            ).exists()
         )
 
 

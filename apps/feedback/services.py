@@ -39,6 +39,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_ipv46_address
 from django.db import transaction
 from django.utils import timezone
+
 from PIL import Image, UnidentifiedImageError
 
 from apps.feedback import gemini_client
@@ -97,9 +98,32 @@ def obtener_ip_cliente(request):
 # Palabras demasiado comunes en español para que su coincidencia cuente como
 # señal de "mismo problema" al detectar duplicados (issue #71 ronda 4).
 STOPWORDS_DUPLICADOS = {
-    "para", "con", "los", "las", "del", "por", "que", "una", "uno", "esta",
-    "este", "sobre", "desde", "cuando", "donde", "como", "pero", "porque",
-    "está", "están", "sigue", "vuelve", "todo", "toda", "todos", "todas",
+    "para",
+    "con",
+    "los",
+    "las",
+    "del",
+    "por",
+    "que",
+    "una",
+    "uno",
+    "esta",
+    "este",
+    "sobre",
+    "desde",
+    "cuando",
+    "donde",
+    "como",
+    "pero",
+    "porque",
+    "está",
+    "están",
+    "sigue",
+    "vuelve",
+    "todo",
+    "toda",
+    "todos",
+    "todas",
 }
 
 
@@ -344,9 +368,7 @@ def sincronizar_ticket(ticket_id):
             ],
         )
     except GitHubClientError as exc:
-        logger.error(
-            "Ticket #%s: fallo sincronizando con GitHub: %s", ticket_id, exc
-        )
+        logger.error("Ticket #%s: fallo sincronizando con GitHub: %s", ticket_id, exc)
         ticket.sincronizado_github = False
         ticket.error_sincronizacion = str(exc)
         ticket.save(update_fields=["sincronizado_github", "error_sincronizacion"])
@@ -377,8 +399,7 @@ def sincronizar_ticket(ticket_id):
         )
     except GitHubClientError as exc:
         logger.error(
-            "Ticket #%s: issue #%s creado pero falló el comentario de aviso a "
-            "Indunnova: %s",
+            "Ticket #%s: issue #%s creado pero falló el comentario de aviso a Indunnova: %s",
             ticket_id,
             resultado["number"],
             exc,
@@ -448,9 +469,7 @@ def obtener_comentarios_github(ticket, usar_cache=True):
     comentarios = [
         c
         for c in crudos
-        if not (c.get("cuerpo") or "").strip().upper().startswith(
-            PREFIJO_COMENTARIO_INTERNO
-        )
+        if not (c.get("cuerpo") or "").strip().upper().startswith(PREFIJO_COMENTARIO_INTERNO)
     ]
 
     cache.set(cache_key, comentarios, CACHE_TTL_COMENTARIOS)
@@ -497,17 +516,13 @@ def resolver_ticket(ticket_id, resuelto_por):
         return False
 
     comentario = (
-        f"**{resuelto_por}** marcó este reporte como **resuelto** "
-        f"desde el portal de SD - Cursos."
+        f"**{resuelto_por}** marcó este reporte como **resuelto** desde el portal de SD - Cursos."
     )
     try:
-        GitHubFeedbackClient().cerrar_issue(
-            ticket.github_issue_number, comentario=comentario
-        )
+        GitHubFeedbackClient().cerrar_issue(ticket.github_issue_number, comentario=comentario)
     except GitHubClientError as exc:
         logger.error(
-            "Ticket #%s: resuelto localmente pero falló el cierre del issue "
-            "#%s en GitHub: %s",
+            "Ticket #%s: resuelto localmente pero falló el cierre del issue #%s en GitHub: %s",
             ticket.pk,
             ticket.github_issue_number,
             exc,
@@ -539,9 +554,7 @@ def comentar_ticket(ticket_id, nombre, cuerpo):
     if not ticket.github_issue_number:
         return False
 
-    texto = (
-        f"**{nombre}** comentó desde el portal de SD - Cursos:\n\n{cuerpo}"
-    )
+    texto = f"**{nombre}** comentó desde el portal de SD - Cursos:\n\n{cuerpo}"
     try:
         GitHubFeedbackClient().comentar_issue(ticket.github_issue_number, texto)
     except GitHubClientError as exc:

@@ -220,10 +220,13 @@ class LessonViewAttendanceRenderTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Resumen de asistencia")
-        self.assertContains(resp, reverse(
-            "courses:export_attendance_pdf",
-            args=[self.course.id, self.attendance_lesson.id],
-        ))
+        self.assertContains(
+            resp,
+            reverse(
+                "courses:export_attendance_pdf",
+                args=[self.course.id, self.attendance_lesson.id],
+            ),
+        )
 
     def test_non_staff_does_not_see_attendance_summary(self):
         self.client.force_login(self.student)

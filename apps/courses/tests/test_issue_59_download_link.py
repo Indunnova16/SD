@@ -114,9 +114,7 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
             status=Enrollment.Status.COMPLETED,
             progress=100,
         )
-        certificate = _make_certificate(
-            ejecutor, self.course, issued_at=timezone.now()
-        )
+        certificate = _make_certificate(ejecutor, self.course, issued_at=timezone.now())
 
         self.client.force_login(ejecutor)
         response = self.client.get(self.url)
@@ -136,9 +134,7 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
             status=Enrollment.Status.COMPLETED,
             progress=100,
         )
-        certificate = _make_certificate(
-            coordinador, self.course, issued_at=timezone.now()
-        )
+        certificate = _make_certificate(coordinador, self.course, issued_at=timezone.now())
 
         self.client.force_login(coordinador)
         response = self.client.get(self.url)
@@ -161,17 +157,13 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
             progress=100,
         )
         old_issued_at = timezone.now() - timedelta(days=30)
-        legacy_certificate = _make_certificate(
-            user, self.course, issued_at=old_issued_at
-        )
+        legacy_certificate = _make_certificate(user, self.course, issued_at=old_issued_at)
 
         self.client.force_login(user)
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        download_url = reverse(
-            "certifications:download", args=[legacy_certificate.id]
-        )
+        download_url = reverse("certifications:download", args=[legacy_certificate.id])
         self.assertContains(response, download_url)
 
     def test_edge_completed_without_issued_certificate_yet_does_not_break_view(self):
@@ -186,9 +178,7 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
             status=Enrollment.Status.COMPLETED,
             progress=100,
         )
-        _make_certificate(
-            user, self.course, status=Certificate.Status.PENDING, issued_at=None
-        )
+        _make_certificate(user, self.course, status=Certificate.Status.PENDING, issued_at=None)
 
         self.client.force_login(user)
         response = self.client.get(self.url)
@@ -243,9 +233,7 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
             status=Enrollment.Status.COMPLETED,
             progress=100,
         )
-        other_certificate = _make_certificate(
-            other_user, self.course, issued_at=timezone.now()
-        )
+        other_certificate = _make_certificate(other_user, self.course, issued_at=timezone.now())
 
         viewer = _make_user(rol=User.Rol.EJECUTOR)
         Enrollment.objects.create(
@@ -259,9 +247,7 @@ class CourseDetailCertificateDownloadLinkTest(TestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        other_download_url = reverse(
-            "certifications:download", args=[other_certificate.id]
-        )
+        other_download_url = reverse("certifications:download", args=[other_certificate.id])
         self.assertNotContains(response, other_download_url)
         # El propio viewer no tiene certificado emitido -> aviso, no link.
         self.assertContains(response, "Certificado en generación")

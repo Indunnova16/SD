@@ -36,7 +36,6 @@ from apps.courses.models import (
 )
 from apps.courses.views import _build_attendance_summary, _resolve_attendance_responsable
 
-
 # Minimal valid 1x1 transparent PNG, so ImageField validation passes.
 _PNG_BYTES = bytes.fromhex(
     "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"

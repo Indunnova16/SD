@@ -120,9 +120,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         resp = self.client.post(url)
 
         attempt = AssessmentAttempt.objects.get(user=self.student, assessment=assessment)
-        self.assertRedirects(
-            resp, reverse("assessments:take", kwargs={"attempt_id": attempt.id})
-        )
+        self.assertRedirects(resp, reverse("assessments:take", kwargs={"attempt_id": attempt.id}))
         self.assertEqual(attempt.status, AssessmentAttempt.Status.IN_PROGRESS)
 
     # ------------------------------------------------------------------
@@ -157,9 +155,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
 
         # El corazón del bug: NO debe existir ningún AssessmentAttempt.
         self.assertFalse(
-            AssessmentAttempt.objects.filter(
-                user=self.student, assessment=assessment
-            ).exists(),
+            AssessmentAttempt.objects.filter(user=self.student, assessment=assessment).exists(),
             "start_attempt NO debe crear un AssessmentAttempt cuando la "
             "evaluación no tiene preguntas (esto es lo que producía el "
             "resultado 0/0 reportado por el cliente).",
@@ -241,9 +237,7 @@ class StartAttemptGuardIssue84Tests(TestCase):
         url = reverse("assessments:start", kwargs={"assessment_id": assessment.id})
         resp = self.client.post(url)
 
-        self.assertRedirects(
-            resp, reverse("assessments:take", kwargs={"attempt_id": existing.id})
-        )
+        self.assertRedirects(resp, reverse("assessments:take", kwargs={"attempt_id": existing.id}))
         self.assertEqual(
             AssessmentAttempt.objects.filter(user=self.student, assessment=assessment).count(),
             1,

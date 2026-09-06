@@ -128,9 +128,7 @@ class AttendanceLessonViewRosterAccessTests(AttendanceRosterAccessTestBase):
 
     def setUp(self):
         super().setUp()
-        self.url = reverse(
-            "courses:attendance_lesson", args=[self.course.id, self.lesson.id]
-        )
+        self.url = reverse("courses:attendance_lesson", args=[self.course.id, self.lesson.id])
 
     def test_happy_path_coordinador_sees_roster(self):
         self.client.force_login(self.coordinador)
@@ -201,9 +199,7 @@ class LessonViewRosterAccessTests(AttendanceRosterAccessTestBase):
         )
         # Unlock it: sequential locking requires the previous (attendance,
         # order=0) mandatory lesson completed first -- unrelated to A4.
-        coordinador_enrollment = Enrollment.objects.get(
-            user=self.coordinador, course=self.course
-        )
+        coordinador_enrollment = Enrollment.objects.get(user=self.coordinador, course=self.course)
         LessonProgress.objects.create(
             enrollment=coordinador_enrollment, lesson=self.lesson, is_completed=True
         )
@@ -223,9 +219,7 @@ class ExportAttendancePdfAccessTests(AttendanceRosterAccessTestBase):
 
     def setUp(self):
         super().setUp()
-        self.url = reverse(
-            "courses:export_attendance_pdf", args=[self.course.id, self.lesson.id]
-        )
+        self.url = reverse("courses:export_attendance_pdf", args=[self.course.id, self.lesson.id])
 
     def test_happy_path_coordinador_exports_pdf(self):
         self.client.force_login(self.coordinador)
@@ -258,7 +252,5 @@ class ExportAttendancePdfAccessTests(AttendanceRosterAccessTestBase):
         helper. Exercised indirectly via `course_builder`, one of the
         views still gated by `_staff_required`."""
         self.client.force_login(self.coordinador)
-        response = self.client.get(
-            reverse("courses:course_builder", args=[self.course.id])
-        )
+        response = self.client.get(reverse("courses:course_builder", args=[self.course.id]))
         self.assertEqual(response.status_code, 302)

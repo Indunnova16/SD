@@ -130,9 +130,7 @@ class TranscribirMediaTestCase(TestCase):
 
     @override_settings(GEMINI_API_KEY="fake-key-123")
     @patch("apps.feedback.gemini_client._get_genai_client")
-    def test_api_falla_o_da_timeout_devuelve_cadena_vacia_sin_excepcion(
-        self, mock_get_client
-    ):
+    def test_api_falla_o_da_timeout_devuelve_cadena_vacia_sin_excepcion(self, mock_get_client):
         """Gemini caído/timeout -> nunca debe propagar, solo degradar a ''."""
         mock_client = Mock()
         mock_client.models.generate_content.side_effect = TimeoutError("timeout")
@@ -175,33 +173,25 @@ class ProcesarArchivosSubidosTranscripcionTestCase(TestCase):
     def test_happy_path_transcripcion_se_persiste_en_el_adjunto(self, mock_transcribir):
         mock_transcribir.return_value = "Transcripción real generada por Gemini."
         ticket = self._ticket()
-        archivo = SimpleUploadedFile(
-            "audio.wav", WAV_FAKE, content_type="audio/wav"
-        )
+        archivo = SimpleUploadedFile("audio.wav", WAV_FAKE, content_type="audio/wav")
 
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(len(creados), 1)
-        self.assertEqual(
-            creados[0].transcripcion_ia, "Transcripción real generada por Gemini."
-        )
+        self.assertEqual(creados[0].transcripcion_ia, "Transcripción real generada por Gemini.")
         mock_transcribir.assert_called_once()
         _args, _kwargs = mock_transcribir.call_args
         # (data, mime) posicionales
         self.assertEqual(mock_transcribir.call_args[0][1], "audio/wav")
 
     @patch("apps.feedback.services.gemini_client.transcribir_media")
-    def test_gemini_falla_ticket_y_adjunto_se_crean_igual_sin_transcripcion(
-        self, mock_transcribir
-    ):
+    def test_gemini_falla_ticket_y_adjunto_se_crean_igual_sin_transcripcion(self, mock_transcribir):
         """Gemini revienta con una excepción no contemplada (defensa de 2da
         capa, issue #81 mismo patrón) -> el adjunto se crea igual, sin 500,
         con `transcripcion_ia=""`."""
         mock_transcribir.side_effect = Exception("Gemini explotó de forma inesperada")
         ticket = self._ticket()
-        archivo = SimpleUploadedFile(
-            "audio.wav", WAV_FAKE, content_type="audio/wav"
-        )
+        archivo = SimpleUploadedFile("audio.wav", WAV_FAKE, content_type="audio/wav")
 
         creados = procesar_archivos_subidos(ticket, [archivo])  # NO debe lanzar
 
@@ -213,9 +203,7 @@ class ProcesarArchivosSubidosTranscripcionTestCase(TestCase):
         test -> el pipeline real (no mockeado) debe degradar a "" y el
         adjunto se crea igual."""
         ticket = self._ticket()
-        archivo = SimpleUploadedFile(
-            "foto.png", PNG_1X1, content_type="image/png"
-        )
+        archivo = SimpleUploadedFile("foto.png", PNG_1X1, content_type="image/png")
 
         creados = procesar_archivos_subidos(ticket, [archivo])
 
@@ -223,9 +211,7 @@ class ProcesarArchivosSubidosTranscripcionTestCase(TestCase):
         self.assertEqual(creados[0].transcripcion_ia, "")
 
     @patch("apps.feedback.services.gemini_client.transcribir_media")
-    def test_adjunto_descartado_por_mime_no_permitido_nunca_llama_a_gemini(
-        self, mock_transcribir
-    ):
+    def test_adjunto_descartado_por_mime_no_permitido_nunca_llama_a_gemini(self, mock_transcribir):
         """Edge case: adjunto de tipo no soportado por el portal (ni imagen,
         ni audio, ni video) -> se descarta ANTES de intentar transcribir."""
         ticket = self._ticket()
@@ -244,9 +230,7 @@ class SincronizarTicketTranscripcionTestCase(TestCase):
     adjuntos que recibe `GitHubFeedbackClient.crear_issue`."""
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_transcripcion_llega_al_dict_de_adjuntos_de_crear_issue(
-        self, mock_client_cls
-    ):
+    def test_transcripcion_llega_al_dict_de_adjuntos_de_crear_issue(self, mock_client_cls):
         ticket = FeedbackTicket.objects.create(
             nombre_reportante="QA_E2E_SD71",
             asunto="Adjunto de audio debe traer transcripcion IA",
@@ -273,14 +257,10 @@ class SincronizarTicketTranscripcionTestCase(TestCase):
         _args, kwargs = mock_client.crear_issue.call_args
         adjuntos_pasados = kwargs["adjuntos"]
         self.assertEqual(len(adjuntos_pasados), 1)
-        self.assertEqual(
-            adjuntos_pasados[0]["transcripcion"], "Transcripción persistida en BD."
-        )
+        self.assertEqual(adjuntos_pasados[0]["transcripcion"], "Transcripción persistida en BD.")
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_adjunto_sin_transcripcion_manda_cadena_vacia_no_rompe(
-        self, mock_client_cls
-    ):
+    def test_adjunto_sin_transcripcion_manda_cadena_vacia_no_rompe(self, mock_client_cls):
         """Adjunto cuyo Gemini falló (`transcripcion_ia=""`) no debe romper
         la sincronización ni mandar `None`."""
         ticket = FeedbackTicket.objects.create(
@@ -317,9 +297,7 @@ class BloqueTranscripcionGithubBodyTestCase(TestCase):
         return GitHubFeedbackClient(token="ghp_test-token", repo="Indunnova16/SD")
 
     def test_bloque_transcripcion_formatea_como_blockquote(self):
-        bloque = GitHubFeedbackClient._bloque_transcripcion(
-            "Primera línea.\nSegunda línea."
-        )
+        bloque = GitHubFeedbackClient._bloque_transcripcion("Primera línea.\nSegunda línea.")
 
         self.assertTrue(bloque.startswith("**Transcripción:**\n"))
         self.assertIn("> Primera línea.", bloque)
@@ -383,9 +361,7 @@ class BloqueTranscripcionGithubBodyTestCase(TestCase):
         self.assertNotIn("Transcripción", body)
 
     @patch("apps.feedback.github_client.requests.post")
-    def test_crear_issue_end_to_end_incluye_transcripcion_en_el_payload(
-        self, mock_post
-    ):
+    def test_crear_issue_end_to_end_incluye_transcripcion_en_el_payload(self, mock_post):
         """El mismo reclamo que valida el journey SD_71.yaml pero a nivel
         unitario: `crear_issue` (lo que golpea la API real de GitHub) debe
         mandar el bloque de transcripción en el body."""

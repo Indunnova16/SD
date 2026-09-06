@@ -9,8 +9,6 @@ perfil objetivo asignado — se tratan como visibles a todos, ver
 default). Coordinador/Administrador ven el catálogo completo sin filtrar.
 """
 
-from datetime import date
-
 from django.test import Client, TestCase
 from django.urls import reverse
 

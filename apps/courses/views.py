@@ -17,6 +17,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
+from apps.accounts.permissions import Rol, require_rol, user_has_rol
+
 from .forms import (
     AssessmentEditForm,
     AttendanceSignatureForm,
@@ -43,8 +45,6 @@ from .models import (
     Module,
     ScheduleAssignment,
 )
-from apps.accounts.permissions import Rol, require_rol, user_has_rol
-
 from .services import CourseScheduleService, EnrollmentService
 from .utils import get_client_ip
 
@@ -644,10 +644,7 @@ def course_create(request):
 @require_rol(Rol.ADMINISTRADOR, redirect_url="courses:list")
 def category_list(request):
     """List all categories (staff only)."""
-    categories = (
-        Category.objects.annotate(course_count=Count("courses"))
-        .order_by("order", "name")
-    )
+    categories = Category.objects.annotate(course_count=Count("courses")).order_by("order", "name")
 
     context = {"categories": categories}
     return render(request, "courses/category_list.html", context)
@@ -778,10 +775,7 @@ def parametrizacion_hub(request):
 
     # Data for tabs
     courses = Course.objects.select_related("category", "created_by").order_by("title")
-    categories = (
-        Category.objects.annotate(course_count=Count("courses"))
-        .order_by("order", "name")
-    )
+    categories = Category.objects.annotate(course_count=Count("courses")).order_by("order", "name")
     all_categories = Category.objects.filter(is_active=True).order_by("name")
     profiles = JobProfileType.objects.all().order_by("order", "name")
 
@@ -1504,7 +1498,7 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
                                 )
                                 assessment.time_limit = time_limit_int
                                 assessment.save(update_fields=["time_limit"])
-                                logger.info(f"Saved successfully")
+                                logger.info("Saved successfully")
                             except (ValueError, TypeError) as ve:
                                 logger.warning(f"Failed to parse time_limit: {ve}")
                         # Refresh to ensure latest value is displayed
@@ -1572,8 +1566,9 @@ def builder_edit_lesson(request, course_id, module_id, lesson_id):
 @require_http_methods(["POST"])
 def builder_update_quiz_time_limit(request, course_id, assessment_id):
     """Update quiz time limit."""
-    from apps.assessments.models import Assessment
     from django.urls import reverse
+
+    from apps.assessments.models import Assessment
 
     if err := _staff_required(request):
         return err
@@ -2000,6 +1995,7 @@ def builder_reorder_questions(request, course_id, assessment_id):
 def sign_lesson_evidence(request, course_id, lesson_id):
     """Record a signature for a presential lesson."""
     import base64
+
     from django.core.files.base import ContentFile
     from django.utils import timezone
 
@@ -2071,6 +2067,7 @@ def sign_lesson_evidence(request, course_id, lesson_id):
 def sign_course_completion(request, course_id):
     """Record user signature upon course completion."""
     import base64
+
     from django.core.files.base import ContentFile
     from django.utils import timezone
 
@@ -2445,7 +2442,14 @@ def _attendance_pdf_branding_context():
     the PDF still renders (just without the logo) instead of 500ing.
     """
     logo_data_uri = ""
-    logo_path = settings.BASE_DIR / "apps" / "certifications" / "migrations" / "assets" / "sd_sas_logo_v2_real.png"
+    logo_path = (
+        settings.BASE_DIR
+        / "apps"
+        / "certifications"
+        / "migrations"
+        / "assets"
+        / "sd_sas_logo_v2_real.png"
+    )
     try:
         with open(logo_path, "rb") as fh:
             logo_bytes = fh.read()
@@ -2498,6 +2502,7 @@ def export_attendance_pdf(request, course_id, lesson_id):
     from io import BytesIO
 
     from django.template.loader import render_to_string
+
     from xhtml2pdf import pisa
 
     course = get_object_or_404(Course, pk=course_id)
@@ -2587,6 +2592,7 @@ def export_course_attendance_pdf(request, course_id):
     from io import BytesIO
 
     from django.template.loader import render_to_string
+
     from xhtml2pdf import pisa
 
     course = get_object_or_404(Course, pk=course_id)
@@ -2662,6 +2668,7 @@ def export_course_attendance_pdf_individual(request, course_id, user_id):
     from io import BytesIO
 
     from django.template.loader import render_to_string
+
     from xhtml2pdf import pisa
 
     course = get_object_or_404(Course, pk=course_id)

@@ -24,7 +24,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # se romperia silenciosamente el dia que se active enforce (mismo patron
 # que motivo SD#76).
 CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "cdn.jsdelivr.net", "cdn.tailwindcss.com", "unpkg.com", "checkout.wompi.co")
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "cdn.jsdelivr.net",
+    "cdn.tailwindcss.com",
+    "unpkg.com",
+    "checkout.wompi.co",
+)
 CSP_STYLE_SRC = ("'self'", "cdn.jsdelivr.net", "fonts.googleapis.com")
 CSP_IMG_SRC = ("'self'", "data:", "storage.googleapis.com", "*.googleusercontent.com")
 CSP_FONT_SRC = ("'self'", "fonts.gstatic.com", "cdn.jsdelivr.net")

@@ -3,7 +3,6 @@ Course and content models for SD LMS.
 """
 
 import re
-from urllib.parse import parse_qs, urlparse
 
 from django.core.validators import MinValueValidator
 from django.db import models
@@ -457,13 +456,13 @@ class Lesson(models.Model):
             models.Index(fields=["module", "order"]),
         ]
 
+    def __str__(self):
+        return f"{self.module.title} - {self.title}"
+
     def save(self, *args, **kwargs):
         if self.video_url and self.lesson_type == "video":
             self.video_url = convert_youtube_url_to_embed(self.video_url)
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.module.title} - {self.title}"
 
 
 class MediaAsset(models.Model):

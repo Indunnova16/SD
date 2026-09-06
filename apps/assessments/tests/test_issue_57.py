@@ -36,9 +36,7 @@ class MaxAttemptsDefaultIssue57Tests(TestCase):
         self.assertEqual(field.default, 0)
 
     def test_new_assessment_without_explicit_max_attempts_is_unlimited(self):
-        assessment = Assessment.objects.create(
-            title="SD57 default check", created_by=self.admin
-        )
+        assessment = Assessment.objects.create(title="SD57 default check", created_by=self.admin)
         self.assertEqual(assessment.max_attempts, 0)
 
 
@@ -118,9 +116,7 @@ class BackfillMatchingMetadataMigrationIssue57Tests(TestCase):
         single_choice.refresh_from_db()
         already_populated.refresh_from_db()
         self.assertEqual(single_choice.metadata, {})
-        self.assertEqual(
-            already_populated.metadata, {"match_pairs": [{"left": "1", "right": "1"}]}
-        )
+        self.assertEqual(already_populated.metadata, {"match_pairs": [{"left": "1", "right": "1"}]})
 
     def test_backfill_does_not_touch_attempt_answers(self):
         """El backfill SOLO escribe Question.metadata -- no debe existir

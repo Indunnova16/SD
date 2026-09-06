@@ -148,7 +148,9 @@ class BuilderAddQuizLessonIssue38Tests(TestCase):
 
         verdadero = Answer.objects.get(question=question, text="Verdadero")
         falso = Answer.objects.get(question=question, text="Falso")
-        self.assertFalse(verdadero.is_correct, "Verdadero no debe ser correcto (usuario eligio Falso)")
+        self.assertFalse(
+            verdadero.is_correct, "Verdadero no debe ser correcto (usuario eligio Falso)"
+        )
         self.assertTrue(falso.is_correct, "Falso debe quedar marcado como la respuesta correcta")
 
     def test_true_false_persists_true_selection(self):
@@ -440,12 +442,8 @@ class BuilderEditExistingQuestionIssue38Tests(TestCase):
             points=10,
             order=0,
         )
-        Answer.objects.create(
-            question=self.question, text="Opcion A", is_correct=True, order=0
-        )
-        Answer.objects.create(
-            question=self.question, text="Opcion B", is_correct=False, order=1
-        )
+        Answer.objects.create(question=self.question, text="Opcion A", is_correct=True, order=0)
+        Answer.objects.create(question=self.question, text="Opcion B", is_correct=False, order=1)
 
         self.url = reverse(
             "courses:builder_edit_question",

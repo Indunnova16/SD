@@ -9,22 +9,23 @@ data-migrations sin cobertura — gotcha documentado tersaSoft/KOMSA/carnes).
 
 Rollout portafolio 2026-08-08. Este módulo NUNCA se usa en runtime de prod.
 """
+
 import os
 
-os.environ.setdefault('SECRET_KEY', 'ci-only-secret-key-no-prod')
-os.environ.setdefault('DJANGO_SECRET_KEY', 'ci-only-secret-key-no-prod')
-os.environ.setdefault('DEBUG', 'False')
-os.environ.setdefault('ALLOWED_HOSTS', '*')
+os.environ.setdefault("SECRET_KEY", "ci-only-secret-key-no-prod")
+os.environ.setdefault("DJANGO_SECRET_KEY", "ci-only-secret-key-no-prod")
+os.environ.setdefault("DEBUG", "False")
+os.environ.setdefault("ALLOWED_HOSTS", "*")
 
 from .base import *  # noqa: F401,F403,E402
 
 DEBUG = False
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
     }
 }
 
@@ -35,35 +36,35 @@ except NameError:
     pass
 
 STORAGES = {
-    'default': {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
-    'staticfiles': {
-        'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # base.py apunta CACHES a un Redis real (redis://localhost:6379/0) -- no hay
 # Redis en el entorno de CI/self-verify. LocMemCache evita que cualquier test
 # que toque el cache (login/axes/sesiones) falle con "Connection refused".
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
 
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.MD5PasswordHasher',
+    "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {'null': {'class': 'logging.NullHandler'}},
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"null": {"class": "logging.NullHandler"}},
     # NIVEL WARNING, no CRITICAL: el NullHandler ya silencia la salida, pero el
     # nivel debe DEJAR PASAR los records o caplog/assertLogs no capturan nada y
     # un test legitimo que verifica logger.warning() falla en falso (claude-skills#456).
-    'root': {'handlers': ['null'], 'level': 'WARNING'},
+    "root": {"handlers": ["null"], "level": "WARNING"},
 }

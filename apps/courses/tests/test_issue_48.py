@@ -145,9 +145,7 @@ class AttendanceSignatureRoundTripTests(TestCase):
         # NOTE: plain "Presente" is a substring of the "Presentes" summary
         # tile label (always rendered), so assert the specific badge
         # instead of the bare word.
-        self.assertNotContains(
-            resp, '<span class="badge badge-success">Presente</span>'
-        )
+        self.assertNotContains(resp, '<span class="badge badge-success">Presente</span>')
 
         # No LessonProgress exists for the student yet.
         self.assertFalse(

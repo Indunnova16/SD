@@ -74,6 +74,4 @@ class IsAdministradorPermissionTests(TestCase):
         self.assertFalse(self.permission.has_permission(self._request(user), view=None))
 
     def test_usuario_anonimo_no_tiene_permiso(self):
-        self.assertFalse(
-            self.permission.has_permission(self._request(AnonymousUser()), view=None)
-        )
+        self.assertFalse(self.permission.has_permission(self._request(AnonymousUser()), view=None))

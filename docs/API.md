@@ -627,31 +627,22 @@ BASE_URL = "https://api.lms.sd.com.co/api/v1"
 
 # Autenticacion
 response = requests.post(
-    f"{BASE_URL}/auth/token/",
-    json={"email": "usuario@sd-sas.com", "password": "contrasena"}
+    f"{BASE_URL}/auth/token/", json={"email": "usuario@sd-sas.com", "password": "contrasena"}
 )
 tokens = response.json()
 access_token = tokens["access"]
 
 # Headers para requests autenticados
-headers = {
-    "Authorization": f"Bearer {access_token}",
-    "Content-Type": "application/json"
-}
+headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
 
 # Obtener cursos
 response = requests.get(
-    f"{BASE_URL}/courses/courses/",
-    headers=headers,
-    params={"status": "published"}
+    f"{BASE_URL}/courses/courses/", headers=headers, params={"status": "published"}
 )
 courses = response.json()
 
 # Inscribirse en curso
-response = requests.post(
-    f"{BASE_URL}/courses/courses/1/enroll/",
-    headers=headers
-)
+response = requests.post(f"{BASE_URL}/courses/courses/1/enroll/", headers=headers)
 enrollment = response.json()
 ```
 

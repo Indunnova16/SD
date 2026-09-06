@@ -82,9 +82,7 @@ class UserEditFormHireDateTests(TestCase):
             "is_staff": self.user.is_staff,
         }
         form = UserEditForm(post_data, instance=self.user)
-        self.assertTrue(
-            form.is_valid(), f"Form inválido: {form.errors.as_json()}"
-        )
+        self.assertTrue(form.is_valid(), f"Form inválido: {form.errors.as_json()}")
         updated = form.save()
         updated.refresh_from_db()
         self.assertEqual(

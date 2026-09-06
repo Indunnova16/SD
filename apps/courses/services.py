@@ -863,9 +863,7 @@ class CourseScheduleService:
             # `ScheduleAssignment.enrollment` is a convenience link created at
             # convocatoria time, not the source of truth.  Legacy data can
             # retain a stale non-null FK after an enrollment was recreated.
-            enrollment = Enrollment.objects.filter(
-                user=user, course=schedule.course
-            ).first()
+            enrollment = Enrollment.objects.filter(user=user, course=schedule.course).first()
 
             presente = bool(enrollment and enrollment.completion_signature)
             if presente:

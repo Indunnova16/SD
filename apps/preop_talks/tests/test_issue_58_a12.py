@@ -19,8 +19,7 @@ SIGUE gateado tal cual, sin cambio.
 """
 
 import itertools
-from datetime import date, datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, date, datetime
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -70,7 +69,7 @@ class TalkListAccesoEjecutorTests(TestCase):
             project_name="Proyecto legacy",
             location="Sitio legacy",
             work_activity="Actividad legacy",
-            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=dt_timezone.utc),
+            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=UTC),
             conducted_by=self.ejecutor,
         )
 

@@ -13,6 +13,7 @@ desde el endpoint `cron/conciliar-wompi/` (Cloud Scheduler diario,
 solo-detección). Cada faltante se loguea como ERROR con el marcador
 `CONCILIACION_WOMPI` — la alerta de Cloud Logging se engancha a ese texto.
 """
+
 import logging
 from datetime import timedelta
 
@@ -31,28 +32,30 @@ def detectar_faltantes(dias=7):
     Retorna la lista de transacciones (dicts crudos de la API) faltantes.
     Loguea un ERROR con marcador CONCILIACION_WOMPI por cada una.
     """
-    prefix = getattr(settings, 'WOMPI_REFERENCE_PREFIX', 'APP') + '-'
+    prefix = getattr(settings, "WOMPI_REFERENCE_PREFIX", "APP") + "-"
     hasta = timezone.now()
     desde = hasta - timedelta(days=dias)
     txs = wompi.listar_transacciones(
-        desde.strftime('%Y-%m-%dT%H:%M:%S'),
-        hasta.strftime('%Y-%m-%dT%H:%M:%S'),
+        desde.strftime("%Y-%m-%dT%H:%M:%S"),
+        hasta.strftime("%Y-%m-%dT%H:%M:%S"),
     )
 
     faltantes = []
     for tx in txs:
-        ref = tx.get('reference') or ''
+        ref = tx.get("reference") or ""
         if not ref.startswith(prefix):
             continue  # transaccion de OTRA app del portafolio (merchant compartido)
-        if tx.get('status') != 'APPROVED':
+        if tx.get("status") != "APPROVED":
             continue
-        if Pago.objects.filter(wompi_transaction_id=tx.get('id', '')).exists():
+        if Pago.objects.filter(wompi_transaction_id=tx.get("id", "")).exists():
             continue
         faltantes.append(tx)
         logger.error(
-            'CONCILIACION_WOMPI: transaccion APROBADA sin registro local '
-            'tx=%s ref=%s monto_cents=%s finalizada=%s',
-            tx.get('id'), ref, tx.get('amount_in_cents'),
-            tx.get('finalized_at') or tx.get('created_at'),
+            "CONCILIACION_WOMPI: transaccion APROBADA sin registro local "
+            "tx=%s ref=%s monto_cents=%s finalizada=%s",
+            tx.get("id"),
+            ref,
+            tx.get("amount_in_cents"),
+            tx.get("finalized_at") or tx.get("created_at"),
         )
     return faltantes

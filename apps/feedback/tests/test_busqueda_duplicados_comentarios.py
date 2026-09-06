@@ -88,9 +88,7 @@ class NuevoViewCapturaIpTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        ticket = FeedbackTicket.objects.get(
-            asunto="El botón de descarga no funciona"
-        )
+        ticket = FeedbackTicket.objects.get(asunto="El botón de descarga no funciona")
         self.assertEqual(ticket.ip_reportante, "198.51.100.7")
 
 
@@ -104,9 +102,7 @@ class BuscarPosiblesDuplicadosTestCase(TestCase):
             descripcion="Descripción de prueba con longitud suficiente.",
         )
 
-        posibles = buscar_posibles_duplicados(
-            "El certificado no descarga en Chrome"
-        )
+        posibles = buscar_posibles_duplicados("El certificado no descarga en Chrome")
 
         self.assertEqual(len(posibles), 1)
         self.assertEqual(posibles[0].asunto, "El certificado no descarga en Safari")
@@ -131,9 +127,7 @@ class BuscarPosiblesDuplicadosTestCase(TestCase):
         resuelto.estado = FeedbackTicket.ESTADO_RESUELTO
         resuelto.save(update_fields=["estado"])
 
-        posibles = buscar_posibles_duplicados(
-            "El certificado no descarga en Chrome"
-        )
+        posibles = buscar_posibles_duplicados("El certificado no descarga en Chrome")
 
         self.assertEqual(posibles, [])
 
@@ -176,15 +170,11 @@ class NuevoViewDuplicadosTestCase(TestCase):
         )
 
     def test_asunto_similar_no_crea_ticket_y_muestra_advertencia(self):
-        response = self.client.post(
-            reverse("feedback:nuevo"), data=self._datos_validos()
-        )
+        response = self.client.post(reverse("feedback:nuevo"), data=self._datos_validos())
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(
-            FeedbackTicket.objects.filter(
-                asunto="El certificado no descarga en Chrome"
-            ).exists()
+            FeedbackTicket.objects.filter(asunto="El certificado no descarga en Chrome").exists()
         )
         self.assertContains(response, "Ya hay ticket(s) abiertos")
         self.assertContains(response, self.existente.asunto)
@@ -204,15 +194,11 @@ class NuevoViewDuplicadosTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(
-            FeedbackTicket.objects.filter(
-                asunto="El certificado no descarga en Chrome"
-            ).exists()
+            FeedbackTicket.objects.filter(asunto="El certificado no descarga en Chrome").exists()
         )
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_asunto_sin_similares_crea_directo_sin_advertencia(
-        self, mock_client_cls
-    ):
+    def test_asunto_sin_similares_crea_directo_sin_advertencia(self, mock_client_cls):
         mock_client_cls.return_value.crear_issue.return_value = {
             "number": 202,
             "html_url": "https://github.com/Indunnova16/SD/issues/202",
@@ -226,9 +212,7 @@ class NuevoViewDuplicadosTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(
-            FeedbackTicket.objects.filter(
-                asunto="Sugerencia de nuevo curso de Excel"
-            ).exists()
+            FeedbackTicket.objects.filter(asunto="Sugerencia de nuevo curso de Excel").exists()
         )
 
 
@@ -244,9 +228,7 @@ class BuscarViewTestCase(TestCase):
         )
 
     def test_busca_por_id_interno_redirige_al_detalle(self):
-        response = self.client.get(
-            reverse("feedback:buscar"), {"numero": self.ticket.id}
-        )
+        response = self.client.get(reverse("feedback:buscar"), {"numero": self.ticket.id})
         self.assertRedirects(
             response,
             reverse("feedback:detalle", kwargs={"ticket_id": self.ticket.id}),
@@ -260,9 +242,7 @@ class BuscarViewTestCase(TestCase):
         )
 
     def test_numero_inexistente_redirige_a_lista_con_mensaje(self):
-        response = self.client.get(
-            reverse("feedback:buscar"), {"numero": 999999}, follow=True
-        )
+        response = self.client.get(reverse("feedback:buscar"), {"numero": 999999}, follow=True)
         self.assertRedirects(response, reverse("feedback:lista"))
         self.assertContains(response, "No encontramos ningún ticket")
 
@@ -289,9 +269,7 @@ class ComentarIssueGithubClientTestCase(TestCase):
 
         self.assertEqual(comment_id, 321)
         self.assertIn("/issues/72/comments", mock_post.call_args[0][0])
-        self.assertEqual(
-            mock_post.call_args[1]["json"], {"body": "Sigue pasando"}
-        )
+        self.assertEqual(mock_post.call_args[1]["json"], {"body": "Sigue pasando"})
 
     @patch("apps.feedback.github_client.requests.post")
     def test_status_inesperado_levanta_error(self, mock_post):
@@ -367,15 +345,11 @@ class ComentarViewTestCase(TestCase):
             sincronizado_github=True,
         )
         self.url = reverse("feedback:comentar", kwargs={"ticket_id": self.ticket.id})
-        self.detalle_url = reverse(
-            "feedback:detalle", kwargs={"ticket_id": self.ticket.id}
-        )
+        self.detalle_url = reverse("feedback:detalle", kwargs={"ticket_id": self.ticket.id})
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
     def test_post_valido_comenta_y_redirige_sin_resolver(self, mock_cls):
-        response = self.client.post(
-            self.url, data={"nombre": "Ana", "comentario": "Sigue pasando"}
-        )
+        response = self.client.post(self.url, data={"nombre": "Ana", "comentario": "Sigue pasando"})
 
         self.assertRedirects(response, self.detalle_url)
         mock_cls.return_value.comentar_issue.assert_called_once()
@@ -418,9 +392,7 @@ class ComentarViewTestCase(TestCase):
 
     def test_ticket_inexistente_404(self):
         url = reverse("feedback:comentar", kwargs={"ticket_id": 999999})
-        response = self.client.post(
-            url, data={"nombre": "Ana", "comentario": "Sigue pasando"}
-        )
+        response = self.client.post(url, data={"nombre": "Ana", "comentario": "Sigue pasando"})
         self.assertEqual(response.status_code, 404)
 
     def test_comentario_visible_no_bloquea_si_ticket_ya_resuelto(self):

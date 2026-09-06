@@ -138,7 +138,7 @@ class User(AbstractUser):
         related_name="users",
         verbose_name=_("Perfil ocupacional"),
     )
-    rol = models.CharField(
+    rol = models.CharField(  # noqa: DJ001 -- null intencional: pendiente de asignación explícita
         _("Rol de acceso"),
         max_length=20,
         choices=Rol.choices,
@@ -184,7 +184,6 @@ class User(AbstractUser):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
-
 
     # Metadata
     created_at = models.DateTimeField(_("Fecha de creación"), auto_now_add=True)

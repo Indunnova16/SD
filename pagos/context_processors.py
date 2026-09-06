@@ -16,12 +16,12 @@ from .models import Suscripcion
 
 
 def alertas_pago(request):
-    user = getattr(request, 'user', None)
+    user = getattr(request, "user", None)
     if not user_has_rol(user, Rol.ADMINISTRADOR):
-        return {'alerta_pago_vencido': False}
+        return {"alerta_pago_vencido": False}
 
     suscripcion = Suscripcion.objects.first()
     if not suscripcion:
-        return {'alerta_pago_vencido': False}
+        return {"alerta_pago_vencido": False}
 
-    return {'alerta_pago_vencido': suscripcion.alerta_pago_vencido}
+    return {"alerta_pago_vencido": suscripcion.alerta_pago_vencido}
