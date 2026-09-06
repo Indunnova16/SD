@@ -3035,6 +3035,7 @@ def export_schedule_attendance_pdf(request, schedule_id):
         "request_user": request.user,
         "pdf_instructor": pdf_instructor,
         "instructor_signature_url": signature_url,
+        "is_individual": False,
     }
     context.update(_attendance_pdf_branding_context())
 

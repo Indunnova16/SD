@@ -350,6 +350,108 @@ class ScheduleAttendanceAttemptSummaryTests(TestCase):
         )
 
 
+class ScheduleAttendancePdfTemplateTests(TestCase):
+    """SD#140: schedule PDF exposes the selected person's assessment data."""
+
+    def setUp(self):
+        self.admin = _make_user(is_staff=True)
+        self.course, _module = _make_course(self.admin)
+        self.schedule = CourseSchedule.objects.create(
+            course=self.course,
+            name="Convocatoria FT-HSEQ-60",
+            created_by=self.admin,
+        )
+        self.persona = _make_user()
+        enrollment = Enrollment.objects.create(user=self.persona, course=self.course)
+        ScheduleAssignment.objects.create(
+            schedule=self.schedule,
+            user=self.persona,
+            enrollment=enrollment,
+        )
+
+    def _render(self, *, is_individual=False):
+        from django.template.loader import render_to_string
+        from django.utils import timezone
+
+        from apps.courses.views import _attendance_pdf_branding_context
+
+        summary = CourseScheduleService.build_schedule_attendance_summary(self.schedule)
+        context = {
+            "course": self.course,
+            "schedule": self.schedule,
+            "rows": summary["rows"],
+            "total_inscritos": summary["total_inscritos"],
+            "total_presentes": summary["total_presentes"],
+            "total_ausentes": summary["total_ausentes"],
+            "porcentaje_asistencia": summary["porcentaje_asistencia"],
+            "calificacion_promedio": summary["calificacion_promedio"],
+            "schedule_date": self.schedule.created_at.date(),
+            "generated_at": timezone.now(),
+            "request_user": self.admin,
+            "pdf_instructor": None,
+            "instructor_signature_url": "",
+            "is_individual": is_individual,
+        }
+        context.update(_attendance_pdf_branding_context())
+        return render_to_string("courses/course_attendance_pdf.html", context)
+
+    def _graded_attempt_with_answer(self):
+        from apps.assessments.models import Assessment, AssessmentAttempt, AttemptAnswer, Question
+
+        assessment = Assessment.objects.create(
+            course=self.course,
+            title="Evaluación de alturas",
+            modality=Assessment.Modality.ORAL,
+            passing_score=Decimal("3.00"),
+            created_by=self.admin,
+        )
+        question = Question.objects.create(
+            assessment=assessment,
+            question_type=Question.Type.ESSAY,
+            text="¿Cuál es el control previo?",
+            order=1,
+        )
+        attempt = AssessmentAttempt.objects.create(
+            user=self.persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=Decimal("4.50"),
+        )
+        AttemptAnswer.objects.create(
+            attempt=attempt,
+            question=question,
+            text_answer="Reviso el arnés y el anclaje.",
+        )
+
+    def test_group_pdf_shows_individual_score_and_modality(self):
+        self._graded_attempt_with_answer()
+
+        html = self._render()
+
+        self.assertIn("Calificación", html)
+        self.assertIn("Modalidad", html)
+        self.assertIn("4,5", html)
+        self.assertIn("Oral", html)
+        self.assertNotIn("Detalle de la evaluación", html)
+
+    def test_individual_pdf_includes_selected_attempt_questions_and_answers(self):
+        self._graded_attempt_with_answer()
+
+        html = self._render(is_individual=True)
+
+        self.assertIn("4,5", html)
+        self.assertIn("Oral", html)
+        self.assertIn("Detalle de la evaluación", html)
+        self.assertIn("¿Cuál es el control previo?", html)
+        self.assertIn("Reviso el arnés y el anclaje.", html)
+
+    def test_individual_pdf_without_graded_attempt_explains_missing_detail(self):
+        html = self._render(is_individual=True)
+
+        self.assertIn("No registra una evaluación calificada con respuestas.", html)
+        self.assertNotIn("<td>Oral</td>", html)
+
+
 class ExportAttendancePdfViewTests(TestCase):
     """export_attendance_pdf view (A5/A6/A7 + B3)."""
 
