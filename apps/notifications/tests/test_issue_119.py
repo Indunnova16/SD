@@ -82,9 +82,7 @@ class NotificationActionButtonNavigatesTests(TestCase):
             user=self.user, action_url="/courses/42/", action_text="Ir al curso"
         )
 
-        response = self.client.get(
-            reverse("notifications:list"), HTTP_HX_REQUEST="true"
-        )
+        response = self.client.get(reverse("notifications:list"), HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
         html = response.content.decode()
 
@@ -112,9 +110,7 @@ class NotificationActionButtonNavigatesTests(TestCase):
         )
         mark_read_url = reverse("notifications:mark-read", args=[notif.id])
 
-        response = self.client.get(
-            reverse("notifications:list"), HTTP_HX_REQUEST="true"
-        )
+        response = self.client.get(reverse("notifications:list"), HTTP_HX_REQUEST="true")
         html = response.content.decode()
         anchor = self._action_anchor(html, notif.action_url)
 
@@ -146,9 +142,7 @@ class NotificationActionButtonNavigatesTests(TestCase):
             action_url="",
             action_text="",
         )
-        response = self.client.get(
-            reverse("notifications:list"), HTTP_HX_REQUEST="true"
-        )
+        response = self.client.get(reverse("notifications:list"), HTTP_HX_REQUEST="true")
         self.assertEqual(response.status_code, 200)
         self.assertIn("Sin accion", response.content.decode())
 
@@ -159,9 +153,7 @@ class NavbarSistemaBadgeTests(TestCase):
 
     def setUp(self):
         self.client = Client()
-        self.user = _make_user(
-            email="issue119_navbar@example.com", document_number="1190000002"
-        )
+        self.user = _make_user(email="issue119_navbar@example.com", document_number="1190000002")
         self.client.force_login(self.user)
 
     def test_summary_sistema_incluye_badge_de_no_leidas(self):
@@ -169,12 +161,8 @@ class NavbarSistemaBadgeTests(TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.content.decode()
 
-        match = re.search(
-            r"<summary>.*?Sistema.*?</summary>", html, re.DOTALL
-        )
-        self.assertIsNotNone(
-            match, "No se encontro el <summary>Sistema...</summary> del navbar."
-        )
+        match = re.search(r"<summary>.*?Sistema.*?</summary>", html, re.DOTALL)
+        self.assertIsNotNone(match, "No se encontro el <summary>Sistema...</summary> del navbar.")
         summary_html = match.group(0)
 
         self.assertIn(

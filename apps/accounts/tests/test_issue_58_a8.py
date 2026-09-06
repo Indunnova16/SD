@@ -33,8 +33,7 @@ abajo y el detalle completo en `apps/preop_talks/tests/test_issue_58_a12.py`.
 """
 
 import itertools
-from datetime import date, datetime
-from datetime import timezone as dt_timezone
+from datetime import UTC, date, datetime
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
@@ -157,6 +156,7 @@ class OperacionesListadoAdministrativoTests(TestCase):
         response = self.client.get(reverse("lessons_learned:list"))
         self.assertEqual(response.status_code, 200)
 
+
 class OperacionesPropiaParticipacionRegresionTests(TestCase):
     """Regresión anti-romper-flujo-diario (PLAN A8): el Ejecutor sigue
     accediendo a las vistas donde participa de SU PROPIA charla/asistencia
@@ -172,15 +172,13 @@ class OperacionesPropiaParticipacionRegresionTests(TestCase):
             project_name="Proyecto A8",
             location="Sitio A8",
             work_activity="Actividad A8",
-            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=dt_timezone.utc),
+            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=UTC),
             conducted_by=self.ejecutor,
         )
 
     def test_talk_conduct_ejecutor_dueno_ok(self):
         self.client.force_login(self.ejecutor)
-        response = self.client.get(
-            reverse("preop_talks:conduct", kwargs={"talk_id": self.talk.id})
-        )
+        response = self.client.get(reverse("preop_talks:conduct", kwargs={"talk_id": self.talk.id}))
         self.assertEqual(response.status_code, 200)
 
     def test_start_talk_ejecutor_dueno_no_bloqueado(self):
@@ -245,7 +243,5 @@ class OperacionesPropiaParticipacionRegresionTests(TestCase):
             created_by=self.ejecutor,
         )
         self.client.force_login(self.ejecutor)
-        response = self.client.get(
-            reverse("lessons_learned:edit", kwargs={"lesson_id": lesson.id})
-        )
+        response = self.client.get(reverse("lessons_learned:edit", kwargs={"lesson_id": lesson.id}))
         self.assertEqual(response.status_code, 200)

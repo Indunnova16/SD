@@ -261,9 +261,7 @@ class BulkUploadService:
             phone = str(row.get("telefono", "") or "").strip()
             job_position = str(row.get("cargo", "Operario") or "Operario").strip()
 
-            profile_raw_input = str(
-                row.get("perfil_ocupacional", "LINIERO") or "LINIERO"
-            ).strip()
+            profile_raw_input = str(row.get("perfil_ocupacional", "LINIERO") or "LINIERO").strip()
             profile_raw = profile_raw_input.lower()
             if profile_raw in BulkUploadService.JOB_PROFILE_MAP:
                 profile_code = BulkUploadService.JOB_PROFILE_MAP[profile_raw]
@@ -315,9 +313,7 @@ class BulkUploadService:
                     )
                     continue
             else:
-                rol = BulkUploadService.ROL_SUGERIDO_POR_JOB_PROFILE_CODE.get(
-                    job_profile.code
-                )
+                rol = BulkUploadService.ROL_SUGERIDO_POR_JOB_PROFILE_CODE.get(job_profile.code)
                 if rol is None:
                     errors.append(
                         f"Fila {row_num}: el perfil ocupacional "

@@ -61,9 +61,7 @@ class NuevoTicketForm(forms.Form):
         if website:
             # Mensaje genérico a propósito: NO mencionar "bot"/"honeypot"/
             # "spam" para no darle pistas a quien intente evadir el filtro.
-            raise forms.ValidationError(
-                _("No se pudo procesar el formulario, intentá de nuevo.")
-            )
+            raise forms.ValidationError(_("No se pudo procesar el formulario, intentá de nuevo."))
         return website
 
 
@@ -119,9 +117,7 @@ class ComentarioTicketForm(forms.Form):
     def clean_website(self):
         website = self.cleaned_data.get("website", "")
         if website:
-            raise forms.ValidationError(
-                _("No se pudo procesar el formulario, intentá de nuevo.")
-            )
+            raise forms.ValidationError(_("No se pudo procesar el formulario, intentá de nuevo."))
         return website
 
 
@@ -154,7 +150,5 @@ class ResolverTicketForm(forms.Form):
     def clean_website(self):
         website = self.cleaned_data.get("website", "")
         if website:
-            raise forms.ValidationError(
-                _("No se pudo procesar el formulario, intentá de nuevo.")
-            )
+            raise forms.ValidationError(_("No se pudo procesar el formulario, intentá de nuevo."))
         return website

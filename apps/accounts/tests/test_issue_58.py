@@ -274,9 +274,7 @@ class BulkUploadViewRendersGeneratedPasswordTests(TestCase):
         upload = SimpleUploadedFile(
             "plantilla.xlsx",
             content,
-            content_type=(
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            ),
+            content_type=("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
         )
         response = self.client.post(reverse("accounts:bulk_upload"), {"file": upload})
         self.assertEqual(response.status_code, 200)

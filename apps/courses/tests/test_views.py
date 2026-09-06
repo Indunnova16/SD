@@ -294,9 +294,7 @@ class BuilderEditAssessmentPublishGuardIssue84Tests(TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assessment_no_questions.refresh_from_db()
         self.assertEqual(self.assessment_no_questions.status, "draft")
-        self.assertContains(
-            resp, "no tiene preguntas todavía", status_code=400
-        )
+        self.assertContains(resp, "no tiene preguntas todavía", status_code=400)
 
     def test_can_still_save_as_draft_with_zero_questions(self):
         """Guardar explícitamente como 'draft' (sin preguntas) sigue

@@ -236,6 +236,7 @@ Las APIs REST utilizan ViewSets para operaciones CRUD estandar.
 ```python
 # apps/courses/api/views.py
 
+
 class CourseViewSet(viewsets.ModelViewSet):
     """API ViewSet para cursos."""
 
@@ -268,6 +269,7 @@ Los signals de Django se usan para desacoplar acciones secundarias.
 
 ```python
 # apps/gamification/signals.py
+
 
 @receiver(post_save, sender=Enrollment)
 def award_enrollment_points(sender, instance, created, **kwargs):
@@ -544,6 +546,7 @@ App Movil                   Sync Service                   Backend
 ```python
 # apps/integrations/services.py
 
+
 class SendGridService:
     """Servicio para envio de emails via SendGrid."""
 
@@ -577,6 +580,7 @@ class SendGridService:
 
 ```python
 # apps/integrations/api/views.py
+
 
 class WebhookView(APIView):
     """Endpoint para recibir webhooks externos."""

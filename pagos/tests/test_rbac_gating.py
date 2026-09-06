@@ -36,34 +36,34 @@ User = get_user_model()
 
 _SEQ = itertools.count(1)
 
-WOMPI_SETTINGS = dict(
-    WOMPI_PUBLIC_KEY='pub_test',
-    WOMPI_PRIVATE_KEY='priv_test',
-    WOMPI_EVENTS_KEY='events_test',
-    WOMPI_INTEGRITY_KEY='integrity_test',
-    WOMPI_SANDBOX=True,
-    WOMPI_REFERENCE_PREFIX='TEST',
-)
+WOMPI_SETTINGS = {
+    "WOMPI_PUBLIC_KEY": "pub_test",
+    "WOMPI_PRIVATE_KEY": "priv_test",
+    "WOMPI_EVENTS_KEY": "events_test",
+    "WOMPI_INTEGRITY_KEY": "integrity_test",
+    "WOMPI_SANDBOX": True,
+    "WOMPI_REFERENCE_PREFIX": "TEST",
+}
 
 # Las 3 vistas gateadas por RolRequiredMixin(allowed_roles=(Rol.ADMINISTRADOR,))
 # en pagos/views.py (sub-item A3). WompiWebhookView queda deliberadamente
 # fuera -- no tiene gate de rol.
-GATED_URL_NAMES = ['pagos:portal', 'pagos:facturacion', 'pagos:historial']
+GATED_URL_NAMES = ["pagos:portal", "pagos:facturacion", "pagos:historial"]
 
 
 def _make_user(rol=None, **overrides):
     n = next(_SEQ)
-    defaults = dict(
-        document_number=f'91{n:07d}',
-        password='testpass123',
-        first_name=f'User{n}',
-        last_name='A10',
-        document_type='CC',
-        job_position='Tech',
-        job_profile=None,
-        hire_date=date(2024, 1, 1),
-        rol=rol,
-    )
+    defaults = {
+        "document_number": f"91{n:07d}",
+        "password": "testpass123",
+        "first_name": f"User{n}",
+        "last_name": "A10",
+        "document_type": "CC",
+        "job_position": "Tech",
+        "job_profile": None,
+        "hire_date": date(2024, 1, 1),
+        "rol": rol,
+    }
     defaults.update(overrides)
     return User.objects.create_user(**defaults)
 
@@ -80,32 +80,39 @@ class RbacGatingHappyPathTests(TestCase):
         # Fixtures minimos para que las 3 vistas rendericen 200 en vez de
         # fallar por falta de datos (plan activo + suscripcion + datos de
         # facturacion, igual que ui_nueva_reconciliar del F2).
-        self.plan = PlanServicio.objects.create(nombre='Plan Test', precio=100000, activo=True)
+        self.plan = PlanServicio.objects.create(nombre="Plan Test", precio=100000, activo=True)
         self.datos = DatosFacturacion.objects.create(
-            tipo_persona='NATURAL', razon_social='Cliente Test',
-            tipo_identificacion='CC', numero_identificacion='123456',
-            email='cliente@test.com', telefono='3000000000',
-            direccion='Calle 1 # 2-3', ciudad='Bogota', departamento='Bogota',
+            tipo_persona="NATURAL",
+            razon_social="Cliente Test",
+            tipo_identificacion="CC",
+            numero_identificacion="123456",
+            email="cliente@test.com",
+            telefono="3000000000",
+            direccion="Calle 1 # 2-3",
+            ciudad="Bogota",
+            departamento="Bogota",
         )
         self.suscripcion = Suscripcion.objects.create(
-            plan=self.plan, estado='PENDIENTE', datos_facturacion=self.datos,
+            plan=self.plan,
+            estado="PENDIENTE",
+            datos_facturacion=self.datos,
         )
 
     def test_administrador_accede_al_portal(self):
-        response = self.client.get(reverse('pagos:portal'))
-        self.assertContains(response, 'Portal de Pagos')
+        response = self.client.get(reverse("pagos:portal"))
+        self.assertContains(response, "Portal de Pagos")
 
     def test_administrador_accede_a_facturacion(self):
-        response = self.client.get(reverse('pagos:facturacion'))
+        response = self.client.get(reverse("pagos:facturacion"))
         # El <select name="tipo_identificacion"> se arma en el template desde
         # las choices reales del modelo (DatosFacturacion.TIPO_IDENTIFICACION_CHOICES)
         # -- assertContains sobre el HTML renderizado, no solo status 200.
         self.assertContains(response, 'name="tipo_identificacion"')
-        self.assertContains(response, 'facturacionForm')
+        self.assertContains(response, "facturacionForm")
 
     def test_administrador_accede_a_historial(self):
-        response = self.client.get(reverse('pagos:historial'))
-        self.assertContains(response, 'Historial de Pagos')
+        response = self.client.get(reverse("pagos:historial"))
+        self.assertContains(response, "Historial de Pagos")
 
 
 class RbacGatingEjecutorBloqueadoTests(TestCase):
@@ -117,16 +124,16 @@ class RbacGatingEjecutorBloqueadoTests(TestCase):
         self.client.force_login(self.ejecutor)
 
     def test_ejecutor_bloqueado_en_portal(self):
-        resp = self.client.get(reverse('pagos:portal'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:portal"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
     def test_ejecutor_bloqueado_en_facturacion(self):
-        resp = self.client.get(reverse('pagos:facturacion'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:facturacion"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
     def test_ejecutor_bloqueado_en_historial(self):
-        resp = self.client.get(reverse('pagos:historial'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:historial"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
 
 class RbacGatingCoordinadorBloqueadoTests(TestCase):
@@ -141,16 +148,16 @@ class RbacGatingCoordinadorBloqueadoTests(TestCase):
         self.client.force_login(self.coordinador)
 
     def test_coordinador_bloqueado_en_portal(self):
-        resp = self.client.get(reverse('pagos:portal'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:portal"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
     def test_coordinador_bloqueado_en_facturacion(self):
-        resp = self.client.get(reverse('pagos:facturacion'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:facturacion"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
     def test_coordinador_bloqueado_en_historial(self):
-        resp = self.client.get(reverse('pagos:historial'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = self.client.get(reverse("pagos:historial"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
 
 class RbacGatingAnonimoBloqueadoTests(TestCase):
@@ -162,8 +169,8 @@ class RbacGatingAnonimoBloqueadoTests(TestCase):
 
     def test_anonimo_bloqueado_en_portal(self):
         client = Client()
-        resp = client.get(reverse('pagos:portal'))
-        self.assertRedirects(resp, reverse('reports:dashboard'), fetch_redirect_response=False)
+        resp = client.get(reverse("pagos:portal"))
+        self.assertRedirects(resp, reverse("reports:dashboard"), fetch_redirect_response=False)
 
 
 class RbacGatingWebhookSinGateTests(TestCase):
@@ -177,7 +184,8 @@ class RbacGatingWebhookSinGateTests(TestCase):
     def test_webhook_anonimo_con_firma_invalida_da_401_no_redirect(self):
         client = Client()
         resp = client.post(
-            reverse('pagos:webhook'), data='{"event": "transaction.updated", "signature": {}, "data": {}}',
-            content_type='application/json',
+            reverse("pagos:webhook"),
+            data='{"event": "transaction.updated", "signature": {}, "data": {}}',
+            content_type="application/json",
         )
         self.assertEqual(resp.status_code, 401)

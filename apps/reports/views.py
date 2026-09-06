@@ -48,9 +48,7 @@ def admin_dashboard(request):
     """Main admin dashboard view."""
     from apps.courses.models import JobProfileType
 
-    categories = Category.objects.filter(is_active=True).order_by(
-        "order", "name"
-    )
+    categories = Category.objects.filter(is_active=True).order_by("order", "name")
     context = {
         "categories": categories,
         "job_profiles": JobProfileType.objects.filter(is_active=True).values_list("code", "name"),

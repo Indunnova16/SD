@@ -88,10 +88,7 @@ class LearningPath(models.Model):
         lesson durations), not a DB field/annotation — an `F()`/`Sum()`
         aggregate can't traverse it, so this sums in Python instead.
         """
-        return sum(
-            pc.course.total_duration
-            for pc in self.path_courses.select_related("course")
-        )
+        return sum(pc.course.total_duration for pc in self.path_courses.select_related("course"))
 
     @property
     def duration_hours(self):
@@ -111,9 +108,7 @@ class LearningPath(models.Model):
         """
         from django.db.models import Sum
 
-        result = self.path_courses.aggregate(
-            total=Sum("course__modules__lessons__duration")
-        )
+        result = self.path_courses.aggregate(total=Sum("course__modules__lessons__duration"))
         total_minutes = result["total"] or 0
         return round_up_to_half(total_minutes / 60)
 

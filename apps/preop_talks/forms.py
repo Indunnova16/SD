@@ -3,6 +3,7 @@ Forms for pre-operational talks app.
 """
 
 from django import forms
+
 from apps.preop_talks.models import TalkTemplate
 
 

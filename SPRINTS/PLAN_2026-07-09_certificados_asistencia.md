@@ -102,9 +102,11 @@ template_file = models.FileField(
     _("Archivo de plantilla"),
     upload_to="certificates/templates/",
     blank=True,  # <-- agregar (permite crear una plantilla "solo logo/firma")
-    help_text=_("Archivo HTML/PDF de la plantilla (opcional — si se deja vacío, "
-                "se usa la plantilla por defecto del sistema con el logo/firma "
-                "configurados)"),
+    help_text=_(
+        "Archivo HTML/PDF de la plantilla (opcional — si se deja vacío, "
+        "se usa la plantilla por defecto del sistema con el logo/firma "
+        "configurados)"
+    ),
     validators=[validate_certificate_template_extension],
 )
 ```
@@ -133,6 +135,7 @@ from django.db import migrations
 LOGO_PATH = Path(__file__).resolve().parent / "assets" / "sd_sas_logo.png"
 TEMPLATE_NAME = "SD S.A.S. — Plantilla Oficial (Logo)"
 
+
 def seed_template(apps, schema_editor):
     CertificateTemplate = apps.get_model("certifications", "CertificateTemplate")
     if CertificateTemplate.objects.filter(name=TEMPLATE_NAME).exists():
@@ -140,15 +143,17 @@ def seed_template(apps, schema_editor):
     tpl = CertificateTemplate(
         name=TEMPLATE_NAME,
         description="Plantilla sembrada por SD#59 — logo institucional real, "
-                     "sin archivo de plantilla completo (usa el default con "
-                     "firma dinámica de #59/A3).",
+        "sin archivo de plantilla completo (usa el default con "
+        "firma dinámica de #59/A3).",
         is_active=True,
     )
     tpl.logo.save("sd_sas_logo.png", ContentFile(LOGO_PATH.read_bytes()), save=True)
 
+
 def unseed_template(apps, schema_editor):
     CertificateTemplate = apps.get_model("certifications", "CertificateTemplate")
     CertificateTemplate.objects.filter(name=TEMPLATE_NAME).delete()
+
 
 class Migration(migrations.Migration):
     dependencies = [("certifications", "0003_alter_certificatetemplate_template_file_optional")]
@@ -177,11 +182,13 @@ def _resolve_certificate_signer(certificate):
     """
     from apps.courses.models import Enrollment
 
-    enrollment = Enrollment.objects.filter(
-        user=certificate.user, course=certificate.course
-    ).first()
+    enrollment = Enrollment.objects.filter(user=certificate.user, course=certificate.course).first()
     signer = None
-    if enrollment and enrollment.assigned_by_id and enrollment.assigned_by_id != certificate.user_id:
+    if (
+        enrollment
+        and enrollment.assigned_by_id
+        and enrollment.assigned_by_id != certificate.user_id
+    ):
         signer = enrollment.assigned_by
     if not signer:
         signer = certificate.course.created_by  # NOT NULL, on_delete=PROTECT — siempre poblado

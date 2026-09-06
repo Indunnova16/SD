@@ -256,9 +256,7 @@ class ReissueOnRecompletionSignalTest(TransactionTestCase):
 
         new_cert = certs.exclude(pk=first_cert.pk).get()
         self.assertEqual(new_cert.status, Certificate.Status.ISSUED)
-        self.assertEqual(
-            new_cert.metadata.get("reissued_from"), first_cert.certificate_number
-        )
+        self.assertEqual(new_cert.metadata.get("reissued_from"), first_cert.certificate_number)
 
     def test_signal_skips_when_existing_certificate_is_still_current(self, mock_gen):
         """
@@ -429,9 +427,7 @@ PENDING_MARKER_TAG_RE = re.compile(r'<div[^>]*\bdata-certificate-pending="true"[
 @override_settings(
     STORAGES={
         "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     },
 )
 class MyCertificatesPendingIndicatorTest(TestCase):
@@ -521,13 +517,9 @@ class MyCertificatesPendingIndicatorTest(TestCase):
         # pending-marker tag it queries for actually exists in the DOM).
         self.assertContains(response, "sd43CertPollStart")
         # The older certificate keeps its download link...
-        self.assertContains(
-            response, reverse("certifications:download", args=[self.old_cert.id])
-        )
+        self.assertContains(response, reverse("certifications:download", args=[self.old_cert.id]))
         # ...but the new PENDING certificate must not offer one yet.
-        self.assertNotContains(
-            response, reverse("certifications:download", args=[new_cert.id])
-        )
+        self.assertNotContains(response, reverse("certifications:download", args=[new_cert.id]))
 
     def test_no_pending_certificates_omits_notice_and_marker_tag(self):
         """
@@ -546,6 +538,4 @@ class MyCertificatesPendingIndicatorTest(TestCase):
         self.assertNotContains(response, "Certificado en generación")
         self.assertNotRegex(content, PENDING_MARKER_TAG_RE)
         # The older certificate's download link is present and untouched.
-        self.assertContains(
-            response, reverse("certifications:download", args=[self.old_cert.id])
-        )
+        self.assertContains(response, reverse("certifications:download", args=[self.old_cert.id]))

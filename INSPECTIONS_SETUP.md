@@ -21,7 +21,7 @@ Edita `carnes_sebastian/config/settings.py`:
 ```python
 INSTALLED_APPS = [
     # ... apps existentes ...
-    'apps.inspections',  # ← Agregar esta línea
+    "apps.inspections",  # ← Agregar esta línea
 ]
 ```
 
@@ -44,7 +44,7 @@ Edita `carnes_sebastian/config/urls.py`:
 ```python
 urlpatterns = [
     # ... urls existentes ...
-    path('inspecciones/', include('apps.inspections.urls')),
+    path("inspecciones/", include("apps.inspections.urls")),
 ]
 ```
 
@@ -62,32 +62,30 @@ from datetime import date
 
 # Crear categorías
 cat_exc = EquipmentCategory.objects.create(
-    name='Excavadoras',
-    description='Máquinas excavadoras de construcción'
+    name="Excavadoras", description="Máquinas excavadoras de construcción"
 )
 
 cat_gra = EquipmentCategory.objects.create(
-    name='Grúas',
-    description='Grúas y equipos de levantamiento'
+    name="Grúas", description="Grúas y equipos de levantamiento"
 )
 
 # Crear equipos
 Equipment.objects.create(
-    folio='EXC-001',
-    name='Excavadora CAT 320',
+    folio="EXC-001",
+    name="Excavadora CAT 320",
     category=cat_exc,
-    location='Planta Principal',
+    location="Planta Principal",
     acquisition_date=date(2020, 1, 15),
-    serial_number='CAT320-2020-001'
+    serial_number="CAT320-2020-001",
 )
 
 Equipment.objects.create(
-    folio='GRA-001',
-    name='Grúa Móvil 25 toneladas',
+    folio="GRA-001",
+    name="Grúa Móvil 25 toneladas",
     category=cat_gra,
-    location='Patio de Maniobras',
+    location="Patio de Maniobras",
     acquisition_date=date(2019, 5, 20),
-    serial_number='GRUM25-2019-001'
+    serial_number="GRUM25-2019-001",
 )
 
 print("✓ Datos de prueba creados")

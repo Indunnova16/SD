@@ -21,7 +21,7 @@ Edita `carnes_sebastian/config/settings.py` (o la ubicación de tu settings.py):
 ```python
 INSTALLED_APPS = [
     # ... otras apps
-    'apps.inspections',
+    "apps.inspections",
 ]
 ```
 
@@ -41,7 +41,7 @@ from django.urls import path, include
 
 urlpatterns = [
     # ... otras URLs
-    path('inspecciones/', include('apps.inspections.urls')),
+    path("inspecciones/", include("apps.inspections.urls")),
 ]
 ```
 
@@ -117,8 +117,8 @@ Registro de inspección de un equipo
 
 ```python
 class Inspection(models.Model):
-    STATUS_CHOICES = ('pending', 'in_progress', 'completed', 'rejected')
-    CRITICALITY_CHOICES = ('low', 'medium', 'critical')
+    STATUS_CHOICES = ("pending", "in_progress", "completed", "rejected")
+    CRITICALITY_CHOICES = ("low", "medium", "critical")
 
     folio = models.CharField(max_length=50)
     equipment = ForeignKey(Equipment)
@@ -147,7 +147,7 @@ Hallazgos encontrados durante la inspección
 
 ```python
 class Finding(models.Model):
-    SEVERITY_CHOICES = ('minor', 'major', 'critical')
+    SEVERITY_CHOICES = ("minor", "major", "critical")
 
     inspection = ForeignKey(Inspection)
     description = models.TextField()
@@ -160,7 +160,7 @@ Acciones correctivas para resolver hallazgos
 
 ```python
 class CorrectiveAction(models.Model):
-    STATUS_CHOICES = ('pending', 'in_progress', 'completed', 'cancelled')
+    STATUS_CHOICES = ("pending", "in_progress", "completed", "cancelled")
 
     finding = ForeignKey(Finding)
     description = models.TextField()
@@ -305,8 +305,8 @@ Para imágenes (firmas y fotos de hallazgos):
 
 ```python
 # settings.py
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 ```
 
 ## Integración con Sistema Existente

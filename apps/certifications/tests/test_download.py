@@ -23,22 +23,14 @@ from apps.accounts.models import User
 from apps.certifications.models import Certificate, CertificateTemplate
 from apps.courses.models import Course
 
-
 # Minimal valid PDF (header + EOF) — large enough to be a real-ish file.
-MINIMAL_PDF = (
-    b"%PDF-1.4\n"
-    b"1 0 obj<<>>endobj\n"
-    b"trailer<<>>\n"
-    b"%%EOF\n"
-)
+MINIMAL_PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
 
 
 @override_settings(
     STORAGES={
         "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     },
 )
 class CertificateDownloadTests(TestCase):

@@ -25,9 +25,7 @@ def mock_generate_certificate_file(certificate):
     """Mock that skips PDF/QR generation and just marks the cert as issued."""
     certificate.status = Certificate.Status.ISSUED
     certificate.issued_at = timezone.now()
-    certificate.verification_url = (
-        f"https://example.com/verify/{certificate.certificate_number}/"
-    )
+    certificate.verification_url = f"https://example.com/verify/{certificate.certificate_number}/"
     certificate.save()
     return certificate
 

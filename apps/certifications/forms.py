@@ -58,13 +58,7 @@ class CertificateTemplateForm(forms.ModelForm):
                     "accept": "image/*",
                 }
             ),
-            "signer_name": forms.TextInput(
-                attrs={"class": "input input-bordered w-full"}
-            ),
-            "signer_title": forms.TextInput(
-                attrs={"class": "input input-bordered w-full"}
-            ),
-            "is_active": forms.CheckboxInput(
-                attrs={"class": "toggle toggle-primary"}
-            ),
+            "signer_name": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+            "signer_title": forms.TextInput(attrs={"class": "input input-bordered w-full"}),
+            "is_active": forms.CheckboxInput(attrs={"class": "toggle toggle-primary"}),
         }

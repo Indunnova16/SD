@@ -103,11 +103,11 @@ CELERY_CONFIG = {
     "result_backend": "django-db",
     "beat_scheduler": "django_celery_beat.schedulers:DatabaseScheduler",
     "task_queues": {
-        "high_priority": {"exchange": "high"},      # Notificaciones urgentes
-        "default": {"exchange": "default"},          # Tareas normales
-        "reports": {"exchange": "reports"},          # Reportes pesados
-        "media": {"exchange": "media"},              # Procesamiento multimedia
-        "sync": {"exchange": "sync"},                # Sincronización offline
+        "high_priority": {"exchange": "high"},  # Notificaciones urgentes
+        "default": {"exchange": "default"},  # Tareas normales
+        "reports": {"exchange": "reports"},  # Reportes pesados
+        "media": {"exchange": "media"},  # Procesamiento multimedia
+        "sync": {"exchange": "sync"},  # Sincronización offline
     },
     "task_routes": {
         "apps.notifications.*": {"queue": "high_priority"},

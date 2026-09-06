@@ -11,11 +11,13 @@ views) se agregan a este mismo archivo en sub-items posteriores.
 import base64
 from unittest.mock import Mock, patch
 
-import requests
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
+import requests
+
+from apps.feedback.forms import NuevoTicketForm
 from apps.feedback.github_client import (
     ASSIGNEE_TICKET_PORTAL,
     LABEL_PORTAL_WEB,
@@ -25,7 +27,6 @@ from apps.feedback.github_client import (
     GitHubClientError,
     GitHubFeedbackClient,
 )
-from apps.feedback.forms import NuevoTicketForm
 from apps.feedback.models import FeedbackAttachment, FeedbackTicket
 from apps.feedback.services import (
     encolar_sincronizacion_ticket,
@@ -209,9 +210,7 @@ class NuevoTicketFormTestCase(TestCase):
         self.assertTrue(form.is_valid())
 
     def test_honeypot_poblado_invalida_el_form_con_mensaje_generico(self):
-        form = NuevoTicketForm(
-            data=self._datos_validos(website="http://spam-bot.example.com")
-        )
+        form = NuevoTicketForm(data=self._datos_validos(website="http://spam-bot.example.com"))
         self.assertFalse(form.is_valid())
         errores = " ".join(form.errors.get("website", []))
         self.assertTrue(errores)
@@ -240,8 +239,7 @@ class NuevoTicketFormTestCase(TestCase):
 # PNG real de 1x1 pixel (transparente) — usado para probar el camino feliz
 # de procesar_archivos_subidos sin depender de un archivo externo.
 PNG_1X1 = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk"
-    "+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 )
 
 # PNG de 4x4 con IHDR válido pero CRC corrupto en el chunk IDAT (issue
@@ -265,8 +263,7 @@ PNG_CRC_IDAT_CORRUPTO = base64.b64decode(
 # OSError/ValueError, mismo hueco que el CRC corrupto. Verificado contra
 # Pillow 10.4.0 (MAX_IMAGE_PIXELS=89478485, límite real de error=2x eso).
 PNG_DECOMPRESSION_BOMB = base64.b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAATiAAAE4gCAIAAABsEtFuAAAAC0lEQVR4nGNg"
-    "wAsAAB8AAYD9Q9oAAAAASUVORK5CYII="
+    "iVBORw0KGgoAAAANSUhEUgAATiAAAE4gCAIAAABsEtFuAAAAC0lEQVR4nGNgwAsAAB8AAYD9Q9oAAAAASUVORK5CYII="
 )
 
 
@@ -296,9 +293,7 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(len(creados), 1)
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 1
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 1)
         self.assertEqual(creados[0].nombre_original, "foto.png")
 
     def test_archivo_content_type_no_imagen_no_crea_attachment_ni_lanza(self):
@@ -312,9 +307,7 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(creados, [])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
     def test_archivo_content_type_spoofeado_bytes_corruptos_no_crea_attachment(
         self,
@@ -329,9 +322,7 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(creados, [])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
     def test_archivo_png_crc_idat_corrupto_no_crea_attachment_ni_lanza(self):
         """Issue #81 — regresión real, NO simulada con bytes de texto.
@@ -352,9 +343,7 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(creados, [])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
     def test_archivo_png_decompression_bomb_no_crea_attachment_ni_lanza(self):
         """Issue #81 — segundo vector confirmado por F2.
@@ -368,16 +357,12 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         disparar el chequeo antes de decodificar un solo píxel.
         """
         ticket = self._ticket()
-        archivo = SimpleUploadedFile(
-            "bomba.png", PNG_DECOMPRESSION_BOMB, content_type="image/png"
-        )
+        archivo = SimpleUploadedFile("bomba.png", PNG_DECOMPRESSION_BOMB, content_type="image/png")
 
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(creados, [])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
     @override_settings(FEEDBACK_MAX_ATTACHMENT_BYTES=10)
     def test_archivo_excede_tamano_maximo_no_crea_attachment(self):
@@ -387,35 +372,30 @@ class ProcesarArchivosSubidosTestCase(TestCase):
         creados = procesar_archivos_subidos(ticket, [archivo])
 
         self.assertEqual(creados, [])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
     @override_settings(FEEDBACK_MAX_ATTACHMENTS=2)
     def test_mas_de_max_attachments_solo_procesa_los_primeros_n(self):
         ticket = self._ticket()
         archivos = [
-            SimpleUploadedFile(f"foto{i}.png", PNG_1X1, content_type="image/png")
-            for i in range(4)
+            SimpleUploadedFile(f"foto{i}.png", PNG_1X1, content_type="image/png") for i in range(4)
         ]
 
         creados = procesar_archivos_subidos(ticket, archivos)
 
         self.assertEqual(len(creados), 2)
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 2
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 2)
 
 
 class SincronizarTicketTestCase(TestCase):
     """Tests del sub-item A4 — sincronizar_ticket (idempotencia + resiliencia)."""
 
     def _ticket(self, **overrides):
-        datos = dict(
-            nombre_reportante="Carlos Ruiz",
-            asunto="Sugerencia de mejora",
-            descripcion="Sería útil poder filtrar los cursos por categoría.",
-        )
+        datos = {
+            "nombre_reportante": "Carlos Ruiz",
+            "asunto": "Sugerencia de mejora",
+            "descripcion": "Sería útil poder filtrar los cursos por categoría.",
+        }
         datos.update(overrides)
         return FeedbackTicket.objects.create(**datos)
 
@@ -437,9 +417,7 @@ class SincronizarTicketTestCase(TestCase):
         ticket.refresh_from_db()
         self.assertTrue(ticket.sincronizado_github)
         self.assertEqual(ticket.github_issue_number, 55)
-        self.assertEqual(
-            ticket.github_url, "https://github.com/Indunnova16/SD/issues/55"
-        )
+        self.assertEqual(ticket.github_url, "https://github.com/Indunnova16/SD/issues/55")
         self.assertEqual(ticket.error_sincronizacion, "")
         # Issue #71 ronda 5: ya no se asigna a Indunnova (crear_issue asigna
         # mbrt26 + label Urgente, ver GithubClientTestCase) — en su lugar se
@@ -450,9 +428,7 @@ class SincronizarTicketTestCase(TestCase):
         self.assertIn(MENCION_INDUNNOVA, comentario_args[1])
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_comentario_de_aviso_falla_no_afecta_ticket_sincronizado(
-        self, mock_client_cls
-    ):
+    def test_comentario_de_aviso_falla_no_afecta_ticket_sincronizado(self, mock_client_cls):
         """Issue #71 ronda 5: si el issue se crea bien pero el comentario de
         aviso a Indunnova falla (red/GitHub caído en ese segundo), el ticket
         NO debe quedar marcado como no-sincronizado — lo crítico (el issue
@@ -464,9 +440,7 @@ class SincronizarTicketTestCase(TestCase):
             "html_url": "https://github.com/Indunnova16/SD/issues/56",
             "id": 124,
         }
-        mock_client.comentar_issue.side_effect = GitHubClientError(
-            "timeout comentando"
-        )
+        mock_client.comentar_issue.side_effect = GitHubClientError("timeout comentando")
 
         resultado = sincronizar_ticket(ticket.pk)  # NO debe lanzar
 
@@ -541,11 +515,11 @@ class ViewsTestCase(TestCase):
         return datos
 
     def _ticket(self, **overrides):
-        datos = dict(
-            nombre_reportante="Carlos Ruiz",
-            asunto="Sugerencia de mejora",
-            descripcion="Sería útil poder filtrar los cursos por categoría.",
-        )
+        datos = {
+            "nombre_reportante": "Carlos Ruiz",
+            "asunto": "Sugerencia de mejora",
+            "descripcion": "Sería útil poder filtrar los cursos por categoría.",
+        }
         datos.update(overrides)
         return FeedbackTicket.objects.create(**datos)
 
@@ -576,9 +550,7 @@ class ViewsTestCase(TestCase):
     # -- nuevo_view (POST) ---------------------------------------------
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_nuevo_view_post_happy_path_crea_ticket_y_redirige_a_detalle(
-        self, mock_client_cls
-    ):
+    def test_nuevo_view_post_happy_path_crea_ticket_y_redirige_a_detalle(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
         mock_client.crear_issue.return_value = {
             "number": 10,
@@ -598,9 +570,7 @@ class ViewsTestCase(TestCase):
             ).exists()
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            response.url, reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
-        )
+        self.assertEqual(response.url, reverse("feedback:detalle", kwargs={"ticket_id": ticket.id}))
 
     def test_nuevo_view_post_honeypot_poblado_no_crea_ticket_y_rerenderiza(self):
         response = self.client.post(
@@ -613,9 +583,7 @@ class ViewsTestCase(TestCase):
         self.assertFalse(response.context["form"].is_valid())
 
     @patch("apps.feedback.services.GitHubFeedbackClient")
-    def test_nuevo_view_post_con_imagen_valida_crea_ticket_y_attachment(
-        self, mock_client_cls
-    ):
+    def test_nuevo_view_post_con_imagen_valida_crea_ticket_y_attachment(self, mock_client_cls):
         mock_client = mock_client_cls.return_value
         mock_client.crear_issue.return_value = {
             "number": 11,
@@ -631,9 +599,7 @@ class ViewsTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
         ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 1
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 1)
 
     @patch("apps.feedback.views.encolar_sincronizacion_ticket")
     def test_nuevo_view_dispara_encolar_sincronizacion_ticket(self, mock_encolar):
@@ -664,33 +630,25 @@ class ViewsTestCase(TestCase):
         with self.assertRaises(RuntimeError):
             self.client.post(reverse("feedback:nuevo"), data=datos)
 
-        self.assertFalse(
-            FeedbackTicket.objects.filter(asunto=datos["asunto"]).exists()
-        )
+        self.assertFalse(FeedbackTicket.objects.filter(asunto=datos["asunto"]).exists())
 
     # -- detalle_view --------------------------------------------------
 
     def test_detalle_view_200_ticket_existente(self):
         ticket = self._ticket()
 
-        response = self.client.get(
-            reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
-        )
+        response = self.client.get(reverse("feedback:detalle", kwargs={"ticket_id": ticket.id}))
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["ticket"], ticket)
 
     def test_detalle_view_404_ticket_inexistente(self):
-        response = self.client.get(
-            reverse("feedback:detalle", kwargs={"ticket_id": 999999})
-        )
+        response = self.client.get(reverse("feedback:detalle", kwargs={"ticket_id": 999999}))
 
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(
-    GITHUB_FEEDBACK_TOKEN="ghp_test-token-a8", GITHUB_FEEDBACK_REPO="Indunnova16/SD"
-)
+@override_settings(GITHUB_FEEDBACK_TOKEN="ghp_test-token-a8", GITHUB_FEEDBACK_REPO="Indunnova16/SD")
 class IntegracionEndToEndTestCase(TestCase):
     """Tests del sub-item A8 — integración end-to-end de la cadena real.
 
@@ -746,9 +704,7 @@ class IntegracionEndToEndTestCase(TestCase):
             for llamada in mock_post.call_args_list
             if llamada.args and llamada.args[0].endswith("/issues")
         ]
-        self.assertEqual(
-            len(llamadas), 1, "se esperaba exactamente 1 POST al endpoint /issues"
-        )
+        self.assertEqual(len(llamadas), 1, "se esperaba exactamente 1 POST al endpoint /issues")
         return llamadas[0]
 
     @patch("apps.feedback.github_client.requests.post")
@@ -766,9 +722,7 @@ class IntegracionEndToEndTestCase(TestCase):
                 "id": 555,
             },
         )
-        archivo = SimpleUploadedFile(
-            "captura.png", PNG_1X1, content_type="image/png"
-        )
+        archivo = SimpleUploadedFile("captura.png", PNG_1X1, content_type="image/png")
         datos = self._datos_validos()
 
         with self.captureOnCommitCallbacks(execute=True):
@@ -796,9 +750,7 @@ class IntegracionEndToEndTestCase(TestCase):
         ticket.refresh_from_db()
         self.assertTrue(ticket.sincronizado_github)
         self.assertEqual(ticket.github_issue_number, 77)
-        self.assertEqual(
-            ticket.github_url, "https://github.com/Indunnova16/SD/issues/77"
-        )
+        self.assertEqual(ticket.github_url, "https://github.com/Indunnova16/SD/issues/77")
         self.assertEqual(ticket.error_sincronizacion, "")
 
         # (d) el payload real que llegó a requests.post trae intacto lo que
@@ -825,9 +777,7 @@ class IntegracionEndToEndTestCase(TestCase):
         self.assertIn(MENCION_INDUNNOVA, comment_calls[0].kwargs["json"]["body"])
 
     @patch("apps.feedback.github_client.requests.post")
-    def test_resiliencia_end_to_end_github_caido_no_pierde_el_ticket(
-        self, mock_post
-    ):
+    def test_resiliencia_end_to_end_github_caido_no_pierde_el_ticket(self, mock_post):
         """Si GitHub falla (red caída), el ticket del usuario NO se pierde:
         queda en BD con sincronizado_github=False + error_sincronizacion
         poblado, y la vista sigue respondiendo 302 al usuario (nunca 500),
@@ -860,9 +810,7 @@ class IntegracionEndToEndTestCase(TestCase):
         self.assertContains(detalle_response, datos["asunto"])
 
     @patch("apps.feedback.github_client.requests.post")
-    def test_imagen_png_crc_idat_corrupta_no_produce_500_ni_ticket_huerfano(
-        self, mock_post
-    ):
+    def test_imagen_png_crc_idat_corrupta_no_produce_500_ni_ticket_huerfano(self, mock_post):
         """Issue #81 — reproduce el escenario EXACTO del journey E2E
         (SD_81, i81_portal_feedback_imagen_crc_corrupto_no_500_no_huerfano)
         contra la cadena completa real: POST público -> nuevo_view ->
@@ -888,9 +836,7 @@ class IntegracionEndToEndTestCase(TestCase):
         archivo = SimpleUploadedFile(
             "crc_corrupto.png", PNG_CRC_IDAT_CORRUPTO, content_type="image/png"
         )
-        datos = self._datos_validos(
-            asunto="QA_E2E_SD81 - imagen PNG con CRC corrupto en IDAT"
-        )
+        datos = self._datos_validos(asunto="QA_E2E_SD81 - imagen PNG con CRC corrupto en IDAT")
 
         with self.captureOnCommitCallbacks(execute=True):
             response = self.client.post(
@@ -906,9 +852,7 @@ class IntegracionEndToEndTestCase(TestCase):
         )
 
         # (b) el archivo corrupto se descartó -- no quedó como adjunto
-        self.assertEqual(
-            FeedbackAttachment.objects.filter(ticket=ticket).count(), 0
-        )
+        self.assertEqual(FeedbackAttachment.objects.filter(ticket=ticket).count(), 0)
 
         # (c) el ticket NO quedó huérfano -- se sincronizó con GitHub
         ticket.refresh_from_db()
@@ -922,14 +866,10 @@ class IntegracionEndToEndTestCase(TestCase):
             reverse("feedback:detalle", kwargs={"ticket_id": ticket.id})
         )
         self.assertEqual(detalle_response.status_code, 200)
-        self.assertNotContains(
-            detalle_response, "estamos procesando la sincronización"
-        )
+        self.assertNotContains(detalle_response, "estamos procesando la sincronización")
 
     @patch("apps.feedback.github_client.requests.post")
-    def test_flujo_completo_navegacion_lista_y_detalle_con_imagen(
-        self, mock_post
-    ):
+    def test_flujo_completo_navegacion_lista_y_detalle_con_imagen(self, mock_post):
         """Crea un ticket con imagen (mock exitoso) y confirma que aparece
         en `feedback:lista` y que su `feedback:detalle` muestra el asunto Y
         la imagen adjunta en el HTML de respuesta."""
@@ -941,17 +881,11 @@ class IntegracionEndToEndTestCase(TestCase):
                 "id": 666,
             },
         )
-        archivo = SimpleUploadedFile(
-            "evidencia.png", PNG_1X1, content_type="image/png"
-        )
-        datos = self._datos_validos(
-            asunto="El certificado no descarga en Safari"
-        )
+        archivo = SimpleUploadedFile("evidencia.png", PNG_1X1, content_type="image/png")
+        datos = self._datos_validos(asunto="El certificado no descarga en Safari")
 
         with self.captureOnCommitCallbacks(execute=True):
-            self.client.post(
-                reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]}
-            )
+            self.client.post(reverse("feedback:nuevo"), data={**datos, "imagenes": [archivo]})
 
         ticket = FeedbackTicket.objects.get(asunto=datos["asunto"])
 

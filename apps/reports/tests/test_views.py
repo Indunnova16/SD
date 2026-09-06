@@ -150,7 +150,9 @@ class ReportsScheduledGateTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(
-            ScheduledReport.objects.filter(template=self.template, created_by=self.administrador).exists()
+            ScheduledReport.objects.filter(
+                template=self.template, created_by=self.administrador
+            ).exists()
         )
 
     def test_schedule_create_ejecutor_bloqueado(self):

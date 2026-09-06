@@ -544,8 +544,8 @@ class AnalyticsService:
         """
         Calculate overall compliance score.
         """
+
         from apps.courses.models import Course, Enrollment
-        from django.db.models import Count, Q
 
         # Get mandatory courses
         mandatory_courses = Course.objects.filter(

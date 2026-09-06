@@ -468,10 +468,7 @@ class LessonBuilderForm(forms.ModelForm):
         lesson_type = self.cleaned_data.get("lesson_type") or self.data.get("lesson_type")
         if lesson_type and lesson_type != Lesson.Type.ATTENDANCE and not duration:
             raise forms.ValidationError(
-                _(
-                    "La duración es obligatoria (mayor a 0 minutos) para "
-                    "este tipo de lección."
-                )
+                _("La duración es obligatoria (mayor a 0 minutos) para este tipo de lección.")
             )
         return duration
 

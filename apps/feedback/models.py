@@ -38,9 +38,7 @@ class FeedbackTicket(models.Model):
         choices=ESTADO_CHOICES,
         default=ESTADO_ABIERTO,
     )
-    resuelto_por = models.CharField(
-        _("Resuelto por"), max_length=120, blank=True
-    )
+    resuelto_por = models.CharField(_("Resuelto por"), max_length=120, blank=True)
     resuelto_at = models.DateTimeField(_("Resuelto el"), null=True, blank=True)
 
     github_issue_number = models.IntegerField(
@@ -50,18 +48,14 @@ class FeedbackTicket(models.Model):
         unique=True,
     )
     github_url = models.URLField(_("URL del issue en GitHub"), blank=True)
-    sincronizado_github = models.BooleanField(
-        _("Sincronizado con GitHub"), default=False
-    )
+    sincronizado_github = models.BooleanField(_("Sincronizado con GitHub"), default=False)
     error_sincronizacion = models.TextField(_("Error de sincronización"), blank=True)
 
     # Issue #71 ronda 4: el reportante ya tenía fecha/hora automática desde
     # v1.0 (`created_at`, abajo). La IP nunca se capturaba — la auditoría del
     # revisor (2026-08-01) pidió confirmarlo/asegurarlo. Se puebla en
     # `nuevo_view` best-effort (nunca bloquea la creación del ticket).
-    ip_reportante = models.GenericIPAddressField(
-        _("IP del reportante"), null=True, blank=True
-    )
+    ip_reportante = models.GenericIPAddressField(_("IP del reportante"), null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -110,16 +104,10 @@ class FeedbackAttachment(models.Model):
         related_name="adjuntos",
         verbose_name=_("Ticket"),
     )
-    archivo = models.FileField(
-        _("Archivo"), upload_to="feedback/adjuntos/%Y/%m/"
-    )
-    tipo = models.CharField(
-        _("Tipo"), max_length=10, choices=TIPO_CHOICES, default=TIPO_IMAGEN
-    )
+    archivo = models.FileField(_("Archivo"), upload_to="feedback/adjuntos/%Y/%m/")
+    tipo = models.CharField(_("Tipo"), max_length=10, choices=TIPO_CHOICES, default=TIPO_IMAGEN)
     mime_type = models.CharField(_("MIME type"), max_length=120, blank=True)
-    nombre_original = models.CharField(
-        _("Nombre original del archivo"), max_length=255, blank=True
-    )
+    nombre_original = models.CharField(_("Nombre original del archivo"), max_length=255, blank=True)
     transcripcion_ia = models.TextField(
         _("Transcripción IA"),
         blank=True,

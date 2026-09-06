@@ -71,13 +71,9 @@ class SuggestRolForJobProfileTests(TestCase):
         for code, expected_rol in MAPPED_CODES.items():
             with self.subTest(code=code):
                 jp = self.profiles_by_code[code]
-                self.assertEqual(
-                    UserCreateForm.suggest_rol_for_job_profile(jp), expected_rol
-                )
+                self.assertEqual(UserCreateForm.suggest_rol_for_job_profile(jp), expected_rol)
                 # Mismo comportamiento en UserEditForm (mixin compartido).
-                self.assertEqual(
-                    UserEditForm.suggest_rol_for_job_profile(jp), expected_rol
-                )
+                self.assertEqual(UserEditForm.suggest_rol_for_job_profile(jp), expected_rol)
 
     def test_codigos_sin_mapeo_no_sugieren_nada(self):
         for code in UNMAPPED_CODES:
@@ -303,9 +299,7 @@ class SupervisorSelfReferenceFormTests(TestCase):
 
         self.assertFalse(is_valid)
         self.assertIn("supervisor", form.errors)
-        self.assertIn(
-            "no puede ser supervisor de sí mismo", form.errors["supervisor"][0]
-        )
+        self.assertIn("no puede ser supervisor de sí mismo", form.errors["supervisor"][0])
 
     def test_form_permite_supervisor_distinto(self):
         otro_coordinador = User.objects.create_user(

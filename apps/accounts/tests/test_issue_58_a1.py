@@ -33,9 +33,7 @@ User = get_user_model()
 # El nombre del módulo empieza con dígitos ("0016_...") — no es un identificador
 # Python válido, así que no se puede usar `from ... import resolve_rol` (error
 # de sintaxis). Se importa dinámicamente, igual que hace el loader de Django.
-_backfill_module = importlib.import_module(
-    "apps.accounts.migrations.0016_backfill_user_rol"
-)
+_backfill_module = importlib.import_module("apps.accounts.migrations.0016_backfill_user_rol")
 resolve_rol = _backfill_module.resolve_rol
 backfill_rol = _backfill_module.backfill_rol
 DEFAULT_SAFE_ROL = _backfill_module.DEFAULT_SAFE_ROL
@@ -66,9 +64,7 @@ class UserRolChoicesTests(TestCase):
             User.Rol.ADMINISTRADOR,
         ):
             with self.subTest(rol=rol_value):
-                user = self._make_user(
-                    document_number=f"80000000{rol_value[0]}", rol=rol_value
-                )
+                user = self._make_user(document_number=f"80000000{rol_value[0]}", rol=rol_value)
                 user.full_clean()  # no debe lanzar
 
     def test_invalid_choice_raises_validation_error(self):
@@ -206,9 +202,7 @@ class BackfillIntegrationTests(TestCase):
         # Los 4 códigos que la BD dev tiene pero NINGUNA migración siembra
         # (se crearon directo en la tabla dinámica `job_profile_types`,
         # evidencia F2) — se recrean acá para simular ese estado real.
-        self.jp_capataz = JobProfileType.objects.create(
-            code="CAPATAZ", name="Capataz", order=20
-        )
+        self.jp_capataz = JobProfileType.objects.create(code="CAPATAZ", name="Capataz", order=20)
         self.jp_todos = JobProfileType.objects.create(
             code="TODOS LOS CARGOS", name="Todos los Cargos", order=21
         )
@@ -259,9 +253,7 @@ class BackfillIntegrationTests(TestCase):
         conductor = self._legacy_user("900000010", self.jp_conductor)
         # Superuser sin job_profile (ej. createsuperuser) — no debe caer al
         # default seguro, aunque su job_profile sea None.
-        superuser = self._legacy_user(
-            "900000011", None, is_superuser=True, is_staff=True
-        )
+        superuser = self._legacy_user("900000011", None, is_superuser=True, is_staff=True)
 
         from django.apps import apps as real_apps
 

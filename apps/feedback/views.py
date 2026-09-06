@@ -83,9 +83,7 @@ def buscar_view(request):
         )
         if ticket:
             return redirect("feedback:detalle", ticket_id=ticket.id)
-        messages.error(
-            request, f"No encontramos ningún ticket con el número {numero}."
-        )
+        messages.error(request, f"No encontramos ningún ticket con el número {numero}.")
     elif request.GET:
         messages.error(request, "Ingresá solo el número de tu ticket.")
 
@@ -135,17 +133,13 @@ def nuevo_view(request):
                     # la creación del ticket si por lo que sea no hay IP.
                     ip_reportante=obtener_ip_cliente(request),
                 )
-                procesar_archivos_subidos(
-                    ticket, request.FILES.getlist("imagenes")
-                )
+                procesar_archivos_subidos(ticket, request.FILES.getlist("imagenes"))
                 # Debe ir DENTRO de este mismo bloque: transaction.on_commit
                 # necesita dispararse cuando la transacción de esta request
                 # (ticket + adjuntos) termine de committear.
                 encolar_sincronizacion_ticket(ticket.id)
 
-            messages.success(
-                request, "¡Gracias! Tu reporte fue registrado correctamente."
-            )
+            messages.success(request, "¡Gracias! Tu reporte fue registrado correctamente.")
             return redirect("feedback:detalle", ticket_id=ticket.id)
     else:
         form = NuevoTicketForm()
@@ -231,9 +225,7 @@ def resolver_view(request, ticket_id):
         }
         return render(request, "feedback/detalle.html", context)
 
-    cerrado_en_github = resolver_ticket(
-        ticket.id, form.cleaned_data["resuelto_por"]
-    )
+    cerrado_en_github = resolver_ticket(ticket.id, form.cleaned_data["resuelto_por"])
     if cerrado_en_github:
         messages.success(request, "¡Listo! El caso quedó marcado como resuelto.")
     else:
@@ -285,8 +277,7 @@ def comentar_view(request, ticket_id):
         # issue todavía donde postear el comentario.
         messages.error(
             request,
-            "Tu ticket todavía se está sincronizando, esperá unos segundos "
-            "y volvé a intentar.",
+            "Tu ticket todavía se está sincronizando, esperá unos segundos y volvé a intentar.",
         )
         return redirect("feedback:detalle", ticket_id=ticket.id)
 
@@ -298,7 +289,6 @@ def comentar_view(request, ticket_id):
     else:
         messages.error(
             request,
-            "No pudimos publicar tu comentario en este momento, volvé a "
-            "intentar en unos minutos.",
+            "No pudimos publicar tu comentario en este momento, volvé a intentar en unos minutos.",
         )
     return redirect("feedback:detalle", ticket_id=ticket.id)

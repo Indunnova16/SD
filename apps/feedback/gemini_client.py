@@ -37,7 +37,6 @@ vez basado en `feedback/gemini_client.py` de Arcopack).
 import json
 import logging
 import re
-from typing import Optional
 
 from django.conf import settings
 
@@ -171,7 +170,7 @@ def transcribir_media(data: bytes, mime: str) -> str:
         return ""
 
 
-def _parse_gemini_json(raw: str) -> Optional[dict]:
+def _parse_gemini_json(raw: str) -> dict | None:
     """Parsea JSON aunque venga envuelto en code fences ```json ... ```."""
     if not raw:
         return None
@@ -205,12 +204,14 @@ def proponer_titulo_descripcion(adjuntos_resumen: list, texto_libre: str) -> dic
     for i, a in enumerate(adjuntos_resumen, start=1):
         tr = (a.get("transcripcion") or "").strip()
         if tr:
-            contexto += f'ADJUNTO {i} ({a.get("tipo", "?")} — {a.get("nombre", "?")}):\n{tr}\n\n'
+            contexto += f"ADJUNTO {i} ({a.get('tipo', '?')} — {a.get('nombre', '?')}):\n{tr}\n\n"
         else:
-            contexto += f'ADJUNTO {i} ({a.get("tipo", "?")} — {a.get("nombre", "?")}): [sin transcripción]\n\n'
+            contexto += f"ADJUNTO {i} ({a.get('tipo', '?')} — {a.get('nombre', '?')}): [sin transcripción]\n\n"
 
     fallback_titulo = (texto_libre or "Reporte desde portal").strip().split("\n", 1)[0][:90]
-    fallback_descripcion = (texto_libre or "Reporte enviado desde el portal con adjuntos.").strip()[:500]
+    fallback_descripcion = (texto_libre or "Reporte enviado desde el portal con adjuntos.").strip()[
+        :500
+    ]
     fallback = {"titulo": fallback_titulo, "descripcion": fallback_descripcion}
 
     if not contexto.strip():

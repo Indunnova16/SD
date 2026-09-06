@@ -23,7 +23,7 @@ una fuga de datos por manipulación del query param.
 """
 
 import itertools
-from datetime import date, timedelta
+from datetime import date
 
 from django.core.files.base import ContentFile
 from django.test import TestCase, override_settings
@@ -129,9 +129,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
         """Edge case: un Ejecutor pide ?scope=equipo por URL — no debe ver
         ni su "equipo" (no tiene, no es Coordinador) ni ningún otro dato."""
         self.client.force_login(self.ejecutor1)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "equipo"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "equipo"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["current_scope"], "mio")
@@ -141,9 +139,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
 
     def test_coordinador_scope_equipo_ve_a_su_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "equipo"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "equipo"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["current_scope"], "equipo")
@@ -153,9 +149,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
 
     def test_coordinador_no_ve_certificados_de_otro_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "equipo"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "equipo"})
 
         certs = set(response.context["certificates"])
         self.assertNotIn(self.cert_e3, certs)  # equipo de coordinador2
@@ -167,9 +161,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
         """Edge case: un Coordinador pide ?scope=todos — no está autorizado
         (solo Administrador), degrada a `mio` (su propio certificado)."""
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "todos"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "todos"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["current_scope"], "mio")
@@ -182,9 +174,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
         pre-backfill) — el scope 'todos' no debe filtrar por `rol` del
         dueño, solo por el `rol` de quien lo pide."""
         self.client.force_login(self.administrador)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "todos"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "todos"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["current_scope"], "todos")
@@ -206,9 +196,7 @@ class MyCertificatesScopeFilteringTests(_A7BaseTestCase):
         """Distinto de 'todos': un Administrador sin nadie a cargo
         (supervisor=administrador) ve la lista de equipo vacía."""
         self.client.force_login(self.administrador)
-        response = self.client.get(
-            reverse("certifications:my_certificates"), {"scope": "equipo"}
-        )
+        response = self.client.get(reverse("certifications:my_certificates"), {"scope": "equipo"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["current_scope"], "equipo")
@@ -221,39 +209,29 @@ class CertificateDetailAuthzTests(_A7BaseTestCase):
 
     def test_coordinador_ve_detalle_de_certificado_de_su_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:detail", args=[self.cert_e1.id])
-        )
+        response = self.client.get(reverse("certifications:detail", args=[self.cert_e1.id]))
         self.assertEqual(response.status_code, 200)
 
     def test_coordinador_bloqueado_en_detalle_de_otro_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:detail", args=[self.cert_e3.id])
-        )
+        response = self.client.get(reverse("certifications:detail", args=[self.cert_e3.id]))
         self.assertEqual(response.status_code, 403)
 
     def test_administrador_ve_detalle_de_cualquier_certificado(self):
         self.client.force_login(self.administrador)
-        response = self.client.get(
-            reverse("certifications:detail", args=[self.cert_legacy.id])
-        )
+        response = self.client.get(reverse("certifications:detail", args=[self.cert_legacy.id]))
         self.assertEqual(response.status_code, 200)
 
     def test_ejecutor_bloqueado_en_detalle_ajeno(self):
         self.client.force_login(self.ejecutor1)
-        response = self.client.get(
-            reverse("certifications:detail", args=[self.cert_e2.id])
-        )
+        response = self.client.get(reverse("certifications:detail", args=[self.cert_e2.id]))
         self.assertEqual(response.status_code, 403)
 
 
 @override_settings(
     STORAGES={
         "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     },
 )
 class CertificateDownloadAuthzTests(_A7BaseTestCase):
@@ -277,15 +255,11 @@ class CertificateDownloadAuthzTests(_A7BaseTestCase):
 
     def test_coordinador_descarga_certificado_de_su_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:download", args=[self.cert_e1.id])
-        )
+        response = self.client.get(reverse("certifications:download", args=[self.cert_e1.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/pdf")
 
     def test_coordinador_no_descarga_certificado_de_otro_equipo(self):
         self.client.force_login(self.coordinador1)
-        response = self.client.get(
-            reverse("certifications:download", args=[self.cert_e3.id])
-        )
+        response = self.client.get(reverse("certifications:download", args=[self.cert_e3.id]))
         self.assertEqual(response.status_code, 403)

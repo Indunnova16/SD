@@ -582,9 +582,7 @@ class ExportCourseAttendancePdfTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertRedirects(
-            response, reverse("courses:course_full_edit", args=[course.id])
-        )
+        self.assertRedirects(response, reverse("courses:course_full_edit", args=[course.id]))
         messages_list = list(response.context["messages"])
         self.assertTrue(any("Proyecto" in str(m) for m in messages_list))
         self.assertTrue(any("Instructor" in str(m) for m in messages_list))
@@ -920,9 +918,7 @@ class GateEdgeCasesTests(TestCase):
             reverse("courses:export_course_attendance_pdf", args=[course.id]),
             follow=True,
         )
-        self.assertRedirects(
-            response, reverse("courses:course_full_edit", args=[course.id])
-        )
+        self.assertRedirects(response, reverse("courses:course_full_edit", args=[course.id]))
         messages_list = list(response.context["messages"])
         joined = " ".join(str(m) for m in messages_list)
         self.assertNotIn("Proyecto", joined)  # este SI esta completo
@@ -941,9 +937,7 @@ class GateEdgeCasesTests(TestCase):
             reverse("courses:export_course_attendance_pdf", args=[course.id]),
             follow=True,
         )
-        self.assertRedirects(
-            response, reverse("courses:course_full_edit", args=[course.id])
-        )
+        self.assertRedirects(response, reverse("courses:course_full_edit", args=[course.id]))
         messages_list = list(response.context["messages"])
         joined = " ".join(str(m) for m in messages_list)
         self.assertIn("Instructor", joined)
@@ -1482,9 +1476,7 @@ class CourseAttendancePdfBrandingAndSignedAtColumnTests(TestCase):
         self.assertIn("—", html)
 
     def test_edge_logo_data_uri_vacio_no_renderiza_img_roto(self):
-        html = self._render(
-            _course_pdf_context(self.course, rows=[self.row], logo_data_uri="")
-        )
+        html = self._render(_course_pdf_context(self.course, rows=[self.row], logo_data_uri=""))
         self.assertNotIn("data:image/png;base64,", html)
         self.assertNotIn('class="header-logo"', html)
 
@@ -1752,11 +1744,9 @@ class LegacyAttendancePdfBrandingTests(TestCase):
     def test_edge_logo_ausente_html_valido_sin_img(self):
         html = render_to_string(
             "courses/attendance_pdf.html",
-            _legacy_pdf_context(
-                self.course, lesson=self.lesson, rows=[self.row], logo_data_uri=""
-            ),
+            _legacy_pdf_context(self.course, lesson=self.lesson, rows=[self.row], logo_data_uri=""),
         )
-        self.assertNotIn("<img class=\"brand-logo\"", html)
+        self.assertNotIn('<img class="brand-logo"', html)
         # el resto del documento sigue renderizando sin error
         self.assertIn("Lista de Asistencia", html)
 

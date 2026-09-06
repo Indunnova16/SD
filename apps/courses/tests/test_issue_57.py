@@ -252,7 +252,11 @@ class BuilderQuizAssessmentMaxAttemptsIssue57Tests(TestCase):
         self.client.force_login(self.staff)
         url = reverse(
             "courses:builder_edit_lesson",
-            kwargs={"course_id": self.course.id, "module_id": self.module.id, "lesson_id": lesson.id},
+            kwargs={
+                "course_id": self.course.id,
+                "module_id": self.module.id,
+                "lesson_id": lesson.id,
+            },
         )
         resp = self.client.post(
             url,

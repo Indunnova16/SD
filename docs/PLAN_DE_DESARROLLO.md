@@ -368,12 +368,13 @@ sd-lms/
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class User(AbstractUser):
     class Status(models.TextChoices):
-        ACTIVE = 'active', 'Activo'
-        INACTIVE = 'inactive', 'Inactivo'
-        SUSPENDED = 'suspended', 'Suspendido'
-        PROBATION = 'probation', 'Período de Prueba'
+        ACTIVE = "active", "Activo"
+        INACTIVE = "inactive", "Inactivo"
+        SUSPENDED = "suspended", "Suspendido"
+        PROBATION = "probation", "Período de Prueba"
 
     document_type = models.CharField(max_length=10)  # CC, CE, etc.
     document_number = models.CharField(max_length=20, unique=True)
@@ -381,24 +382,20 @@ class User(AbstractUser):
     job_position = models.CharField(max_length=100)
     work_front = models.CharField(max_length=100, blank=True)
     hire_date = models.DateField()
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.ACTIVE
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
 
     class Meta:
-        db_table = 'users'
+        db_table = "users"
 
 
 class Role(models.Model):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
-    permissions = models.ManyToManyField('auth.Permission')
-    users = models.ManyToManyField(User, related_name='custom_roles')
+    permissions = models.ManyToManyField("auth.Permission")
+    users = models.ManyToManyField(User, related_name="custom_roles")
 
     class Meta:
-        db_table = 'roles'
+        db_table = "roles"
 
 
 class Contract(models.Model):
@@ -412,19 +409,19 @@ class Contract(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'contracts'
+        db_table = "contracts"
 
 
 class UserContract(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contracts')
-    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='users')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="contracts")
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name="users")
     assigned_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'user_contracts'
-        unique_together = ['user', 'contract']
+        db_table = "user_contracts"
+        unique_together = ["user", "contract"]
 ```
 
 #### Entregables Fase 1
@@ -478,22 +475,23 @@ class UserContract(models.Model):
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 
+
 class Course(models.Model):
     class Type(models.TextChoices):
-        MANDATORY = 'mandatory', 'Obligatorio'
-        OPTIONAL = 'optional', 'Opcional'
-        REFRESHER = 'refresher', 'Refuerzo'
+        MANDATORY = "mandatory", "Obligatorio"
+        OPTIONAL = "optional", "Opcional"
+        REFRESHER = "refresher", "Refuerzo"
 
     class Status(models.TextChoices):
-        DRAFT = 'draft', 'Borrador'
-        PUBLISHED = 'published', 'Publicado'
-        ARCHIVED = 'archived', 'Archivado'
+        DRAFT = "draft", "Borrador"
+        PUBLISHED = "published", "Publicado"
+        ARCHIVED = "archived", "Archivado"
 
     class RiskLevel(models.TextChoices):
-        LOW = 'low', 'Bajo'
-        MEDIUM = 'medium', 'Medio'
-        HIGH = 'high', 'Alto'
-        CRITICAL = 'critical', 'Crítico'
+        LOW = "low", "Bajo"
+        MEDIUM = "medium", "Medio"
+        HIGH = "high", "Alto"
+        CRITICAL = "critical", "Crítico"
 
     code = models.CharField(max_length=50, unique=True)
     title = models.CharField(max_length=200)
@@ -505,36 +503,36 @@ class Course(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     version = models.PositiveIntegerField(default=1)
     target_profiles = ArrayField(models.CharField(max_length=50), default=list)
-    prerequisites = models.ManyToManyField('self', symmetrical=False, blank=True)
-    created_by = models.ForeignKey('accounts.User', on_delete=models.PROTECT)
+    prerequisites = models.ManyToManyField("self", symmetrical=False, blank=True)
+    created_by = models.ForeignKey("accounts.User", on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'courses'
+        db_table = "courses"
 
 
 class Module(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='modules')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField()
 
     class Meta:
-        db_table = 'modules'
-        ordering = ['order']
+        db_table = "modules"
+        ordering = ["order"]
 
 
 class Lesson(models.Model):
     class Type(models.TextChoices):
-        VIDEO = 'video', 'Video'
-        PDF = 'pdf', 'PDF'
-        SCORM = 'scorm', 'SCORM'
-        INTERACTIVE = 'interactive', 'Interactivo'
-        QUIZ = 'quiz', 'Quiz'
-        AUDIO = 'audio', 'Audio'
+        VIDEO = "video", "Video"
+        PDF = "pdf", "PDF"
+        SCORM = "scorm", "SCORM"
+        INTERACTIVE = "interactive", "Interactivo"
+        QUIZ = "quiz", "Quiz"
+        AUDIO = "audio", "Audio"
 
-    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
     lesson_type = models.CharField(max_length=20, choices=Type.choices)
     content_url = models.URLField()
@@ -545,15 +543,15 @@ class Lesson(models.Model):
     metadata = models.JSONField(default=dict)
 
     class Meta:
-        db_table = 'lessons'
-        ordering = ['order']
+        db_table = "lessons"
+        ordering = ["order"]
 
 
 class MediaAsset(models.Model):
     class Status(models.TextChoices):
-        PROCESSING = 'processing', 'Procesando'
-        READY = 'ready', 'Listo'
-        ERROR = 'error', 'Error'
+        PROCESSING = "processing", "Procesando"
+        READY = "ready", "Listo"
+        ERROR = "error", "Error"
 
     filename = models.CharField(max_length=255)
     original_name = models.CharField(max_length=255)
@@ -567,7 +565,7 @@ class MediaAsset(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'media_assets'
+        db_table = "media_assets"
 ```
 
 #### Entregables Fase 2

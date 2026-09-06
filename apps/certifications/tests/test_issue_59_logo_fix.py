@@ -33,9 +33,7 @@ from django.test import TestCase
 
 from apps.certifications.models import CertificateTemplate
 
-_ASSETS_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "migrations", "assets"
-)
+_ASSETS_DIR = os.path.join(os.path.dirname(__file__), "..", "migrations", "assets")
 _BROKEN_ASSET_PATH = os.path.join(_ASSETS_DIR, "sd_sas_logo.png")
 _REAL_ASSET_PATH = os.path.join(_ASSETS_DIR, "sd_sas_logo_v2_real.png")
 
@@ -146,9 +144,7 @@ class DefaultTemplateLogoPostMigrateStateTest(TestCase):
     """
 
     def test_seeded_active_template_does_not_use_broken_asset(self):
-        template = CertificateTemplate.objects.filter(
-            name=TEMPLATE_NAME, is_active=True
-        ).first()
+        template = CertificateTemplate.objects.filter(name=TEMPLATE_NAME, is_active=True).first()
         # Si 0004 no-opeo porque ya existia una plantilla activa de otro
         # origen, no hay nada que afirmar aqui -- pero en un entorno de
         # test limpio (nuestro caso) 0004 siempre siembra esta fila.

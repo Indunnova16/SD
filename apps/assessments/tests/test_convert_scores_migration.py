@@ -10,9 +10,7 @@ from django.test import TestCase
 from apps.accounts.models import User
 from apps.assessments.models import Assessment, AssessmentAttempt
 
-MIGRATION = importlib.import_module(
-    "apps.assessments.migrations.0009_convert_scores_data"
-)
+MIGRATION = importlib.import_module("apps.assessments.migrations.0009_convert_scores_data")
 
 
 class ConvertScoresDataMigrationTests(TestCase):

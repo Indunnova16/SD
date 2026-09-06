@@ -70,9 +70,7 @@ def _make_user(rol=None, **overrides):
 def _render_default_password(user):
     """Renderiza el templatetag `default_password` tal como lo usa
     `user_list_table.html` ({% load account_tags %}{% default_password u %})."""
-    tpl = Template(
-        "{% load account_tags %}{% default_password u %}"
-    )
+    tpl = Template("{% load account_tags %}{% default_password u %}")
     return tpl.render(Context({"u": user}))
 
 
@@ -126,7 +124,9 @@ class DefaultPasswordTemplatetagMatchesRealPasswordTests(TestCase):
 
         client = Client()
         login_ok = client.login(username=user.email, password=shown)
-        self.assertTrue(login_ok, "la contraseña mostrada por el templatetag debe permitir login real")
+        self.assertTrue(
+            login_ok, "la contraseña mostrada por el templatetag debe permitir login real"
+        )
 
 
 class DashboardReportsWidgetsGatingTests(TestCase):

@@ -26,7 +26,6 @@ from apps.certifications.models import Certificate, CertificateTemplate
 from apps.certifications.services import CertificateService
 from apps.courses.models import Course, Enrollment
 
-
 # Minimal valid PDF (header + EOF) — large enough to be a real-ish file.
 MINIMAL_PDF = b"%PDF-1.4\n%test certificate e2e\n" + b"x" * 500 + b"\n%%EOF\n"
 
@@ -45,9 +44,7 @@ def _fake_generate_certificate_file(certificate):
     )
     certificate.status = Certificate.Status.ISSUED
     certificate.issued_at = timezone.now()
-    certificate.verification_url = (
-        f"https://example.com/verify/{certificate.certificate_number}/"
-    )
+    certificate.verification_url = f"https://example.com/verify/{certificate.certificate_number}/"
     certificate.save()
     return certificate
 
@@ -55,9 +52,7 @@ def _fake_generate_certificate_file(certificate):
 @override_settings(
     STORAGES={
         "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
-        "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"
-        },
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     },
 )
 class CertificadosE2ETest(TransactionTestCase):
@@ -134,11 +129,7 @@ class CertificadosE2ETest(TransactionTestCase):
             status=Enrollment.Status.IN_PROGRESS,
             progress=50,
         )
-        self.assertFalse(
-            Certificate.objects.filter(
-                user=self.student, course=self.course
-            ).exists()
-        )
+        self.assertFalse(Certificate.objects.filter(user=self.student, course=self.course).exists())
 
         # Transition IN_PROGRESS -> COMPLETED. Signal fires on commit and
         # invokes our mocked generator, which attaches the PDF blob.
@@ -154,16 +145,12 @@ class CertificadosE2ETest(TransactionTestCase):
 
         # ---- B3 (SD#43): student downloads PDF via FileResponse ----
         self.client.force_login(self.student)
-        resp = self.client.get(
-            reverse("certifications:download", args=[cert.pk])
-        )
+        resp = self.client.get(reverse("certifications:download", args=[cert.pk]))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/pdf")
         disposition = resp.get("Content-Disposition", "")
         self.assertIn("attachment", disposition)
-        self.assertIn(
-            f"Certificado_{cert.certificate_number}.pdf", disposition
-        )
+        self.assertIn(f"Certificado_{cert.certificate_number}.pdf", disposition)
 
         body = b"".join(resp.streaming_content)
         self.assertTrue(body.startswith(b"%PDF"))
@@ -194,17 +181,13 @@ class CertificadosE2ETest(TransactionTestCase):
 
         # First save -> 1 cert exists.
         self.assertEqual(
-            Certificate.objects.filter(
-                user=self.student, course=self.course
-            ).count(),
+            Certificate.objects.filter(user=self.student, course=self.course).count(),
             1,
         )
 
         # Re-save without changing status -> still exactly 1 cert.
         enrollment.save()
         self.assertEqual(
-            Certificate.objects.filter(
-                user=self.student, course=self.course
-            ).count(),
+            Certificate.objects.filter(user=self.student, course=self.course).count(),
             1,
         )

@@ -7,7 +7,7 @@ Edita `carnes_sebastian/config/settings.py` (o tu archivo settings.py):
 ```python
 INSTALLED_APPS = [
     # ... otras apps existentes ...
-    'apps.inspections',  # ← Agregar esta línea
+    "apps.inspections",  # ← Agregar esta línea
 ]
 ```
 
@@ -32,7 +32,7 @@ from django.urls import path, include
 
 urlpatterns = [
     # ... otras URLs ...
-    path('inspecciones/', include('apps.inspections.urls')),
+    path("inspecciones/", include("apps.inspections.urls")),
     # ... más URLs ...
 ]
 ```

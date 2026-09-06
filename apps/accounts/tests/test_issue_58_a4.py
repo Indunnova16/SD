@@ -24,7 +24,7 @@ Cubre:
 """
 
 import itertools
-from datetime import date, datetime, timezone as dt_timezone
+from datetime import UTC, date, datetime
 
 from django.contrib.auth import get_user_model
 from django.contrib.messages import get_messages
@@ -310,7 +310,7 @@ class MigratedViewsRegressionTests(TestCase):
             project_name="Proyecto A4",
             location="Sitio A4",
             work_activity="Actividad A4",
-            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=dt_timezone.utc),
+            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=UTC),
             conducted_by=self.ejecutor,
         )
         self.client.force_login(self.administrador)
@@ -324,7 +324,7 @@ class MigratedViewsRegressionTests(TestCase):
             project_name="Proyecto A4",
             location="Sitio A4",
             work_activity="Actividad A4",
-            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=dt_timezone.utc),
+            scheduled_at=datetime(2024, 1, 1, 8, 0, tzinfo=UTC),
             conducted_by=self.ejecutor,
         )
         otro_ejecutor = _make_user(rol=Rol.EJECUTOR)

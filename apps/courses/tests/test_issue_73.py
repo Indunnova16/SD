@@ -165,9 +165,7 @@ class CourseScheduleModelTests(TestCase):
         CourseScheduleService.convocar(s2, audience)
 
         self.assertEqual(ScheduleAssignment.objects.filter(user=persona).count(), 2)
-        self.assertEqual(
-            Enrollment.objects.filter(user=persona, course=self.course).count(), 1
-        )
+        self.assertEqual(Enrollment.objects.filter(user=persona, course=self.course).count(), 1)
 
 
 # =============================================================================
@@ -218,9 +216,7 @@ class ResolveAudienceTests(TestCase):
 
     def test_no_convoca_usuarios_inactivos(self):
         _make_user(job_position="Cargo Inactivo SD73", is_active=False)
-        audience = CourseScheduleService.resolve_audience(
-            job_positions=["Cargo Inactivo SD73"]
-        )
+        audience = CourseScheduleService.resolve_audience(job_positions=["Cargo Inactivo SD73"])
         self.assertEqual(audience, {})
 
     def test_dedup_y_precedencia_persona_sobre_perfil_y_cargo(self):
@@ -259,9 +255,7 @@ class ConvocarTests(TestCase):
         assignment = result["convocados"][0]
         self.assertEqual(assignment.user_id, persona.id)
         self.assertIsNotNone(assignment.enrollment)
-        self.assertTrue(
-            Enrollment.objects.filter(user=persona, course=self.course).exists()
-        )
+        self.assertTrue(Enrollment.objects.filter(user=persona, course=self.course).exists())
 
     def test_fecha_sugerida_no_se_escribe_en_enrollment_due_date(self):
         """Entregable 8 -- EL requisito que no se puede romper.
@@ -275,9 +269,7 @@ class ConvocarTests(TestCase):
             self.course, self.admin, suggested_end_date=date.today() + timedelta(days=10)
         )
 
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         enrollment = Enrollment.objects.get(user=persona, course=self.course)
         self.assertIsNone(enrollment.due_date)
@@ -290,9 +282,7 @@ class ConvocarTests(TestCase):
         schedule = _make_schedule(
             self.course, self.admin, suggested_end_date=date.today() - timedelta(days=30)
         )
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         check_enrollment_deadlines()
 
@@ -311,9 +301,7 @@ class ConvocarTests(TestCase):
             suggested_end_date=date(2026, 12, 31),
         )
 
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         notif = Notification.objects.filter(user=persona).first()
         self.assertIsNotNone(notif)
@@ -330,14 +318,10 @@ class ConvocarTests(TestCase):
         persona = _make_user()
         schedule = _make_schedule(self.course, self.admin, name="Turno X")
 
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         notif = Notification.objects.get(user=persona)
-        self.assertEqual(
-            notif.action_url, reverse("courses:detail", args=[self.course.id])
-        )
+        self.assertEqual(notif.action_url, reverse("courses:detail", args=[self.course.id]))
         self.assertEqual(notif.action_text, "Ir al curso")
 
     def test_persona_ya_inscrita_reusa_enrollment_sin_resetear_progreso(self):
@@ -352,14 +336,10 @@ class ConvocarTests(TestCase):
         )
         schedule = _make_schedule(self.course, self.admin)
 
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         enrollment.refresh_from_db()
-        self.assertEqual(
-            Enrollment.objects.filter(user=persona, course=self.course).count(), 1
-        )
+        self.assertEqual(Enrollment.objects.filter(user=persona, course=self.course).count(), 1)
         self.assertEqual(enrollment.status, Enrollment.Status.IN_PROGRESS)
         self.assertEqual(int(enrollment.progress), 55)
         self.assertIsNotNone(enrollment.started_at)
@@ -375,9 +355,7 @@ class ConvocarTests(TestCase):
         )
         schedule = _make_schedule(self.course, self.admin)
 
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         enrollment.refresh_from_db()
         self.assertEqual(int(enrollment.progress), 80)
@@ -433,9 +411,7 @@ class ScheduleAttendanceSummaryTests(TestCase):
         Enrollment.objects.create(user=solo_inscrito, course=self.course)
 
         schedule = _make_schedule(self.course, self.admin)
-        CourseScheduleService.convocar(
-            schedule, {convocado.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {convocado.id: ScheduleAssignment.Source.USER})
 
         summary = CourseScheduleService.build_schedule_attendance_summary(schedule)
         self.assertEqual([row["user"].id for row in summary["rows"]], [convocado.id])
@@ -505,9 +481,7 @@ class ScheduleAttendanceSummaryTests(TestCase):
         """
         persona = _make_user()
         schedule = _make_schedule(self.course, self.admin)
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         enrollment = Enrollment.objects.get(user=persona, course=self.course)
         enrollment.completion_signature = _png_file()
@@ -532,9 +506,7 @@ class ScheduleAttendanceSummaryTests(TestCase):
         persona = _make_user()
         otro_curso = _make_course(self.admin)
         schedule = _make_schedule(self.course, self.admin)
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
 
         canonical = Enrollment.objects.get(user=persona, course=self.course)
         canonical.completion_signature = _png_file()
@@ -553,9 +525,7 @@ class ScheduleAttendanceSummaryTests(TestCase):
 
         persona = _make_user()
         schedule = _make_schedule(self.course, self.admin)
-        CourseScheduleService.convocar(
-            schedule, {persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {persona.id: ScheduleAssignment.Source.USER})
         assessment = Assessment.objects.create(
             course=self.course,
             title="Evaluación SD73",
@@ -563,12 +533,16 @@ class ScheduleAttendanceSummaryTests(TestCase):
             created_by=self.admin,
         )
         older = AssessmentAttempt.objects.create(
-            user=persona, assessment=assessment,
-            status=AssessmentAttempt.Status.GRADED, score=40,
+            user=persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=40,
         )
         newer = AssessmentAttempt.objects.create(
-            user=persona, assessment=assessment,
-            status=AssessmentAttempt.Status.GRADED, score=90,
+            user=persona,
+            assessment=assessment,
+            status=AssessmentAttempt.Status.GRADED,
+            score=90,
         )
         newer.graded_at = timezone.now()
         newer.save(update_fields=["graded_at"])
@@ -733,9 +707,7 @@ class ScheduleViewsTests(TestCase):
         self.assertEqual(schedule.created_by_id, self.admin.id)
 
         convocados = set(
-            ScheduleAssignment.objects.filter(schedule=schedule).values_list(
-                "user_id", flat=True
-            )
+            ScheduleAssignment.objects.filter(schedule=schedule).values_list("user_id", flat=True)
         )
         self.assertEqual(convocados, {persona.id, del_perfil.id, del_cargo.id})
 
@@ -777,9 +749,7 @@ class ScheduleViewsTests(TestCase):
         enrollment.completion_signed_at = timezone.now()
         enrollment.save()
 
-        response = self.client.get(
-            reverse("courses:schedule_detail", args=[schedule.id])
-        )
+        response = self.client.get(reverse("courses:schedule_detail", args=[schedule.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Presente SD73")
@@ -864,9 +834,7 @@ class ScheduleResponsableAndPdfTests(TestCase):
         self.responsable_2.signature = _png_file("firma2.png")
         self.responsable_2.save()
 
-        self.schedule = _make_schedule(
-            self.course, self.admin, responsable=self.responsable_1
-        )
+        self.schedule = _make_schedule(self.course, self.admin, responsable=self.responsable_1)
         self.convocado = _make_user()
         CourseScheduleService.convocar(
             self.schedule, {self.convocado.id: ScheduleAssignment.Source.USER}
@@ -914,9 +882,7 @@ class ScheduleResponsableAndPdfTests(TestCase):
                 "notes": "",
             },
         )
-        self.assertEqual(
-            ScheduleAssignment.objects.filter(schedule=self.schedule).count(), 1
-        )
+        self.assertEqual(ScheduleAssignment.objects.filter(schedule=self.schedule).count(), 1)
 
     def test_editar_agrega_convocados(self):
         nuevo = _make_user()
@@ -1015,9 +981,7 @@ class ScheduleResponsableAndPdfTests(TestCase):
 
     def test_schedule_detail_ofrece_descargar_individual_por_fila(self):
         """El template debe traer el link por fila (no solo el grupal)."""
-        response = self.client.get(
-            reverse("courses:schedule_detail", args=[self.schedule.id])
-        )
+        response = self.client.get(reverse("courses:schedule_detail", args=[self.schedule.id]))
         self.assertContains(
             response,
             reverse(
@@ -1091,12 +1055,8 @@ class ScheduleResponsableAndPdfTests(TestCase):
         (simulando 2 descargas separadas) y confirma que el campo 'Fecha'
         (vía `schedule_date`) es estable mientras 'Generado el' sí cambia.
         """
-        html_1 = self._render_schedule_pdf(
-            generated_at=timezone.make_aware(datetime(2026, 1, 1))
-        )
-        html_2 = self._render_schedule_pdf(
-            generated_at=timezone.make_aware(datetime(2026, 6, 15))
-        )
+        html_1 = self._render_schedule_pdf(generated_at=timezone.make_aware(datetime(2026, 1, 1)))
+        html_2 = self._render_schedule_pdf(generated_at=timezone.make_aware(datetime(2026, 6, 15)))
 
         schedule_date = self.schedule.suggested_end_date or self.schedule.created_at.date()
         fecha_esperada = schedule_date.strftime("%d/%m/%Y")
@@ -1217,9 +1177,7 @@ class MyCoursesConvocatoriaBadgeTests(TestCase):
             name="Turno Aviso",
             suggested_end_date=date(2026, 11, 30),
         )
-        CourseScheduleService.convocar(
-            schedule, {self.persona.id: ScheduleAssignment.Source.USER}
-        )
+        CourseScheduleService.convocar(schedule, {self.persona.id: ScheduleAssignment.Source.USER})
 
         self.client.force_login(self.persona)
         response = self.client.get(reverse("courses:my_courses"))
@@ -1249,9 +1207,7 @@ class CourseScheduleFormTests(TestCase):
         self.draft = _make_course(self.admin, status=Course.Status.DRAFT)
 
     def test_requiere_audiencia_al_crear(self):
-        form = CourseScheduleForm(
-            data={"course": self.course.id, "name": "Turno", "notes": ""}
-        )
+        form = CourseScheduleForm(data={"course": self.course.id, "name": "Turno", "notes": ""})
         self.assertFalse(form.is_valid())
         self.assertIn("al menos una persona", str(form.errors))
 
@@ -1332,8 +1288,6 @@ class CourseScheduleFormTemplateTests(TestCase):
 
     def test_form_editar_programacion_renderiza_activity_type(self):
         schedule = _make_schedule(self.course, self.admin)
-        response = self.client.get(
-            reverse("courses:schedule_edit", args=[schedule.id])
-        )
+        response = self.client.get(reverse("courses:schedule_edit", args=[schedule.id]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="activity_type"')

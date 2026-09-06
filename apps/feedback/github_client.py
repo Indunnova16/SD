@@ -13,8 +13,9 @@ GitHubClientError para que el caller (apps.feedback.services) capture un
 único tipo de excepción, sin acoplarse a requests.exceptions.*.
 """
 
-import requests
 from django.conf import settings
+
+import requests
 
 GITHUB_API_BASE = "https://api.github.com"
 TITLE_MAX_LENGTH = 256
@@ -82,7 +83,7 @@ class GitHubFeedbackClient:
         if not transcripcion or not transcripcion.strip():
             return ""
         lineas = transcripcion.strip().splitlines()
-        bq = "\n".join(f"> {l}" if l.strip() else ">" for l in lineas)
+        bq = "\n".join(f"> {linea}" if linea.strip() else ">" for linea in lineas)
         return f"**Transcripción:**\n{bq}"
 
     def _build_body(self, descripcion, nombre_reportante, adjuntos=None):

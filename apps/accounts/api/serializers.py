@@ -7,8 +7,9 @@ from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
 
-from ..models import Contract, Role
 from apps.courses.models import JobProfileType
+
+from ..models import Contract, Role
 
 User = get_user_model()
 

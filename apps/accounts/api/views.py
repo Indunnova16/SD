@@ -144,8 +144,9 @@ class ImportUsersView(APIView):
             )
 
         try:
-            import pandas as pd
             import io
+
+            import pandas as pd
 
             # Detect file type and read
             if file.name.endswith(".csv"):

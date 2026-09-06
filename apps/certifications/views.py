@@ -11,7 +11,6 @@ from apps.accounts.permissions import Rol, user_has_rol
 
 from .models import Certificate, CertificateVerification
 
-
 # ---------------------------------------------------------------------------
 # A7 (issue #58) — filtrado por rol: propio (Ejecutor) / equipo vía
 # `supervisor` FK (Coordinador) / todos (Administrador).
@@ -89,9 +88,7 @@ def my_certificates(request):
     requested_scope = request.GET.get("scope", SCOPE_MIO)
     scope, can_view_equipo, can_view_todos = _resolve_scope(request.user, requested_scope)
 
-    certificates = _certificates_queryset_for_scope(request.user, scope).order_by(
-        "-issued_at"
-    )
+    certificates = _certificates_queryset_for_scope(request.user, scope).order_by("-issued_at")
 
     # Filter by status
     status_filter = request.GET.get("status")
@@ -207,9 +204,7 @@ def certificate_download(request, certificate_id):
         # FileResponse will iterate over and close after streaming.
         file_handle = certificate.certificate_file.open("rb")
     except FileNotFoundError:
-        context = {
-            "message": "El archivo del certificado no está disponible (FileNotFound)."
-        }
+        context = {"message": "El archivo del certificado no está disponible (FileNotFound)."}
         return render(request, "certifications/not_available.html", context, status=404)
 
     response = FileResponse(
